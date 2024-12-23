@@ -12,13 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting receipt processing...')
     const formData = await req.formData()
     const file = formData.get('file')
     const receiptId = formData.get('receiptId')
 
     if (!file || !receiptId) {
+      console.error('Missing file or receipt ID')
       throw new Error('Missing file or receipt ID')
     }
+
+    console.log('Receipt ID:', receiptId)
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -30,6 +34,7 @@ serve(async (req) => {
     const buffer = await file.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
 
+    console.log('Calling OCR API...')
     // Call OCR API
     const response = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
@@ -40,15 +45,17 @@ serve(async (req) => {
       body: new URLSearchParams({
         'base64Image': `data:${file.type};base64,${base64}`,
         'language': 'heb',
-        'isOverlayRequired': 'false',
         'detectOrientation': 'true',
+        'scale': 'true',
+        'OCREngine': '2',
       }),
     })
 
     const ocrResult = await response.json()
-    console.log('OCR Result:', ocrResult)
+    console.log('OCR Result:', JSON.stringify(ocrResult))
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
+      console.error('Failed to extract text from image')
       throw new Error('Failed to extract text from image')
     }
 
@@ -61,6 +68,8 @@ serve(async (req) => {
     const items = []
     let total = 0
 
+    console.log('Extracted text lines:', lines)
+
     for (const line of lines) {
       const priceMatch = line.match(pricePattern)
       if (priceMatch) {
@@ -68,19 +77,27 @@ serve(async (req) => {
         const name = line.replace(priceMatch[0], '').trim()
         if (name && price) {
           items.push({ name, price })
-        }
-        // Assume the largest number is the total
-        if (price > total) {
-          total = price
+          // Assume the largest number is the total
+          if (price > total) {
+            total = price
+          }
         }
       }
     }
 
+    console.log('Extracted items:', items)
+    console.log('Total:', total)
+
     // Update receipt total
-    await supabase
+    const { error: updateError } = await supabase
       .from('receipts')
       .update({ total })
       .eq('id', receiptId)
+
+    if (updateError) {
+      console.error('Error updating receipt:', updateError)
+      throw updateError
+    }
 
     // Insert receipt items
     if (items.length > 0) {
@@ -92,7 +109,10 @@ serve(async (req) => {
           price: item.price
         })))
 
-      if (itemsError) throw itemsError
+      if (itemsError) {
+        console.error('Error inserting items:', itemsError)
+        throw itemsError
+      }
     }
 
     return new Response(

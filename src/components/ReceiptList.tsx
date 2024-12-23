@@ -2,19 +2,26 @@ import { Receipt, ChevronDown, ChevronUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
 
-  const { data: receipts, isLoading } = useQuery({
+  const { data: receipts, isLoading, error } = useQuery({
     queryKey: ['receipts'],
     queryFn: async () => {
+      console.log('Fetching receipts...');
       const { data: receiptsData, error: receiptsError } = await supabase
         .from('receipts')
         .select('*, receipt_items(*)')
         .order('created_at', { ascending: false });
       
-      if (receiptsError) throw receiptsError;
+      if (receiptsError) {
+        console.error('Error fetching receipts:', receiptsError);
+        throw receiptsError;
+      }
+
+      console.log('Fetched receipts:', receiptsData);
       return receiptsData;
     }
   });
@@ -26,6 +33,16 @@ const ReceiptList = () => {
         : [...prev, receiptId]
     );
   };
+
+  if (error) {
+    console.error('Error in ReceiptList:', error);
+    toast.error('שגיאה בטעינת הקבלות');
+    return (
+      <div className="mt-12 text-center text-red-500">
+        שגיאה בטעינת הקבלות
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <div className="mt-12 text-center">טוען קבלות...</div>;
@@ -73,16 +90,22 @@ const ReceiptList = () => {
               </div>
             </div>
 
-            {expandedReceipts.includes(receipt.id) && receipt.receipt_items && (
+            {expandedReceipts.includes(receipt.id) && (
               <div className="mt-4 border-t pt-4">
-                <div className="space-y-2">
-                  {receipt.receipt_items.map((item: any) => (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="text-gray-700">{item.name}</span>
-                      <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
+                {receipt.receipt_items && receipt.receipt_items.length > 0 ? (
+                  <div className="space-y-2">
+                    {receipt.receipt_items.map((item: any) => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span className="text-gray-700">{item.name}</span>
+                        <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-2">
+                    לא נמצאו פריטים בקבלה זו
+                  </div>
+                )}
               </div>
             )}
 
