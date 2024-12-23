@@ -18,17 +18,8 @@ serve(async (req) => {
     const receiptId = formData.get('receiptId')
 
     if (!file || !receiptId) {
-      console.error('Missing file or receipt ID')
       throw new Error('Missing file or receipt ID')
     }
-
-    console.log('Receipt ID:', receiptId)
-
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
 
     // Convert file to base64
     const buffer = await file.arrayBuffer()
@@ -55,31 +46,42 @@ serve(async (req) => {
     console.log('OCR Result:', JSON.stringify(ocrResult))
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
-      console.error('Failed to extract text from image')
       throw new Error('Failed to extract text from image')
     }
 
-    // Process the OCR result to extract items and total
     const text = ocrResult.ParsedResults[0].ParsedText
     const lines = text.split('\n')
     
-    // Simple regex patterns for price extraction
-    const pricePattern = /\d+\.?\d*/
+    // Initialize variables
     const items = []
     let total = 0
+    let storeName = ''
 
     console.log('Extracted text lines:', lines)
 
+    // Try to find store name in first few lines
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      const line = lines[i].trim()
+      if (line && line.length > 2) {
+        storeName = line
+        break
+      }
+    }
+
+    // Process lines to find items and prices
+    const pricePattern = /\d+\.?\d*/
     for (const line of lines) {
       const priceMatch = line.match(pricePattern)
       if (priceMatch) {
         const price = parseFloat(priceMatch[0])
-        const name = line.replace(priceMatch[0], '').trim()
-        if (name && price) {
-          items.push({ name, price })
-          // Assume the largest number is the total
-          if (price > total) {
-            total = price
+        if (!isNaN(price)) {
+          const name = line.replace(priceMatch[0], '').trim()
+          if (name && price > 0) {
+            items.push({ name, price })
+            // Update total with the highest price found
+            if (price > total) {
+              total = price
+            }
           }
         }
       }
@@ -87,11 +89,21 @@ serve(async (req) => {
 
     console.log('Extracted items:', items)
     console.log('Total:', total)
+    console.log('Store name:', storeName)
 
-    // Update receipt total
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Update receipt with store name and total
     const { error: updateError } = await supabase
       .from('receipts')
-      .update({ total })
+      .update({ 
+        store_name: storeName,
+        total: total 
+      })
       .eq('id', receiptId)
 
     if (updateError) {
@@ -106,7 +118,8 @@ serve(async (req) => {
         .insert(items.map(item => ({
           receipt_id: receiptId,
           name: item.name,
-          price: item.price
+          price: item.price,
+          quantity: 1
         })))
 
       if (itemsError) {
@@ -116,14 +129,25 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, items, total }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, items, total, storeName }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   } catch (error) {
     console.error('Error processing receipt:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json' 
+        },
+        status: 500 
+      }
     )
   }
 })
