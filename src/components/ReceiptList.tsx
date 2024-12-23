@@ -97,7 +97,12 @@ const ReceiptList = () => {
                     {receipt.receipt_items.map((item: any) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-gray-700">{item.name}</span>
-                        <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
+                        <div className="flex items-center gap-2">
+                          {item.quantity && item.quantity > 1 && (
+                            <span className="text-gray-500">x{item.quantity}</span>
+                          )}
+                          <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -110,11 +115,17 @@ const ReceiptList = () => {
             )}
 
             {receipt.image_url && (
-              <img 
-                src={receipt.image_url} 
-                alt="תמונת קבלה" 
-                className="mt-4 w-full max-w-xs mx-auto rounded-lg shadow-sm"
-              />
+              <div className="mt-4">
+                <img 
+                  src={receipt.image_url} 
+                  alt="תמונת קבלה" 
+                  className="w-full max-w-xs mx-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(receipt.image_url, '_blank');
+                  }}
+                />
+              </div>
             )}
           </div>
         ))}
