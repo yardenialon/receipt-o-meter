@@ -108,7 +108,7 @@ export const ReceiptItem = ({
         </div>
       )}
 
-      {receipt.image_url && (
+      {isExpanded && receipt.image_url && (
         <div className="mt-4">
           <img 
             src={receipt.image_url} 
