@@ -16,10 +16,30 @@ serve(async (req) => {
   try {
     console.log('Starting receipt processing...');
     
-    const { base64Image, receiptId, contentType } = await req.json();
+    // Log the request content type
+    console.log('Request Content-Type:', req.headers.get('content-type'));
+    
+    // Get the request body as text first for debugging
+    const bodyText = await req.text();
+    console.log('Raw request body:', bodyText);
+    
+    // Parse the JSON body
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      throw new Error(`Invalid JSON body: ${parseError.message}`);
+    }
+    
+    const { base64Image, receiptId, contentType } = body;
 
     if (!base64Image || !receiptId || !contentType) {
-      console.error('Missing required fields:', { base64Image: !!base64Image, receiptId, contentType });
+      console.error('Missing required fields:', { 
+        hasBase64: !!base64Image, 
+        hasReceiptId: !!receiptId, 
+        hasContentType: !!contentType 
+      });
       throw new Error('Missing required fields');
     }
 

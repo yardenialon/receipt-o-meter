@@ -32,12 +32,13 @@ const UploadZone = () => {
           reader.readAsDataURL(file);
         });
 
+        console.log('Sending OCR request for receipt:', receiptId);
         const { data, error } = await supabase.functions.invoke('process-receipt', {
-          body: {
+          body: JSON.stringify({
             base64Image: base64,
             receiptId: receiptId,
             contentType: file.type
-          }
+          })
         });
 
         if (error) {
