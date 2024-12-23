@@ -13,16 +13,16 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in" dir="rtl">
       <div className="max-w-4xl mx-auto text-center">
         <div className="flex items-center justify-center space-x-3 mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 ml-3">CashBackly</h1>
           <Scan className="w-10 h-10 text-primary-500" />
-          <h1 className="text-4xl font-bold text-gray-900">ReceiptScanner</h1>
         </div>
         
         <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-          Track your shopping habits by scanning your receipts. 
-          Get insights into your spending patterns and make informed decisions.
+          עקבו אחר הרגלי הקניות שלכם על ידי סריקת קבלות.
+          קבלו תובנות על דפוסי ההוצאות שלכם וקבלו החלטות מושכלות.
         </p>
 
         <UploadZone />

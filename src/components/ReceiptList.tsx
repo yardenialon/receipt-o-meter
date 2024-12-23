@@ -4,21 +4,21 @@ const ReceiptList = () => {
   const mockReceipts = [
     {
       id: 1,
-      store: "Walmart",
-      date: "2024-03-20",
+      store: "שופרסל",
+      date: "20/03/2024",
       total: 156.78
     },
     {
       id: 2,
-      store: "Target",
-      date: "2024-03-18",
+      store: "רמי לוי",
+      date: "18/03/2024",
       total: 89.99
     }
   ];
 
   return (
     <div className="mt-12 w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Recent Receipts</h2>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6">קבלות אחרונות</h2>
       <div className="space-y-4">
         {mockReceipts.map((receipt) => (
           <div
@@ -27,14 +27,14 @@ const ReceiptList = () => {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <Receipt className="w-6 h-6 text-primary-500" />
+                <Receipt className="w-6 h-6 text-primary-500 ml-4" />
                 <div>
                   <h3 className="font-medium text-gray-900">{receipt.store}</h3>
                   <p className="text-sm text-gray-500">{receipt.date}</p>
                 </div>
               </div>
               <p className="text-lg font-semibold text-gray-900">
-                ${receipt.total.toFixed(2)}
+                ₪{receipt.total.toFixed(2)}
               </p>
             </div>
           </div>
