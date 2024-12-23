@@ -16,21 +16,9 @@ serve(async (req) => {
   try {
     console.log('Starting receipt processing...');
     
-    // Log the request content type
-    console.log('Request Content-Type:', req.headers.get('content-type'));
-    
-    // Get the request body as text first for debugging
-    const bodyText = await req.text();
-    console.log('Raw request body:', bodyText);
-    
-    // Parse the JSON body
-    let body;
-    try {
-      body = JSON.parse(bodyText);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError);
-      throw new Error(`Invalid JSON body: ${parseError.message}`);
-    }
+    // Get the request body
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
     
     const { base64Image, receiptId, contentType } = body;
 
