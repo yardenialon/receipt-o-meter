@@ -16,17 +16,28 @@ const UploadZone = () => {
       
       if (publicUrl && receiptId) {
         console.log('Starting OCR processing for receipt:', receiptId);
-        // Process receipt with OCR
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('receiptId', receiptId);
-
+        
         const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error('No session found');
+        }
+
+        // Convert Blob to base64
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            resolve(base64String.split(',')[1]); // Remove data URL prefix
+          };
+          reader.readAsDataURL(file);
+        });
+
         const { data, error } = await supabase.functions.invoke('process-receipt', {
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-          },
+          body: {
+            base64Image: base64,
+            receiptId: receiptId,
+            contentType: file.type
+          }
         });
 
         if (error) {

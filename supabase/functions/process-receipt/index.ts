@@ -13,29 +13,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  let formData;
   try {
     console.log('Starting receipt processing...');
     
-    // Get form data once and store it
-    formData = await req.formData();
-    const file = formData.get('file');
-    const receiptId = formData.get('receiptId');
+    const { base64Image, receiptId, contentType } = await req.json();
 
-    if (!file || !receiptId || typeof receiptId !== 'string') {
-      console.error('Missing required fields:', { file: !!file, receiptId });
+    if (!base64Image || !receiptId || !contentType) {
+      console.error('Missing required fields:', { base64Image: !!base64Image, receiptId, contentType });
       throw new Error('Missing required fields');
     }
 
-    console.log('Processing receipt:', { receiptId });
-
-    // Convert file to base64
-    const buffer = await (file as File).arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    console.log('Processing receipt:', { receiptId, contentType });
 
     // Process with OCR
     console.log('Calling OCR API...');
-    const { items, total, storeName } = await processOCR(base64, (file as File).type);
+    const { items, total, storeName } = await processOCR(base64Image, contentType);
 
     // Update receipt status
     console.log('Updating receipt status:', { storeName, total });
@@ -77,21 +69,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing receipt:', error);
     
-    // Try to update receipt status to error state if we have the receipt ID
-    if (formData) {
-      const receiptId = formData.get('receiptId');
-      if (receiptId && typeof receiptId === 'string') {
-        try {
-          await updateReceiptStatus(receiptId, {
-            store_name: 'שגיאה בעיבוד',
-            total: 0
-          });
-        } catch (updateError) {
-          console.error('Error updating receipt status:', updateError);
-        }
-      }
-    }
-
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
@@ -102,7 +79,7 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json' 
         },
-        status: 200
+        status: 500
       }
     );
   }
