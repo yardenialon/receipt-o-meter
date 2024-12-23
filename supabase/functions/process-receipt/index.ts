@@ -18,8 +18,11 @@ serve(async (req) => {
     const receiptId = formData.get('receiptId')
 
     if (!file || !receiptId) {
+      console.error('Missing file or receipt ID')
       throw new Error('Missing file or receipt ID')
     }
+
+    console.log('Received file and receipt ID:', { receiptId })
 
     // Convert file to base64
     const buffer = await file.arrayBuffer()
@@ -43,27 +46,29 @@ serve(async (req) => {
     })
 
     const ocrResult = await response.json()
-    console.log('OCR Result:', JSON.stringify(ocrResult))
+    console.log('OCR API Response:', JSON.stringify(ocrResult))
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
+      console.error('Failed to extract text from image')
       throw new Error('Failed to extract text from image')
     }
 
     const text = ocrResult.ParsedResults[0].ParsedText
     const lines = text.split('\n')
     
+    console.log('Extracted text lines:', lines)
+
     // Initialize variables
     const items = []
     let total = 0
     let storeName = ''
-
-    console.log('Extracted text lines:', lines)
 
     // Try to find store name in first few lines
     for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i].trim()
       if (line && line.length > 2) {
         storeName = line
+        console.log('Found store name:', storeName)
         break
       }
     }
@@ -89,7 +94,6 @@ serve(async (req) => {
 
     console.log('Extracted items:', items)
     console.log('Total:', total)
-    console.log('Store name:', storeName)
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -97,6 +101,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log('Updating receipt with extracted data...')
     // Update receipt with store name and total
     const { error: updateError } = await supabase
       .from('receipts')
@@ -111,6 +116,7 @@ serve(async (req) => {
       throw updateError
     }
 
+    console.log('Adding receipt items...')
     // Insert receipt items
     if (items.length > 0) {
       const { error: itemsError } = await supabase
@@ -128,6 +134,7 @@ serve(async (req) => {
       }
     }
 
+    console.log('Receipt processing completed successfully')
     return new Response(
       JSON.stringify({ success: true, items, total, storeName }),
       { 
