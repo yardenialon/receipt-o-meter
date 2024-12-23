@@ -20,7 +20,7 @@ serve(async (req) => {
     
     // Get the request body
     const body = await req.json();
-    console.log('Request body received');
+    console.log('Request body received:', JSON.stringify(body));
     
     const { base64Image, contentType } = body;
     receiptId = body.receiptId; // Store receiptId for error handling

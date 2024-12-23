@@ -45,15 +45,26 @@ export const uploadReceiptToSupabase = async (file: Blob) => {
     }
 
     console.log('Receipt record created, processing with OCR...');
-    // Create FormData for the OCR request
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('receiptId', receipt.id);
+    
+    // Convert file to base64
+    const reader = new FileReader();
+    const base64Promise = new Promise((resolve) => {
+      reader.onload = () => {
+        const base64 = reader.result?.toString().split(',')[1];
+        resolve(base64);
+      };
+    });
+    reader.readAsDataURL(file);
+    const base64Image = await base64Promise;
 
-    // Call the Edge Function to process the receipt
+    // Call the Edge Function with proper JSON data
     const { data: processResult, error: processError } = await supabase.functions
       .invoke('process-receipt', {
-        body: formData
+        body: JSON.stringify({
+          base64Image,
+          receiptId: receipt.id,
+          contentType: file.type
+        })
       });
 
     if (processError) {
