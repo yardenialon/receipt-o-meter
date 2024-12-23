@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Progress } from "@/components/ui/progress";
 
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
@@ -23,6 +24,13 @@ const ReceiptList = () => {
 
       console.log('Fetched receipts:', receiptsData);
       return receiptsData;
+    },
+    refetchInterval: (data) => {
+      // Check if any receipts are still processing
+      if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
+        return 3000; // Refetch every 3 seconds if processing
+      }
+      return false; // Stop refetching when no receipts are processing
     }
   });
 
@@ -72,10 +80,21 @@ const ReceiptList = () => {
               <div className="flex items-center space-x-4">
                 <Receipt className="w-6 h-6 text-primary-500 ml-4" />
                 <div>
-                  <h3 className="font-medium text-gray-900">{receipt.store_name || 'חנות לא ידועה'}</h3>
-                  <p className="text-sm text-gray-500">
-                    {new Date(receipt.created_at).toLocaleDateString('he-IL')}
-                  </p>
+                  {receipt.store_name === 'מעבד...' ? (
+                    <>
+                      <h3 className="font-medium text-gray-900">מעבד את הקבלה...</h3>
+                      <div className="w-48 mt-2">
+                        <Progress value={33} className="h-2" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-medium text-gray-900">{receipt.store_name || 'חנות לא ידועה'}</h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(receipt.created_at).toLocaleDateString('he-IL')}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -108,7 +127,10 @@ const ReceiptList = () => {
                   </div>
                 ) : (
                   <div className="text-center text-gray-500 py-2">
-                    לא נמצאו פריטים בקבלה זו
+                    {receipt.store_name === 'מעבד...' ? 
+                      'מעבד את פרטי הקבלה...' : 
+                      'לא נמצאו פריטים בקבלה זו'
+                    }
                   </div>
                 )}
               </div>
