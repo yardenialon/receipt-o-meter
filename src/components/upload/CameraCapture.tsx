@@ -63,7 +63,7 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
           await onPhotoCapture(blob);
           stopCamera();
         }
-      }, 'image/jpeg');
+      }, 'image/jpeg', 0.8);
     }
   };
 
@@ -78,7 +78,7 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
         />
         <canvas ref={canvasRef} className="hidden" />
         <div className="flex justify-center gap-4">
-          <Button onClick={stopCamera}>
+          <Button onClick={stopCamera} variant="outline">
             ביטול
           </Button>
           <Button onClick={capturePhoto} variant="default">
