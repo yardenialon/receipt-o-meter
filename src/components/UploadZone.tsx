@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, Camera } from 'lucide-react';
+import { Upload, File, Camera, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -10,10 +10,15 @@ const UploadZone = () => {
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const isMobile = useIsMobile();
 
   const startCamera = async () => {
     try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
       const constraints = {
         video: {
           facingMode: isMobile ? 'environment' : 'user',
@@ -23,19 +28,25 @@ const UploadZone = () => {
       };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(error => {
-          console.error('Error playing video:', error);
-          toast.error('Failed to start video stream');
-        });
+        await videoRef.current.play();
         setShowCamera(true);
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      toast.error('Unable to access camera. Please check permissions.');
+      toast.error('לא ניתן לגשת למצלמה. אנא בדקו את ההרשאות.');
     }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
   };
 
   const capturePhoto = () => {
@@ -48,13 +59,9 @@ const UploadZone = () => {
       canvasRef.current.toBlob((blob) => {
         if (blob) {
           handleFile(blob);
+          stopCamera();
         }
       }, 'image/jpeg');
-
-      // Stop camera stream
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      setShowCamera(false);
     }
   };
 
@@ -63,7 +70,7 @@ const UploadZone = () => {
     // Simulate upload delay - in a real app, you'd send to your backend
     setTimeout(() => {
       setIsUploading(false);
-      toast.success('Receipt uploaded successfully!');
+      toast.success('הקבלה הועלתה בהצלחה!');
     }, 2000);
   };
 
@@ -92,17 +99,11 @@ const UploadZone = () => {
         />
         <canvas ref={canvasRef} className="hidden" />
         <div className="flex justify-center gap-4">
-          <Button onClick={() => {
-            const stream = videoRef.current?.srcObject as MediaStream;
-            if (stream) {
-              stream.getTracks().forEach(track => track.stop());
-            }
-            setShowCamera(false);
-          }}>
-            Cancel
+          <Button onClick={stopCamera}>
+            ביטול
           </Button>
           <Button onClick={capturePhoto} variant="default">
-            Take Photo
+            צלם תמונה
           </Button>
         </div>
       </div>
@@ -132,17 +133,17 @@ const UploadZone = () => {
           <div className="text-center">
             <p className="text-lg font-medium text-gray-700">
               {isDragActive
-                ? "Drop your receipt here"
-                : "Drag & drop your receipt here"}
+                ? "שחרר את הקבלה כאן"
+                : "גרור וזרוק את הקבלה כאן"}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              or click to select a file
+              או לחץ לבחירת קובץ
             </p>
           </div>
         </div>
       </div>
       
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-4">
         <Button
           onClick={startCamera}
           variant="outline"
@@ -150,8 +151,37 @@ const UploadZone = () => {
           disabled={isUploading}
         >
           <Camera className="w-4 h-4" />
-          Take Photo
+          צלם קבלה
         </Button>
+
+        <div className="mt-8 text-center">
+          <Button
+            variant="default"
+            className="mb-4 w-full max-w-xs"
+            onClick={() => toast.info('בקרוב - קבלת החזר כספי')}
+          >
+            לחץ כאן לקבלת החזר כספי
+          </Button>
+          
+          <div className="flex justify-center gap-6">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => toast.info('בקרוב - תשלום דרך Bit')}
+            >
+              <Smartphone className="w-5 h-5" />
+              Bit
+            </Button>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => toast.info('בקרוב - תשלום דרך Paybox')}
+            >
+              <Smartphone className="w-5 h-5" />
+              Paybox
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
