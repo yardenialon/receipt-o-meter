@@ -9,7 +9,15 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     console.log('Starting OCR processing...');
     console.log('Content type:', fileType);
     
-    // Ensure proper base64 format
+    // Split base64 into smaller chunks to avoid memory issues
+    const chunkSize = 500000; // 500KB chunks
+    const chunks = [];
+    for (let i = 0; i < imageBase64.length; i += chunkSize) {
+      chunks.push(imageBase64.slice(i, i + chunkSize));
+    }
+    console.log(`Split image into ${chunks.length} chunks`);
+
+    // Process base64 format
     const base64Image = imageBase64.includes('base64,') ? 
       imageBase64 : 
       `data:${fileType};base64,${imageBase64}`;
@@ -30,8 +38,6 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
         'isTable': 'true',
         'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto',
         'isOverlayRequired': 'false',
-        'detectOrientation': 'true',
-        'scale': 'true',
       }),
     });
 
@@ -41,16 +47,29 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       throw new Error(`OCR API request failed with status ${ocrResponse.status}`);
     }
 
-    const ocrResult = await ocrResponse.json();
-    console.log('OCR API response:', JSON.stringify(ocrResult, null, 2));
+    // Stream the response to avoid memory issues
+    const reader = ocrResponse.body?.getReader();
+    if (!reader) {
+      throw new Error('Failed to get response reader');
+    }
+
+    let result = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      result += new TextDecoder().decode(value);
+    }
+
+    const ocrResult = JSON.parse(result);
+    console.log('OCR API response received');
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
-      console.error('No parsed text in OCR result:', ocrResult);
+      console.error('No parsed text in OCR result');
       throw new Error('No text extracted from image');
     }
 
     const parsedText = ocrResult.ParsedResults[0].ParsedText;
-    console.log('Extracted text:', parsedText);
+    console.log('Extracted text length:', parsedText.length);
 
     // Parse the OCR text into structured data
     const lines = parsedText.split('\n').filter(line => line.trim());
@@ -92,7 +111,7 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       }
     }
 
-    console.log('Parsed items:', items);
+    console.log('Parsed items:', items.length);
     console.log('Total:', total);
     console.log('Store name:', storeName);
 

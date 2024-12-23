@@ -10,6 +10,13 @@ const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFile = async (file: Blob) => {
+    // Check file size
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('הקובץ גדול מדי. גודל מקסימלי הוא 5MB');
+      return;
+    }
+
     setIsUploading(true);
     try {
       const { publicUrl, receiptId } = await uploadReceiptToSupabase(file);
