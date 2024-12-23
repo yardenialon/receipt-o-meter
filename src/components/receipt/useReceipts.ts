@@ -85,10 +85,31 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
     }
   };
 
+  const deleteAllReceipts = async () => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('receipts')
+        .delete()
+        .neq('id', ''); // This will delete all receipts for the current user due to RLS
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      toast.success('כל הקבלות נמחקו בהצלחה');
+    } catch (err) {
+      console.error('Error deleting all receipts:', err);
+      toast.error('שגיאה במחיקת הקבלות');
+      throw err;
+    }
+  };
+
   return {
     receipts,
     isLoading,
     error,
-    deleteReceipt
+    deleteReceipt,
+    deleteAllReceipts
   };
 };
