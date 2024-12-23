@@ -13,11 +13,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let formData;
   try {
     console.log('Starting receipt processing...');
     
     // Get form data once and store it
-    const formData = await req.formData();
+    formData = await req.formData();
     const file = formData.get('file');
     const receiptId = formData.get('receiptId');
 
@@ -77,17 +78,18 @@ serve(async (req) => {
     console.error('Error processing receipt:', error);
     
     // Try to update receipt status to error state if we have the receipt ID
-    try {
-      const formData = await req.formData();
+    if (formData) {
       const receiptId = formData.get('receiptId');
       if (receiptId && typeof receiptId === 'string') {
-        await updateReceiptStatus(receiptId, {
-          store_name: 'שגיאה בעיבוד',
-          total: 0
-        });
+        try {
+          await updateReceiptStatus(receiptId, {
+            store_name: 'שגיאה בעיבוד',
+            total: 0
+          });
+        } catch (updateError) {
+          console.error('Error updating receipt status:', updateError);
+        }
       }
-    } catch (updateError) {
-      console.error('Error updating receipt status:', updateError);
     }
 
     return new Response(
@@ -100,7 +102,7 @@ serve(async (req) => {
           ...corsHeaders,
           'Content-Type': 'application/json' 
         },
-        status: 200 // שינינו ל-200 במקום 500 כדי שהקליינט יוכל לטפל בשגיאה
+        status: 200
       }
     );
   }
