@@ -18,7 +18,7 @@ serve(async (req) => {
     
     // Get the request body
     const body = await req.json();
-    console.log('Request body:', JSON.stringify(body, null, 2));
+    console.log('Request body received');
     
     const { base64Image, receiptId, contentType } = body;
 
@@ -28,7 +28,16 @@ serve(async (req) => {
         hasReceiptId: !!receiptId, 
         hasContentType: !!contentType 
       });
-      throw new Error('Missing required fields');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required fields',
+          details: 'base64Image, receiptId, and contentType are required'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     console.log('Processing receipt:', { receiptId, contentType });
@@ -67,26 +76,33 @@ serve(async (req) => {
           'לא זוהו פריטים בקבלה'
       }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       }
     );
   } catch (error) {
     console.error('Error processing receipt:', error);
     
+    // Update receipt status to error state
+    try {
+      const { receiptId } = await req.json();
+      if (receiptId) {
+        await updateReceiptStatus(receiptId, {
+          store_name: 'שגיאה בעיבוד',
+          total: 0
+        });
+      }
+    } catch (updateError) {
+      console.error('Error updating receipt status:', updateError);
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
         details: error.toString()
       }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
     );
