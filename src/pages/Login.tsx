@@ -13,7 +13,18 @@ const Login = () => {
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event);
       console.log('Session:', session);
+      
+      // Handle hash fragment from OAuth redirect
+      if (window.location.hash && !session) {
+        // If we have a hash but no session, let's wait for the session
+        return;
+      }
+      
       if (session) {
+        // Clear the hash fragment
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
         toast.success('התחברת בהצלחה!');
         navigate('/');
       }
@@ -47,7 +58,7 @@ const Login = () => {
             }
           }}
           providers={['google']}
-          redirectTo={`${window.location.origin}${window.location.pathname}`}
+          redirectTo={`${window.location.origin}/projects/adefcec6-d186-4415-b58d-9b931f14f135/login`}
           localization={{
             variables: {
               sign_in: {
