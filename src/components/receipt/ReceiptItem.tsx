@@ -68,7 +68,7 @@ export const ReceiptItem = ({
               e.stopPropagation();
               onDelete();
             }}
-            disabled={isDeleting || receipt.store_name === 'מעבד...'}
+            disabled={isDeleting}
             className="text-gray-500 hover:text-red-500"
           >
             <Trash2 className="w-5 h-5" />
