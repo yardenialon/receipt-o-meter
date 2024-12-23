@@ -44,7 +44,8 @@ const ReceiptList = () => {
       console.log('Fetched receipts:', receiptsData);
       return receiptsData as ReceiptData[];
     },
-    refetchInterval: (data: ReceiptData[] | undefined) => {
+    refetchInterval: (query) => {
+      const data = query.state.data as ReceiptData[] | undefined;
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
         return 3000; // Refetch every 3 seconds if processing
       }
@@ -86,7 +87,7 @@ const ReceiptList = () => {
     <div className="mt-12 w-full max-w-4xl mx-auto">
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">קבלות אחרונות</h2>
       <div className="space-y-4">
-        {receipts.map((receipt) => (
+        {receipts?.map((receipt) => (
           <div
             key={receipt.id}
             className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors"

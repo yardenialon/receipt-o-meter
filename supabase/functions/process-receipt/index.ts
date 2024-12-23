@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     const text = ocrResult.ParsedResults[0].ParsedText
-    const lines = text.split('\n')
+    const lines = text.split('\n').filter(line => line.trim())
     
     console.log('Extracted text lines:', lines)
 
@@ -66,7 +66,7 @@ serve(async (req) => {
     // Try to find store name in first few lines
     for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i].trim()
-      if (line && line.length > 2) {
+      if (line && line.length > 2 && !line.match(/^\d/)) {
         storeName = line
         console.log('Found store name:', storeName)
         break
@@ -74,19 +74,18 @@ serve(async (req) => {
     }
 
     // Process lines to find items and prices
-    const pricePattern = /\d+\.?\d*/
+    const pricePattern = /(\d+\.?\d*)/
     for (const line of lines) {
       const priceMatch = line.match(pricePattern)
       if (priceMatch) {
-        const price = parseFloat(priceMatch[0])
-        if (!isNaN(price)) {
-          const name = line.replace(priceMatch[0], '').trim()
-          if (name && price > 0) {
+        const price = parseFloat(priceMatch[1])
+        if (!isNaN(price) && price > 0) {
+          // Remove the price and any trailing spaces/special characters
+          const name = line.replace(priceMatch[0], '').replace(/[^\w\s\u0590-\u05FF]/g, '').trim()
+          if (name && price > 0 && !name.match(/^[\d\s]+$/)) {
             items.push({ name, price })
-            // Update total with the highest price found
-            if (price > total) {
-              total = price
-            }
+            // Update total
+            total += price
           }
         }
       }
@@ -106,8 +105,8 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('receipts')
       .update({ 
-        store_name: storeName,
-        total: total 
+        store_name: storeName || 'חנות לא ידועה',
+        total: total || 0
       })
       .eq('id', receiptId)
 
