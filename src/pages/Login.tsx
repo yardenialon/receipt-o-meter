@@ -70,9 +70,9 @@ const Login = () => {
                     inputBorderHover: '#47d193',
                     inputBorderFocus: '#47d193',
                   },
-                  borderRadii: {
-                    buttonBorderRadius: '0.75rem',
-                    inputBorderRadius: '0.75rem',
+                  radii: {
+                    borderRadiusButton: '0.75rem',
+                    borderRadiusInput: '0.75rem',
                   },
                   fontSizes: {
                     baseInputSize: '1rem',
@@ -94,18 +94,22 @@ const Login = () => {
             localization={{
               variables: {
                 sign_in: {
-                  email_label: 'אימייל',
+                  email_label: 'כתובת אימייל',
                   password_label: 'סיסמה',
                   button_label: 'התחבר',
                   social_provider_text: 'התחבר באמצעות {{provider}}',
                   loading_button_label: 'מתחבר...',
+                  email_input_placeholder: 'הכנס את כתובת האימייל שלך',
+                  password_input_placeholder: 'הכנס סיסמה',
                 },
                 sign_up: {
-                  email_label: 'אימייל',
+                  email_label: 'כתובת אימייל',
                   password_label: 'סיסמה',
                   button_label: 'הרשם',
                   social_provider_text: 'התחבר באמצעות {{provider}}',
                   loading_button_label: 'נרשם...',
+                  email_input_placeholder: 'הכנס את כתובת האימייל שלך',
+                  password_input_placeholder: 'בחר סיסמה',
                 }
               }
             }}
