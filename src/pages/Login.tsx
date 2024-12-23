@@ -63,7 +63,7 @@ const Login = () => {
             }
           }}
           providers={['google']}
-          redirectTo="https://preview--receipt-o-meter.lovable.app/login"
+          redirectTo="https://receipt-o-meter.lovable.app/login"
           localization={{
             variables: {
               sign_in: {
