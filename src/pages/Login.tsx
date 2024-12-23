@@ -71,8 +71,8 @@ const Login = () => {
                     inputBorderFocus: '#47d193',
                   },
                   radii: {
-                    borderRadiusButton: '0.75rem',
-                    borderRadiusInput: '0.75rem',
+                    buttonBorderRadius: '0.75rem',
+                    inputBorderRadius: '0.75rem',
                   },
                   fontSizes: {
                     baseInputSize: '1rem',
