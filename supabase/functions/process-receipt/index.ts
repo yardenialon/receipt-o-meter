@@ -1,6 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, processOCR } from "./ocr-utils.ts";
-import { updateReceiptStatus, insertReceiptItems } from "./db-utils.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { processOCR } from "./ocr-utils.ts"
+import { updateReceiptStatus, insertReceiptItems } from "./db-utils.ts"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -10,24 +15,29 @@ serve(async (req) => {
 
   try {
     console.log('Starting receipt processing...');
+    
+    // Get form data once and store it
     const formData = await req.formData();
     const file = formData.get('file');
     const receiptId = formData.get('receiptId');
 
     if (!file || !receiptId || typeof receiptId !== 'string') {
-      throw new Error('Missing file or receipt ID');
+      console.error('Missing required fields:', { file: !!file, receiptId });
+      throw new Error('Missing required fields');
     }
 
     console.log('Processing receipt:', { receiptId });
 
     // Convert file to base64
-    const buffer = await file.arrayBuffer();
+    const buffer = await (file as File).arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
+    // Process with OCR
     console.log('Calling OCR API...');
-    const { items, total, storeName } = await processOCR(base64, file.type);
+    const { items, total, storeName } = await processOCR(base64, (file as File).type);
 
-    // Update receipt with results
+    // Update receipt status
+    console.log('Updating receipt status:', { storeName, total });
     await updateReceiptStatus(receiptId, {
       store_name: storeName || 'חנות לא ידועה',
       total: total || 0
@@ -35,10 +45,10 @@ serve(async (req) => {
 
     // Insert items if any were found
     if (items.length > 0) {
+      console.log('Inserting receipt items:', items.length);
       await insertReceiptItems(receiptId, items);
     }
 
-    console.log('Receipt processing completed successfully');
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -58,20 +68,6 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error processing receipt:', error);
-
-    // Try to update receipt status to error state if we have the receipt ID
-    try {
-      const receiptId = await req.formData().then(form => form.get('receiptId'));
-      if (receiptId && typeof receiptId === 'string') {
-        await updateReceiptStatus(receiptId, {
-          store_name: 'שגיאה בעיבוד',
-          total: 0
-        });
-      }
-    } catch (updateError) {
-      console.error('Error updating receipt status:', updateError);
-    }
-
     return new Response(
       JSON.stringify({ 
         error: error.message,
