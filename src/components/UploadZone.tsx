@@ -31,19 +31,19 @@ const UploadZone = () => {
 
         if (error) {
           console.error('OCR processing error:', error);
-          toast.error('שגיאה בעיבוד הקבלה');
+          toast.error('שגיאה בעיבוד הקבלה: ' + (error.message || 'אנא נסה שוב'));
         } else {
           console.log('OCR processing result:', data);
           if (data?.items?.length > 0) {
             toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
           } else {
-            toast.error('לא זוהו פריטים בקבלה');
+            toast.error('לא זוהו פריטים בקבלה. אנא נסה להעלות תמונה ברורה יותר');
           }
         }
       }
     } catch (err) {
       console.error('Upload error:', err);
-      toast.error('שגיאה בהעלאת הקבלה');
+      toast.error('שגיאה בהעלאת הקבלה: ' + (err instanceof Error ? err.message : 'אנא נסה שוב'));
     } finally {
       setIsUploading(false);
     }

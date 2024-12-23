@@ -22,15 +22,15 @@ serve(async (req) => {
       throw new Error('Missing file or receipt ID')
     }
 
-    console.log('Received file and receipt ID:', { receiptId })
+    console.log('Processing receipt:', { receiptId })
 
     // Convert file to base64
     const buffer = await file.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
 
     console.log('Calling OCR API...')
-    // Call OCR API
-    const response = await fetch('https://api.ocr.space/parse/image', {
+    // Call OCR API with improved error handling
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
         'apikey': Deno.env.get('OCR_SPACE_API_KEY') ?? '',
@@ -42,14 +42,20 @@ serve(async (req) => {
         'detectOrientation': 'true',
         'scale': 'true',
         'OCREngine': '2',
+        'isTable': 'true',
       }),
     })
 
-    const ocrResult = await response.json()
+    if (!ocrResponse.ok) {
+      console.error('OCR API error:', await ocrResponse.text())
+      throw new Error('OCR API request failed')
+    }
+
+    const ocrResult = await ocrResponse.json()
     console.log('OCR API Response:', JSON.stringify(ocrResult))
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
-      console.error('Failed to extract text from image')
+      console.error('Failed to extract text from image:', ocrResult)
       throw new Error('Failed to extract text from image')
     }
 
@@ -73,22 +79,38 @@ serve(async (req) => {
       }
     }
 
-    // Process lines to find items and prices
+    // Process lines to find items and prices with improved pattern matching
     const pricePattern = /(\d+\.?\d*)/
+    const skipWords = ['סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי']
+    
     for (const line of lines) {
+      // Skip lines containing words we want to ignore
+      if (skipWords.some(word => line.includes(word))) {
+        continue
+      }
+
       const priceMatch = line.match(pricePattern)
       if (priceMatch) {
         const price = parseFloat(priceMatch[1])
         if (!isNaN(price) && price > 0) {
           // Remove the price and any trailing spaces/special characters
-          const name = line.replace(priceMatch[0], '').replace(/[^\w\s\u0590-\u05FF]/g, '').trim()
+          const name = line
+            .replace(priceMatch[0], '')
+            .replace(/[^\w\s\u0590-\u05FF]/g, '')
+            .trim()
+
           if (name && price > 0 && !name.match(/^[\d\s]+$/)) {
             items.push({ name, price })
-            // Update total
             total += price
+            console.log('Found item:', { name, price })
           }
         }
       }
+    }
+
+    if (items.length === 0) {
+      console.error('No items found in receipt')
+      throw new Error('No items found in receipt')
     }
 
     console.log('Extracted items:', items)
@@ -146,7 +168,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing receipt:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       { 
         headers: { 
           ...corsHeaders,
