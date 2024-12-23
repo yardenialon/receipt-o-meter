@@ -40,14 +40,26 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     if (!ocrResponse.ok) {
       const errorText = await ocrResponse.text();
       console.error('OCR API error response:', errorText);
-      throw new Error('שגיאה בעיבוד התמונה - אנא נסה שוב');
+      throw new Error('שגיאה בתקשורת עם שירות ה-OCR - אנא נסה שוב');
     }
 
     const ocrResult = await ocrResponse.json();
-    console.log('OCR API response received:', JSON.stringify(ocrResult));
+    console.log('OCR API raw response:', JSON.stringify(ocrResult));
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
       console.error('No parsed text in OCR result:', ocrResult);
+      
+      // Check if there's a specific error from the OCR service
+      if (ocrResult.ErrorMessage) {
+        console.error('OCR service error:', ocrResult.ErrorMessage);
+        throw new Error(`שגיאה מהשירות: ${ocrResult.ErrorMessage}`);
+      }
+      
+      if (ocrResult.IsErroredOnProcessing) {
+        console.error('OCR processing error:', ocrResult.ErrorDetails);
+        throw new Error('שגיאה בעיבוד התמונה - אנא נסה שוב');
+      }
+      
       throw new Error('לא זוהה טקסט בקבלה - אנא נסה להעלות תמונה ברורה יותר');
     }
 
@@ -58,6 +70,8 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     const lines = parsedText.split('\n')
       .filter(line => line.trim())
       .map(line => line.trim());
+
+    console.log('Parsed lines:', lines);
 
     const items: Array<{ name: string; price: number; quantity?: number }> = [];
     let total = 0;
@@ -82,7 +96,10 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     
     for (const line of lines) {
       // Skip lines containing specific words
-      if (skipWords.some(word => line.includes(word))) continue;
+      if (skipWords.some(word => line.includes(word))) {
+        console.log('Skipping line with reserved word:', line);
+        continue;
+      }
 
       const priceMatch = line.match(pricePattern);
       if (priceMatch) {
@@ -104,6 +121,7 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
           }
 
           if (name && price > 0 && !/^\d+$/.test(name)) {
+            console.log('Found item:', { name, price, quantity });
             items.push({ name, price, ...(quantity && { quantity }) });
             total += price * (quantity || 1);
           }
