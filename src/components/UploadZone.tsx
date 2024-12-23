@@ -41,17 +41,16 @@ const UploadZone = () => {
 
         console.log('Sending OCR request for receipt:', receiptId);
         const { data, error } = await supabase.functions.invoke('process-receipt', {
-          body: JSON.stringify({
+          body: {
             base64Image: base64,
             receiptId: receiptId,
             contentType: file.type,
             isPDF: file.type === 'application/pdf'
-          })
+          }
         });
 
         if (error) {
           console.error('OCR processing error:', error);
-          toast.error('שגיאה בעיבוד הקבלה: ' + (error.message || 'אנא נסה שוב'));
           
           // Update receipt status to error
           const { error: updateError } = await supabase
@@ -65,25 +64,27 @@ const UploadZone = () => {
           if (updateError) {
             console.error('Error updating receipt status:', updateError);
           }
+          
+          throw error;
+        }
+
+        console.log('OCR processing result:', data);
+        if (data?.items?.length > 0) {
+          toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
         } else {
-          console.log('OCR processing result:', data);
-          if (data?.items?.length > 0) {
-            toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
-          } else {
-            toast.error('לא זוהו פריטים בקבלה. אנא נסה להעלות תמונה ברורה יותר');
+          toast.error('לא זוהו פריטים בקבלה. אנא נסה להעלות תמונה ברורה יותר');
+          
+          // Update receipt status for no items found
+          const { error: updateError } = await supabase
+            .from('receipts')
+            .update({ 
+              store_name: 'לא זוהו פריטים',
+              total: 0
+            })
+            .eq('id', receiptId);
             
-            // Update receipt status for no items found
-            const { error: updateError } = await supabase
-              .from('receipts')
-              .update({ 
-                store_name: 'לא זוהו פריטים',
-                total: 0
-              })
-              .eq('id', receiptId);
-              
-            if (updateError) {
-              console.error('Error updating receipt status:', updateError);
-            }
+          if (updateError) {
+            console.error('Error updating receipt status:', updateError);
           }
         }
       }

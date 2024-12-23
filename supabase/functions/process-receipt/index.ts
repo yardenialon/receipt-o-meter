@@ -17,7 +17,14 @@ serve(async (req) => {
     const { base64Image, receiptId, contentType } = await req.json();
 
     if (!base64Image || !receiptId || !contentType) {
-      throw new Error('חסרים שדות נדרשים');
+      console.error('Missing required fields:', { base64Image: !!base64Image, receiptId: !!receiptId, contentType: !!contentType });
+      return new Response(
+        JSON.stringify({ error: 'חסרים שדות נדרשים' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      );
     }
 
     console.log('Processing receipt:', { receiptId, contentType });
