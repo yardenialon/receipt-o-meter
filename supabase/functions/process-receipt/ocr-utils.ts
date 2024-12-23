@@ -45,7 +45,6 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
       console.error('No parsed text in OCR result:', ocrResult);
       
-      // Check if there's a specific error from the OCR service
       if (ocrResult.ErrorMessage) {
         console.error('OCR service error:', ocrResult.ErrorMessage);
         throw new Error(`שגיאה מהשירות: ${ocrResult.ErrorMessage}`);
@@ -53,7 +52,7 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       
       if (ocrResult.IsErroredOnProcessing) {
         console.error('OCR processing error:', ocrResult.ErrorDetails);
-        throw new Error('שגיאה בעיבוד התמונה - אנא נסה שוב');
+        throw new Error('שגיאה בעיבוד התמונה - אנא נסה להעלות תמונה ברורה יותר');
       }
       
       throw new Error('לא זוהה טקסט בקבלה - אנא נסה להעלות תמונה ברורה יותר');
@@ -82,13 +81,15 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       }
     }
 
-    // Improved price and item detection
-    const pricePattern = /(\d+\.?\d*)/;
-    const quantityPattern = /[xX×](\d+)|(\d+)\s*יח\'?/; // Added Hebrew unit indicator
+    // Improved price and item detection with Hebrew support
+    const pricePattern = /(\d+(?:[,.]\d{1,2})?)/;
+    const quantityPattern = /[xX×](\d+)|(\d+)\s*יח\'?/;
     const skipWords = [
       'סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי', 'כרטיס', 'עודף', 'מספר',
-      'חשבונית', 'קבלה', 'עוסק', 'מורשה', 'טלפון', 'פקס', 'תאריך'
+      'חשבונית', 'קבלה', 'עוסק', 'מורשה', 'טלפון', 'פקס', 'תאריך', 'ש"ח', 'שח'
     ];
+    
+    let foundItems = false;
     
     for (const line of lines) {
       // Skip lines containing specific words
@@ -99,7 +100,9 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
 
       const priceMatch = line.match(pricePattern);
       if (priceMatch) {
-        const price = parseFloat(priceMatch[1]);
+        const priceStr = priceMatch[1].replace(',', '.');
+        const price = parseFloat(priceStr);
+        
         if (!isNaN(price) && price > 0) {
           // Clean item name by removing price and special characters
           let name = line
@@ -120,18 +123,20 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
             console.log('Found item:', { name, price, quantity });
             items.push({ name, price, ...(quantity && { quantity }) });
             total += price * (quantity || 1);
+            foundItems = true;
           }
         }
       }
     }
 
+    if (!foundItems) {
+      console.error('No items found in receipt text');
+      throw new Error('לא זוהו פריטים בקבלה - אנא נסה להעלות תמונה ברורה יותר');
+    }
+
     console.log('Parsed items:', items);
     console.log('Total:', total);
     console.log('Store name:', storeName);
-
-    if (items.length === 0) {
-      throw new Error('לא זוהו פריטים בקבלה - אנא נסה להעלות תמונה ברורה יותר');
-    }
 
     return { items, total, storeName };
   } catch (error) {
