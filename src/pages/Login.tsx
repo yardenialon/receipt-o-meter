@@ -9,29 +9,28 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.onAuthStateChange((event, session) => {
+    const handleAuthChange = async (event: string, session: any) => {
       console.log('Auth event:', event);
       console.log('Session:', session);
-      
-      // Handle hash fragment from OAuth redirect
-      if (window.location.hash && !session) {
-        // If we have a hash but no session, let's wait for the session
-        return;
-      }
-      
+
       if (session) {
-        // Clear the hash fragment
-        if (window.location.hash) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
+        // Clear any hash or query parameters from the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
         toast.success('התחברת בהצלחה!');
         navigate('/');
       }
       if (event === 'SIGNED_OUT') {
         toast.info('התנתקת בהצלחה');
       }
-    });
+    };
+
+    // Set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (
