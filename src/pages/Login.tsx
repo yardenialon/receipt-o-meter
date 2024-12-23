@@ -57,7 +57,7 @@ const Login = () => {
             }
           }}
           providers={['google']}
-          redirectTo={`${window.location.origin}/projects/adefcec6-d186-4415-b58d-9b931f14f135/login`}
+          redirectTo="https://preview--receipt-o-meter.lovable.app/login"
           localization={{
             variables: {
               sign_in: {
