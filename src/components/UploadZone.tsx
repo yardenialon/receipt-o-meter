@@ -3,22 +3,38 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, File, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isMobile = useIsMobile();
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = {
+        video: {
+          facingMode: isMobile ? 'environment' : 'user',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(error => {
+          console.error('Error playing video:', error);
+          toast.error('Failed to start video stream');
+        });
         setShowCamera(true);
       }
     } catch (err) {
-      toast.error('Unable to access camera');
+      console.error('Camera access error:', err);
+      toast.error('Unable to access camera. Please check permissions.');
     }
   };
 
@@ -78,7 +94,9 @@ const UploadZone = () => {
         <div className="flex justify-center gap-4">
           <Button onClick={() => {
             const stream = videoRef.current?.srcObject as MediaStream;
-            stream?.getTracks().forEach(track => track.stop());
+            if (stream) {
+              stream.getTracks().forEach(track => track.stop());
+            }
             setShowCamera(false);
           }}>
             Cancel
