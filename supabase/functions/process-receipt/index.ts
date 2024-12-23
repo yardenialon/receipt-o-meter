@@ -13,6 +13,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let receiptId: string | undefined;
+
   try {
     console.log('Starting receipt processing...');
     
@@ -20,7 +22,8 @@ serve(async (req) => {
     const body = await req.json();
     console.log('Request body received');
     
-    const { base64Image, receiptId, contentType } = body;
+    const { base64Image, contentType } = body;
+    receiptId = body.receiptId; // Store receiptId for error handling
 
     if (!base64Image || !receiptId || !contentType) {
       console.error('Missing required fields:', { 
@@ -83,17 +86,16 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing receipt:', error);
     
-    // Update receipt status to error state
-    try {
-      const { receiptId } = await req.json();
-      if (receiptId) {
+    // Update receipt status to error state if we have the receiptId
+    if (receiptId) {
+      try {
         await updateReceiptStatus(receiptId, {
           store_name: 'שגיאה בעיבוד',
           total: 0
         });
+      } catch (updateError) {
+        console.error('Error updating receipt status:', updateError);
       }
-    } catch (updateError) {
-      console.error('Error updating receipt status:', updateError);
     }
     
     return new Response(
