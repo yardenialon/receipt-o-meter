@@ -5,9 +5,11 @@ import UploadZone from '../components/UploadZone';
 import ReceiptList from '../components/ReceiptList';
 import { LogOut, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((event, session) => {
@@ -25,6 +27,17 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in" dir="rtl">
       <div className="max-w-4xl mx-auto">
+        {isMobile && (
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="w-full mb-6 flex items-center justify-center gap-2 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
+          >
+            <LogOut className="w-4 h-4" />
+            התנתק
+          </Button>
+        )}
+
         <div className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-3">
             <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
@@ -37,14 +50,16 @@ const Index = () => {
               <p className="text-primary-700 text-sm">מערכת חכמה לניהול קבלות</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
-          >
-            <LogOut className="w-4 h-4" />
-            התנתק
-          </Button>
+          {!isMobile && (
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
+            >
+              <LogOut className="w-4 h-4" />
+              התנתק
+            </Button>
+          )}
         </div>
         
         <div className="text-center mb-16 animate-slide-up">
