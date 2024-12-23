@@ -1,4 +1,3 @@
-import { Smartphone } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -14,22 +13,26 @@ const PaymentButtons = () => {
       </Button>
       
       <div className="flex justify-center gap-6">
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
+        <button
           onClick={() => toast.info('בקרוב - תשלום דרך Bit')}
+          className="h-12 w-12 rounded-xl bg-[#004B41] p-2 transition-all hover:scale-105 active:scale-95"
         >
-          <Smartphone className="w-5 h-5" />
-          Bit
-        </Button>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
+          <img 
+            src="/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png" 
+            alt="Bit" 
+            className="h-full w-full object-contain"
+          />
+        </button>
+        <button
           onClick={() => toast.info('בקרוב - תשלום דרך Paybox')}
+          className="h-12 w-12 rounded-xl bg-[#004B41] p-2 transition-all hover:scale-105 active:scale-95"
         >
-          <Smartphone className="w-5 h-5" />
-          Paybox
-        </Button>
+          <img 
+            src="/placeholder.svg" 
+            alt="Paybox" 
+            className="h-full w-full object-contain"
+          />
+        </button>
       </div>
     </div>
   );
