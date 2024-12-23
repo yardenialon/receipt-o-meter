@@ -28,6 +28,10 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
         'scale': 'true',
         'OCREngine': '2',
         'isTable': 'true',
+        'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto',
+        'isOverlayRequired': 'false',
+        'detectOrientation': 'true',
+        'scale': 'true',
       }),
     });
 

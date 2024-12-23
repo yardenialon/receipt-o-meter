@@ -17,7 +17,8 @@ const DropZone = ({ onFileDrop, isUploading }: DropZoneProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png']
+      'image/*': ['.jpeg', '.jpg', '.png'],
+      'application/pdf': ['.pdf']
     },
     maxFiles: 1
   });
@@ -49,6 +50,9 @@ const DropZone = ({ onFileDrop, isUploading }: DropZoneProps) => {
           </p>
           <p className="text-sm text-gray-500 mt-1">
             או לחץ לבחירת קובץ
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            קבצים נתמכים: JPG, PNG, PDF
           </p>
         </div>
       </div>

@@ -37,7 +37,8 @@ const UploadZone = () => {
           body: JSON.stringify({
             base64Image: base64,
             receiptId: receiptId,
-            contentType: file.type
+            contentType: file.type,
+            isPDF: file.type === 'application/pdf'
           })
         });
 
