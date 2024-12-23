@@ -4,6 +4,7 @@ import { Upload, File, Camera, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/lib/supabase';
 
 const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -56,9 +57,9 @@ const UploadZone = () => {
       canvasRef.current.height = videoRef.current.videoHeight;
       context?.drawImage(videoRef.current, 0, 0);
       
-      canvasRef.current.toBlob((blob) => {
+      canvasRef.current.toBlob(async (blob) => {
         if (blob) {
-          handleFile(blob);
+          await handleFile(blob);
           stopCamera();
         }
       }, 'image/jpeg');
@@ -67,11 +68,38 @@ const UploadZone = () => {
 
   const handleFile = async (file: Blob) => {
     setIsUploading(true);
-    // Simulate upload delay - in a real app, you'd send to your backend
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      const fileName = `receipt-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase
+        .from('receipts')
+        .insert([
+          {
+            file_name: fileName,
+            url: publicUrl,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+          }
+        ]);
+
+      if (dbError) throw dbError;
+
       toast.success('הקבלה הועלתה בהצלחה!');
-    }, 2000);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('שגיאה בהעלאת הקבלה. אנא נסו שוב.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
