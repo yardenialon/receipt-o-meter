@@ -10,10 +10,7 @@ const Login = () => {
 
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
-      console.log('Auth event:', event);
-      console.log('Session:', session);
-
-      if (session) {
+      if (event === 'SIGNED_IN' && session) {
         // Clear any hash or query parameters from the URL
         window.history.replaceState({}, document.title, window.location.pathname);
         toast.success('התחברת בהצלחה!');
@@ -26,6 +23,15 @@ const Login = () => {
 
     // Set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+
+    // Check if we're already authenticated
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    checkSession();
 
     // Cleanup subscription on unmount
     return () => {
