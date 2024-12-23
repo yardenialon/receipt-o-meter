@@ -3,6 +3,13 @@ import { toast } from 'sonner';
 
 export const uploadReceiptToSupabase = async (file: Blob) => {
   try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const fileExt = 'jpg';
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `${fileName}`;
@@ -21,13 +28,12 @@ export const uploadReceiptToSupabase = async (file: Blob) => {
 
     const { error: dbError } = await supabase
       .from('receipts')
-      .insert([
-        {
-          image_url: publicUrl,
-          store_name: 'חנות חדשה', // Default name, can be updated later
-          total: 0, // Default total, can be updated later
-        }
-      ]);
+      .insert({
+        image_url: publicUrl,
+        store_name: 'חנות חדשה', // Default name, can be updated later
+        total: 0, // Default total, can be updated later
+        user_id: user.id // Add the user_id
+      });
 
     if (dbError) {
       throw dbError;

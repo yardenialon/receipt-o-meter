@@ -21,6 +21,11 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
 
+      // בדיקה אם המכשיר תומך במצלמה
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('מצלמה לא נתמכת במכשיר זה');
+      }
+
       const constraints = {
         video: {
           facingMode: isMobile ? 'environment' : 'user',
@@ -34,12 +39,18 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(console.error);
+        };
         setShowCamera(true);
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      toast.error('לא ניתן לגשת למצלמה. אנא בדקו את ההרשאות.');
+      if (err instanceof Error) {
+        toast.error(`לא ניתן לגשת למצלמה: ${err.message}`);
+      } else {
+        toast.error('לא ניתן לגשת למצלמה. אנא בדקו את ההרשאות.');
+      }
     }
   };
 
@@ -54,16 +65,28 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
   const capturePhoto = () => {
     if (videoRef.current && canvasRef.current) {
       const context = canvasRef.current.getContext('2d');
+      if (!context) return;
+
+      // שמירת התמונה באיכות גבוהה
       canvasRef.current.width = videoRef.current.videoWidth;
       canvasRef.current.height = videoRef.current.videoHeight;
-      context?.drawImage(videoRef.current, 0, 0);
+      context.drawImage(videoRef.current, 0, 0);
       
-      canvasRef.current.toBlob(async (blob) => {
-        if (blob) {
-          await onPhotoCapture(blob);
-          stopCamera();
-        }
-      }, 'image/jpeg', 0.8);
+      canvasRef.current.toBlob(
+        async (blob) => {
+          if (blob) {
+            try {
+              await onPhotoCapture(blob);
+              stopCamera();
+            } catch (err) {
+              console.error('Error saving photo:', err);
+              toast.error('שגיאה בשמירת התמונה');
+            }
+          }
+        },
+        'image/jpeg',
+        0.95 // איכות תמונה גבוהה
+      );
     }
   };
 
