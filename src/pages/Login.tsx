@@ -33,17 +33,20 @@ const Login = () => {
               }
             }
           }}
+          providers={['google']}
           localization={{
             variables: {
               sign_in: {
                 email_label: 'אימייל',
                 password_label: 'סיסמה',
                 button_label: 'התחבר',
+                social_provider_text: 'התחבר באמצעות {{provider}}',
               },
               sign_up: {
                 email_label: 'אימייל',
                 password_label: 'סיסמה',
                 button_label: 'הרשם',
+                social_provider_text: 'התחבר באמצעות {{provider}}',
               }
             }
           }}
