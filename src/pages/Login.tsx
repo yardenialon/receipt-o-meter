@@ -3,6 +3,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,8 +11,13 @@ const Login = () => {
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event);
       if (session) {
+        toast.success('התחברת בהצלחה!');
         navigate('/');
+      }
+      if (event === 'SIGNED_OUT') {
+        toast.info('התנתקת בהצלחה');
       }
     });
   }, [navigate]);
@@ -31,6 +37,12 @@ const Login = () => {
                   brandAccent: '#0284C7',
                 }
               }
+            },
+            className: {
+              container: 'auth-container',
+              button: 'auth-button',
+              label: 'auth-label',
+              input: 'auth-input',
             }
           }}
           providers={['google']}
@@ -41,12 +53,14 @@ const Login = () => {
                 password_label: 'סיסמה',
                 button_label: 'התחבר',
                 social_provider_text: 'התחבר באמצעות {{provider}}',
+                loading_button_label: 'מתחבר...',
               },
               sign_up: {
                 email_label: 'אימייל',
                 password_label: 'סיסמה',
                 button_label: 'הרשם',
                 social_provider_text: 'התחבר באמצעות {{provider}}',
+                loading_button_label: 'נרשם...',
               }
             }
           }}
