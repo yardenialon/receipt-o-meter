@@ -1,11 +1,32 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect } from 'react';
+import UploadZone from '../components/UploadZone';
+import ReceiptList from '../components/ReceiptList';
+import { Scan } from 'lucide-react';
 
 const Index = () => {
+  useEffect(() => {
+    // Load Inter font
+    const link = document.createElement('link');
+    link.href = 'https://rsms.me/inter/inter.css';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="max-w-4xl mx-auto text-center">
+        <div className="flex items-center justify-center space-x-3 mb-8">
+          <Scan className="w-10 h-10 text-primary-500" />
+          <h1 className="text-4xl font-bold text-gray-900">ReceiptScanner</h1>
+        </div>
+        
+        <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
+          Track your shopping habits by scanning your receipts. 
+          Get insights into your spending patterns and make informed decisions.
+        </p>
+
+        <UploadZone />
+        <ReceiptList />
       </div>
     </div>
   );
