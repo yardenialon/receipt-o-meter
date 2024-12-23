@@ -1,8 +1,3 @@
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 export interface OCRResult {
   items: Array<{ name: string; price: number }>;
   total: number;
@@ -10,33 +5,40 @@ export interface OCRResult {
 }
 
 export async function processOCR(imageBase64: string, fileType: string): Promise<OCRResult> {
-  const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
-    method: 'POST',
-    headers: {
-      'apikey': Deno.env.get('OCR_SPACE_API_KEY') ?? '',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      'base64Image': `data:${fileType};base64,${imageBase64}`,
-      'language': 'heb',
-      'detectOrientation': 'true',
-      'scale': 'true',
-      'OCREngine': '2',
-      'isTable': 'true',
-    }),
-  });
+  try {
+    console.log('Making OCR API request...');
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: {
+        'apikey': Deno.env.get('OCR_SPACE_API_KEY') ?? '',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        'base64Image': `data:${fileType};base64,${imageBase64}`,
+        'language': 'heb',
+        'detectOrientation': 'true',
+        'scale': 'true',
+        'OCREngine': '2',
+        'isTable': 'true',
+      }),
+    });
 
-  if (!ocrResponse.ok) {
-    console.error('OCR API error:', await ocrResponse.text());
-    throw new Error('OCR API request failed');
+    if (!ocrResponse.ok) {
+      console.error('OCR API error:', await ocrResponse.text());
+      throw new Error('OCR API request failed');
+    }
+
+    const ocrResult = await ocrResponse.json();
+    if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
+      throw new Error('Failed to extract text from image');
+    }
+
+    console.log('OCR successful, parsing results...');
+    return parseOCRText(ocrResult.ParsedResults[0].ParsedText);
+  } catch (error) {
+    console.error('OCR processing error:', error);
+    throw error;
   }
-
-  const ocrResult = await ocrResponse.json();
-  if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
-    throw new Error('Failed to extract text from image');
-  }
-
-  return parseOCRText(ocrResult.ParsedResults[0].ParsedText);
 }
 
 function parseOCRText(text: string): OCRResult {
@@ -78,5 +80,6 @@ function parseOCRText(text: string): OCRResult {
     }
   }
 
+  console.log('Parsed OCR results:', { itemCount: items.length, total, storeName });
   return { items, total, storeName };
 }

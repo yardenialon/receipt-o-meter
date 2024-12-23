@@ -13,11 +13,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let formData;
   try {
     console.log('Starting receipt processing...');
     
     // Get form data once and store it
-    const formData = await req.formData();
+    formData = await req.formData();
     const file = formData.get('file');
     const receiptId = formData.get('receiptId');
 
@@ -44,9 +45,15 @@ serve(async (req) => {
     });
 
     // Insert items if any were found
-    if (items.length > 0) {
+    if (items && items.length > 0) {
       console.log('Inserting receipt items:', items.length);
       await insertReceiptItems(receiptId, items);
+    } else {
+      console.log('No items found in receipt');
+      await updateReceiptStatus(receiptId, {
+        store_name: 'לא זוהו פריטים',
+        total: 0
+      });
     }
 
     return new Response(
@@ -68,6 +75,22 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error processing receipt:', error);
+    
+    // Update receipt status to error state if we have the receipt ID
+    if (formData) {
+      const receiptId = formData.get('receiptId');
+      if (receiptId && typeof receiptId === 'string') {
+        try {
+          await updateReceiptStatus(receiptId, {
+            store_name: 'שגיאה בעיבוד',
+            total: 0
+          });
+        } catch (updateError) {
+          console.error('Error updating receipt status:', updateError);
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         error: error.message,

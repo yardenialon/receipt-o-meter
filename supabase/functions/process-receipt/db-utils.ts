@@ -1,47 +1,49 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
-export function getSupabaseClient() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase credentials');
-  }
-
-  return createClient(supabaseUrl, supabaseKey);
+function getSupabaseClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 }
 
 export async function updateReceiptStatus(
-  receiptId: string, 
+  receiptId: string,
   status: { store_name: string; total: number }
 ) {
+  console.log('Updating receipt status:', { receiptId, status });
   const supabase = getSupabaseClient();
+  
   const { error } = await supabase
     .from('receipts')
     .update(status)
     .eq('id', receiptId);
 
   if (error) {
-    console.error('Error updating receipt status:', error);
+    console.error('Error updating receipt:', error);
     throw error;
   }
 }
 
 export async function insertReceiptItems(
-  receiptId: string, 
+  receiptId: string,
   items: Array<{ name: string; price: number }>
 ) {
-  if (items.length === 0) return;
+  if (!items || items.length === 0) return;
 
+  console.log('Inserting receipt items:', { receiptId, itemCount: items.length });
   const supabase = getSupabaseClient();
+
   const { error } = await supabase
     .from('receipt_items')
-    .insert(items.map(item => ({
-      receipt_id: receiptId,
-      name: item.name,
-      price: item.price,
-      quantity: 1
-    })));
+    .insert(
+      items.map(item => ({
+        receipt_id: receiptId,
+        name: item.name,
+        price: item.price,
+        quantity: 1
+      }))
+    );
 
   if (error) {
     console.error('Error inserting items:', error);
