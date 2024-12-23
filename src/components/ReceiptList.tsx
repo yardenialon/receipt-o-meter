@@ -1,9 +1,10 @@
-import { Receipt, ChevronDown, ChevronUp } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Receipt, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 
 interface ReceiptItem {
   id: string;
@@ -27,6 +28,8 @@ interface ReceiptData {
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
   const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
+  const [isDeletingReceipt, setIsDeletingReceipt] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: receipts, isLoading, error } = useQuery({
     queryKey: ['receipts'],
@@ -77,6 +80,31 @@ const ReceiptList = () => {
     );
   };
 
+  const handleDelete = async (receiptId: string) => {
+    try {
+      setIsDeletingReceipt(receiptId);
+      
+      // Delete receipt items first (they will be automatically deleted due to cascade)
+      const { error: deleteError } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', receiptId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // Invalidate and refetch the receipts query
+      await queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      toast.success('הקבלה נמחקה בהצלחה');
+    } catch (err) {
+      console.error('Error deleting receipt:', err);
+      toast.error('שגיאה במחיקת הקבלה');
+    } finally {
+      setIsDeletingReceipt(null);
+    }
+  };
+
   if (error) {
     console.error('Error in ReceiptList:', error);
     toast.error('שגיאה בטעינת הקבלות');
@@ -108,11 +136,11 @@ const ReceiptList = () => {
             key={receipt.id}
             className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors"
           >
-            <div 
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => toggleReceipt(receipt.id)}
-            >
-              <div className="flex items-center space-x-4">
+            <div className="flex items-center justify-between">
+              <div 
+                className="flex items-center space-x-4 flex-grow cursor-pointer"
+                onClick={() => toggleReceipt(receipt.id)}
+              >
                 <Receipt className="w-6 h-6 text-primary-500 ml-4" />
                 <div>
                   {receipt.store_name === 'מעבד...' ? (
@@ -139,6 +167,18 @@ const ReceiptList = () => {
                 <p className="text-lg font-semibold text-gray-900">
                   ₪{receipt.total?.toFixed(2) || '0.00'}
                 </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(receipt.id);
+                  }}
+                  disabled={isDeletingReceipt === receipt.id || receipt.store_name === 'מעבד...'}
+                  className="text-gray-500 hover:text-red-500"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
                 {expandedReceipts.includes(receipt.id) ? (
                   <ChevronUp className="w-5 h-5 text-gray-500" />
                 ) : (
