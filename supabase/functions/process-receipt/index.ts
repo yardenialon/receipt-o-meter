@@ -108,19 +108,15 @@ serve(async (req) => {
       }
     }
 
-    if (items.length === 0) {
-      console.error('No items found in receipt')
-      throw new Error('No items found in receipt')
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials')
     }
 
-    console.log('Extracted items:', items)
-    console.log('Total:', total)
-
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     console.log('Updating receipt with extracted data...')
     // Update receipt with store name and total
@@ -157,7 +153,13 @@ serve(async (req) => {
 
     console.log('Receipt processing completed successfully')
     return new Response(
-      JSON.stringify({ success: true, items, total, storeName }),
+      JSON.stringify({ 
+        success: true, 
+        items, 
+        total, 
+        storeName,
+        message: items.length > 0 ? `זוהו ${items.length} פריטים בקבלה` : 'לא זוהו פריטים בקבלה'
+      }),
       { 
         headers: { 
           ...corsHeaders,
@@ -167,6 +169,30 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error processing receipt:', error)
+
+    // Update receipt status to error state
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        const receiptId = req.formData().then(form => form.get('receiptId'))
+        
+        if (receiptId) {
+          await supabase
+            .from('receipts')
+            .update({ 
+              store_name: 'שגיאה בעיבוד',
+              total: 0
+            })
+            .eq('id', receiptId)
+        }
+      }
+    } catch (updateError) {
+      console.error('Error updating receipt status:', updateError)
+    }
+
     return new Response(
       JSON.stringify({ 
         error: error.message,

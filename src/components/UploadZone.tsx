@@ -32,12 +32,38 @@ const UploadZone = () => {
         if (error) {
           console.error('OCR processing error:', error);
           toast.error('שגיאה בעיבוד הקבלה: ' + (error.message || 'אנא נסה שוב'));
+          
+          // Update receipt status to error
+          const { error: updateError } = await supabase
+            .from('receipts')
+            .update({ 
+              store_name: 'שגיאה בעיבוד',
+              total: 0
+            })
+            .eq('id', receiptId);
+            
+          if (updateError) {
+            console.error('Error updating receipt status:', updateError);
+          }
         } else {
           console.log('OCR processing result:', data);
           if (data?.items?.length > 0) {
             toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
           } else {
             toast.error('לא זוהו פריטים בקבלה. אנא נסה להעלות תמונה ברורה יותר');
+            
+            // Update receipt status for no items found
+            const { error: updateError } = await supabase
+              .from('receipts')
+              .update({ 
+                store_name: 'לא זוהו פריטים',
+                total: 0
+              })
+              .eq('id', receiptId);
+              
+            if (updateError) {
+              console.error('Error updating receipt status:', updateError);
+            }
           }
         }
       }
