@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { processOCR } from "./ocr-utils.ts"
-import { updateReceiptStatus, insertReceiptItems } from "./db-utils.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,94 +13,92 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  let receiptId: string | undefined;
-
   try {
-    console.log('Starting receipt processing...');
-    
-    // Get the request body
-    const body = await req.json();
-    console.log('Request body received:', JSON.stringify(body));
-    
-    const { base64Image, contentType } = body;
-    receiptId = body.receiptId; // Store receiptId for error handling
+    const { base64Image, receiptId, contentType } = await req.json();
 
     if (!base64Image || !receiptId || !contentType) {
-      console.error('Missing required fields:', { 
-        hasBase64: !!base64Image, 
-        hasReceiptId: !!receiptId, 
-        hasContentType: !!contentType 
-      });
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required fields',
-          details: 'base64Image, receiptId, and contentType are required'
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400
-        }
-      );
+      throw new Error('חסרים שדות נדרשים');
     }
 
     console.log('Processing receipt:', { receiptId, contentType });
 
-    // Process with OCR
-    console.log('Calling OCR API...');
-    const { items, total, storeName } = await processOCR(base64Image, contentType);
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Update receipt status
-    console.log('Updating receipt status:', { storeName, total });
-    await updateReceiptStatus(receiptId, {
-      store_name: storeName || 'חנות לא ידועה',
-      total: total || 0
-    });
+    try {
+      // Process with OCR
+      console.log('Starting OCR processing...');
+      const { items, total, storeName } = await processOCR(base64Image, contentType);
 
-    // Insert items if any were found
-    if (items && items.length > 0) {
-      console.log('Inserting receipt items:', items.length);
-      await insertReceiptItems(receiptId, items);
-    } else {
-      console.log('No items found in receipt');
-      await updateReceiptStatus(receiptId, {
-        store_name: 'לא זוהו פריטים',
-        total: 0
-      });
-    }
+      // Update receipt with store name and total
+      const { error: updateError } = await supabase
+        .from('receipts')
+        .update({ 
+          store_name: storeName || 'חנות לא ידועה',
+          total: total || 0
+        })
+        .eq('id', receiptId);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        items, 
-        total, 
-        storeName,
-        message: items.length > 0 ? 
-          `זוהו ${items.length} פריטים בקבלה` : 
-          'לא זוהו פריטים בקבלה'
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
+      if (updateError) {
+        console.error('Error updating receipt:', updateError);
+        throw new Error('שגיאה בעדכון פרטי הקבלה');
       }
-    );
-  } catch (error) {
-    console.error('Error processing receipt:', error);
-    
-    // Update receipt status to error state if we have the receiptId
-    if (receiptId) {
-      try {
-        await updateReceiptStatus(receiptId, {
-          store_name: 'שגיאה בעיבוד',
+
+      // Insert items
+      if (items.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('receipt_items')
+          .insert(items.map(item => ({
+            receipt_id: receiptId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity || 1
+          })));
+
+        if (itemsError) {
+          console.error('Error inserting items:', itemsError);
+          throw new Error('שגיאה בשמירת פריטי הקבלה');
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          items, 
+          total, 
+          storeName,
+          message: `זוהו ${items.length} פריטים בקבלה`
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
+    } catch (error) {
+      console.error('Error processing receipt:', error);
+      
+      // Update receipt status to error
+      const { error: updateError } = await supabase
+        .from('receipts')
+        .update({ 
+          store_name: error.message || 'שגיאה בעיבוד',
           total: 0
-        });
-      } catch (updateError) {
+        })
+        .eq('id', receiptId);
+        
+      if (updateError) {
         console.error('Error updating receipt status:', updateError);
       }
+
+      throw error;
     }
-    
+  } catch (error) {
+    console.error('Error processing receipt:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: error.message || 'שגיאה בעיבוד הקבלה',
         details: error.toString()
       }),
       { 

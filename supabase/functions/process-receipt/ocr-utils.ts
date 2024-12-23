@@ -6,15 +6,14 @@ export interface OCRResult {
 
 export async function processOCR(imageBase64: string, fileType: string): Promise<OCRResult> {
   try {
-    console.log('Starting OCR processing...');
-    console.log('Content type:', fileType);
+    console.log('Starting OCR processing with content type:', fileType);
     
     // Process base64 format
     const base64Image = imageBase64.includes('base64,') ? 
       imageBase64 : 
       `data:${fileType};base64,${imageBase64}`;
 
-    console.log('Making OCR API request...');
+    console.log('Making OCR API request with Hebrew language settings...');
     const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
       method: 'POST',
       headers: {
@@ -23,10 +22,10 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'heb', // Explicitly set to Hebrew
+        'language': 'heb', // Hebrew language
         'detectOrientation': 'true',
         'scale': 'true',
-        'OCREngine': '2', // Using more advanced OCR engine
+        'OCREngine': '2', // More advanced OCR engine
         'isTable': 'true',
         'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto',
         'isOverlayRequired': 'false',
@@ -41,7 +40,7 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     if (!ocrResponse.ok) {
       const errorText = await ocrResponse.text();
       console.error('OCR API error response:', errorText);
-      throw new Error(`OCR API request failed with status ${ocrResponse.status}`);
+      throw new Error('שגיאה בעיבוד התמונה - אנא נסה שוב');
     }
 
     const ocrResult = await ocrResponse.json();
@@ -56,24 +55,30 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     console.log('Extracted text:', parsedText);
 
     // Parse the OCR text into structured data
-    const lines = parsedText.split('\n').filter(line => line.trim());
+    const lines = parsedText.split('\n')
+      .filter(line => line.trim())
+      .map(line => line.trim());
+
     const items: Array<{ name: string; price: number; quantity?: number }> = [];
     let total = 0;
     let storeName = '';
 
-    // Find store name in first few lines
+    // Enhanced store name detection - look for longer text lines in first few lines
     for (let i = 0; i < Math.min(5, lines.length); i++) {
-      const line = lines[i].trim();
-      if (line && line.length > 2 && !line.match(/^\d/)) {
+      const line = lines[i];
+      if (line && line.length > 3 && !/^\d/.test(line) && !/^[A-Za-z]/.test(line)) {
         storeName = line;
         break;
       }
     }
 
-    // Process lines to find items and prices
+    // Improved price and item detection
     const pricePattern = /(\d+\.?\d*)/;
-    const quantityPattern = /[xX](\d+)/;
-    const skipWords = ['סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי', 'כרטיס', 'עודף', 'מספר'];
+    const quantityPattern = /[xX×](\d+)|(\d+)\s*יח\'?/; // Added Hebrew unit indicator
+    const skipWords = [
+      'סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי', 'כרטיס', 'עודף', 'מספר',
+      'חשבונית', 'קבלה', 'עוסק', 'מורשה', 'טלפון', 'פקס', 'תאריך'
+    ];
     
     for (const line of lines) {
       // Skip lines containing specific words
@@ -83,20 +88,22 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       if (priceMatch) {
         const price = parseFloat(priceMatch[1]);
         if (!isNaN(price) && price > 0) {
+          // Clean item name by removing price and special characters
           let name = line
             .replace(priceMatch[0], '')
-            .replace(/[^\w\s\u0590-\u05FF]/g, '')
+            .replace(/[^\w\s\u0590-\u05FF]/g, ' ') // Keep Hebrew characters
+            .replace(/\s+/g, ' ') // Normalize spaces
             .trim();
 
           // Check for quantity
           let quantity: number | undefined;
           const quantityMatch = line.match(quantityPattern);
           if (quantityMatch) {
-            quantity = parseInt(quantityMatch[1]);
+            quantity = parseInt(quantityMatch[1] || quantityMatch[2]);
             name = name.replace(quantityMatch[0], '').trim();
           }
 
-          if (name && price > 0 && !name.match(/^[\d\s]+$/)) {
+          if (name && price > 0 && !/^\d+$/.test(name)) {
             items.push({ name, price, ...(quantity && { quantity }) });
             total += price * (quantity || 1);
           }
