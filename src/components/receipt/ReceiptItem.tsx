@@ -32,13 +32,15 @@ export const ReceiptItem = ({
   onDelete 
 }: ReceiptItemProps) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors">
+    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-primary-100/50 hover:border-primary-200 transition-all duration-300 hover:shadow-xl">
       <div className="flex items-center justify-between">
         <div 
-          className="flex items-center space-x-4 flex-grow cursor-pointer"
+          className="flex items-center space-x-4 flex-grow cursor-pointer group"
           onClick={onToggle}
         >
-          <Receipt className="w-6 h-6 text-primary-500 ml-4" />
+          <div className="bg-primary-50 p-3 rounded-xl ml-4 group-hover:bg-primary-100 transition-colors">
+            <Receipt className="w-6 h-6 text-primary-500" />
+          </div>
           <div>
             {receipt.store_name === 'מעבד...' ? (
               <>
@@ -49,7 +51,9 @@ export const ReceiptItem = ({
               </>
             ) : (
               <>
-                <h3 className="font-medium text-gray-900">{receipt.store_name || 'חנות לא ידועה'}</h3>
+                <h3 className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
+                  {receipt.store_name || 'חנות לא ידועה'}
+                </h3>
                 <p className="text-sm text-gray-500">
                   {new Date(receipt.created_at).toLocaleDateString('he-IL')}
                 </p>
@@ -58,7 +62,7 @@ export const ReceiptItem = ({
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <p className="text-lg font-semibold text-gray-900">
+          <p className="text-lg font-semibold text-primary-600">
             ₪{receipt.total?.toFixed(2) || '0.00'}
           </p>
           <Button
@@ -69,30 +73,30 @@ export const ReceiptItem = ({
               onDelete();
             }}
             disabled={isDeleting}
-            className="text-gray-500 hover:text-red-500"
+            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
           >
             <Trash2 className="w-5 h-5" />
           </Button>
           {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-500" />
+            <ChevronUp className="w-5 h-5 text-primary-400" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-gray-500" />
+            <ChevronDown className="w-5 h-5 text-primary-400" />
           )}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="mt-4 border-t pt-4">
+        <div className="mt-4 border-t border-primary-100 pt-4 animate-slide-up">
           {receipt.receipt_items && receipt.receipt_items.length > 0 ? (
             <div className="space-y-2">
               {receipt.receipt_items.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
+                <div key={item.id} className="flex justify-between text-sm p-2 rounded-lg hover:bg-primary-50 transition-colors">
                   <span className="text-gray-700">{item.name}</span>
                   <div className="flex items-center gap-2">
                     {item.quantity && item.quantity > 1 && (
                       <span className="text-gray-500">x{item.quantity}</span>
                     )}
-                    <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
+                    <span className="text-primary-600 font-medium">₪{item.price.toFixed(2)}</span>
                   </div>
                 </div>
               ))}
@@ -109,11 +113,11 @@ export const ReceiptItem = ({
       )}
 
       {isExpanded && receipt.image_url && (
-        <div className="mt-4">
+        <div className="mt-4 animate-fade-in">
           <img 
             src={receipt.image_url} 
             alt="תמונת קבלה" 
-            className="w-full max-w-xs mx-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+            className="w-full max-w-xs mx-auto rounded-xl shadow-lg cursor-pointer hover:opacity-90 transition-all duration-300 hover:scale-105"
             onClick={(e) => {
               e.stopPropagation();
               window.open(receipt.image_url, '_blank');

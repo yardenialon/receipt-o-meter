@@ -3,26 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import UploadZone from '../components/UploadZone';
 import ReceiptList from '../components/ReceiptList';
-import { Scan } from 'lucide-react';
+import { LogOut, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication status
     supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate('/login');
       }
     });
-
-    // Load Inter font
-    const link = document.createElement('link');
-    link.href = 'https://rsms.me/inter/inter.css';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -31,30 +23,46 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 py-12 px-4 sm:px-6 lg:px-8 animate-fade-in" dir="rtl">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-4xl font-bold text-gray-900 ml-3">CashBackly</h1>
-            <Scan className="w-10 h-10 text-primary-500" />
+        <div className="flex justify-between items-center mb-12">
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
+              <Receipt className="w-8 h-8 text-primary-500" />
+            </div>
+            <div className="animate-slide-up">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+                CashBackly
+              </h1>
+              <p className="text-primary-700 text-sm">מערכת חכמה לניהול קבלות</p>
+            </div>
           </div>
           <Button 
             variant="outline" 
             onClick={handleLogout}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-white/50 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
           >
             <LogOut className="w-4 h-4" />
             התנתק
           </Button>
         </div>
         
-        <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto text-center">
-          עקבו אחר הרגלי הקניות שלכם על ידי סריקת קבלות.
-          קבלו תובנות על דפוסי ההוצאות שלכם וקבלו החלטות מושכלות.
-        </p>
+        <div className="text-center mb-16 animate-slide-up">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            נהלו את הקבלות שלכם בקלות
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            סרקו קבלות, קבלו תובנות על ההוצאות שלכם וקבלו החזרים כספיים בקלות
+          </p>
+        </div>
 
-        <UploadZone />
-        <ReceiptList />
+        <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-xl mb-12 animate-scale-in">
+          <UploadZone />
+        </div>
+
+        <div className="animate-slide-up">
+          <ReceiptList />
+        </div>
       </div>
     </div>
   );
