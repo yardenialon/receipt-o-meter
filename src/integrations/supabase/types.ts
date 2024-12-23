@@ -27,6 +27,41 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          price: number
+          quantity: number | null
+          receipt_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          price: number
+          quantity?: number | null
+          receipt_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          quantity?: number | null
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_items_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receipts: {
         Row: {
           created_at: string

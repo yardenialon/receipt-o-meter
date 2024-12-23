@@ -1,20 +1,31 @@
-import { Receipt } from 'lucide-react';
+import { Receipt, ChevronDown, ChevronUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 
 const ReceiptList = () => {
+  const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
+
   const { data: receipts, isLoading } = useQuery({
     queryKey: ['receipts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: receiptsData, error: receiptsError } = await supabase
         .from('receipts')
-        .select('*')
+        .select('*, receipt_items(*)')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data;
+      if (receiptsError) throw receiptsError;
+      return receiptsData;
     }
   });
+
+  const toggleReceipt = (receiptId: string) => {
+    setExpandedReceipts(prev => 
+      prev.includes(receiptId)
+        ? prev.filter(id => id !== receiptId)
+        : [...prev, receiptId]
+    );
+  };
 
   if (isLoading) {
     return <div className="mt-12 text-center">טוען קבלות...</div>;
@@ -35,9 +46,12 @@ const ReceiptList = () => {
         {receipts.map((receipt) => (
           <div
             key={receipt.id}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors cursor-pointer"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors"
           >
-            <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => toggleReceipt(receipt.id)}
+            >
               <div className="flex items-center space-x-4">
                 <Receipt className="w-6 h-6 text-primary-500 ml-4" />
                 <div>
@@ -47,10 +61,31 @@ const ReceiptList = () => {
                   </p>
                 </div>
               </div>
-              <p className="text-lg font-semibold text-gray-900">
-                ₪{receipt.total?.toFixed(2) || '0.00'}
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-lg font-semibold text-gray-900">
+                  ₪{receipt.total?.toFixed(2) || '0.00'}
+                </p>
+                {expandedReceipts.includes(receipt.id) ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </div>
             </div>
+
+            {expandedReceipts.includes(receipt.id) && receipt.receipt_items && (
+              <div className="mt-4 border-t pt-4">
+                <div className="space-y-2">
+                  {receipt.receipt_items.map((item: any) => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span className="text-gray-700">{item.name}</span>
+                      <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {receipt.image_url && (
               <img 
                 src={receipt.image_url} 

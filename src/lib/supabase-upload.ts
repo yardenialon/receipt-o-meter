@@ -26,21 +26,24 @@ export const uploadReceiptToSupabase = async (file: Blob) => {
       .from('receipts')
       .getPublicUrl(filePath);
 
-    const { error: dbError } = await supabase
+    // Insert the receipt and get the ID
+    const { data: receipt, error: dbError } = await supabase
       .from('receipts')
       .insert({
         image_url: publicUrl,
-        store_name: 'חנות חדשה', // Default name, can be updated later
-        total: 0, // Default total, can be updated later
-        user_id: user.id // Add the user_id
-      });
+        store_name: 'חנות חדשה',
+        total: 0,
+        user_id: user.id
+      })
+      .select()
+      .single();
 
     if (dbError) {
       throw dbError;
     }
 
     toast.success('הקבלה נשמרה בהצלחה!');
-    return { publicUrl };
+    return { publicUrl, receiptId: receipt.id };
   } catch (error) {
     console.error('Error uploading receipt:', error);
     toast.error('שגיאה בהעלאת הקבלה');

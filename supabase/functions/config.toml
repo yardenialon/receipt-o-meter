@@ -1,0 +1,4 @@
+project_id = "kthqkydgegsoheymesgc"
+
+[process-receipt]
+verify_jwt = true

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { uploadReceiptToSupabase } from '@/lib/supabase-upload';
+import { supabase } from '@/lib/supabase';
 import CameraCapture from './upload/CameraCapture';
 import DropZone from './upload/DropZone';
 import PaymentButtons from './upload/PaymentButtons';
+import { toast } from 'sonner';
 
 const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -10,7 +12,32 @@ const UploadZone = () => {
   const handleFile = async (file: Blob) => {
     setIsUploading(true);
     try {
-      await uploadReceiptToSupabase(file);
+      const { publicUrl, receiptId } = await uploadReceiptToSupabase(file);
+      
+      if (publicUrl && receiptId) {
+        // Process receipt with OCR
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('receiptId', receiptId);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        const { data, error } = await supabase.functions.invoke('process-receipt', {
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        });
+
+        if (error) {
+          console.error('OCR processing error:', error);
+          toast.error('שגיאה בעיבוד הקבלה');
+        } else {
+          toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
+        }
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('שגיאה בהעלאת הקבלה');
     } finally {
       setIsUploading(false);
     }
