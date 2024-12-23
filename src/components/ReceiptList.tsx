@@ -26,6 +26,7 @@ interface ReceiptData {
 
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
+  const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
 
   const { data: receipts, isLoading, error } = useQuery({
     queryKey: ['receipts'],
@@ -41,13 +42,28 @@ const ReceiptList = () => {
         throw receiptsError;
       }
 
+      // Update progress for processing receipts
+      const newProgress = { ...processingProgress };
+      receiptsData?.forEach(receipt => {
+        if (receipt.store_name === 'מעבד...') {
+          if (!processingProgress[receipt.id]) {
+            newProgress[receipt.id] = 0;
+          } else {
+            newProgress[receipt.id] = Math.min(95, processingProgress[receipt.id] + 15);
+          }
+        } else {
+          delete newProgress[receipt.id];
+        }
+      });
+      setProcessingProgress(newProgress);
+
       console.log('Fetched receipts:', receiptsData);
       return receiptsData as ReceiptData[];
     },
     refetchInterval: (query) => {
       const data = query.state.data as ReceiptData[] | undefined;
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
-        return 3000; // Refetch every 3 seconds if processing
+        return 2000; // Refetch every 2 seconds if processing
       }
       return false; // Stop refetching when no receipts are processing
     }
@@ -103,7 +119,10 @@ const ReceiptList = () => {
                     <>
                       <h3 className="font-medium text-gray-900">מעבד את הקבלה...</h3>
                       <div className="w-48 mt-2">
-                        <Progress value={33} className="h-2" />
+                        <Progress 
+                          value={processingProgress[receipt.id] || 0} 
+                          className="h-2"
+                        />
                       </div>
                     </>
                   ) : (
