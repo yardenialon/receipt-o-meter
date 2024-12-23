@@ -27,13 +27,9 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
         'scale': 'true',
         'OCREngine': '2', // More advanced OCR engine
         'isTable': 'true',
-        'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto',
         'isOverlayRequired': 'false',
-        'IsCreateSearchablePDF': 'false',
-        'isSearchablePdfHideTextLayer': 'false',
-        'detectCheckbox': 'false',
-        'checkboxTemplate': '0',
-        'pageRange': 'all'
+        'isCreateSearchablePDF': 'false',
+        'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto'
       }),
     });
 
