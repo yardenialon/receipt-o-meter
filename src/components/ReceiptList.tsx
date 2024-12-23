@@ -5,6 +5,25 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Progress } from "@/components/ui/progress";
 
+interface ReceiptItem {
+  id: string;
+  receipt_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  created_at: string;
+}
+
+interface ReceiptData {
+  id: string;
+  store_name: string;
+  total: number;
+  image_url: string;
+  created_at: string;
+  user_id: string;
+  receipt_items: ReceiptItem[];
+}
+
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
 
@@ -23,10 +42,9 @@ const ReceiptList = () => {
       }
 
       console.log('Fetched receipts:', receiptsData);
-      return receiptsData;
+      return receiptsData as ReceiptData[];
     },
-    refetchInterval: (data) => {
-      // Check if any receipts are still processing
+    refetchInterval: (data: ReceiptData[] | undefined) => {
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
         return 3000; // Refetch every 3 seconds if processing
       }
@@ -113,7 +131,7 @@ const ReceiptList = () => {
               <div className="mt-4 border-t pt-4">
                 {receipt.receipt_items && receipt.receipt_items.length > 0 ? (
                   <div className="space-y-2">
-                    {receipt.receipt_items.map((item: any) => (
+                    {receipt.receipt_items.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span className="text-gray-700">{item.name}</span>
                         <div className="flex items-center gap-2">

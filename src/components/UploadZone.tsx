@@ -15,6 +15,7 @@ const UploadZone = () => {
       const { publicUrl, receiptId } = await uploadReceiptToSupabase(file);
       
       if (publicUrl && receiptId) {
+        console.log('Starting OCR processing for receipt:', receiptId);
         // Process receipt with OCR
         const formData = new FormData();
         formData.append('file', file);
@@ -32,7 +33,12 @@ const UploadZone = () => {
           console.error('OCR processing error:', error);
           toast.error('שגיאה בעיבוד הקבלה');
         } else {
-          toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
+          console.log('OCR processing result:', data);
+          if (data?.items?.length > 0) {
+            toast.success(`זוהו ${data.items.length} פריטים בקבלה`);
+          } else {
+            toast.error('לא זוהו פריטים בקבלה');
+          }
         }
       }
     } catch (err) {
