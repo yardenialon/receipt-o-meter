@@ -25,10 +25,10 @@ const PaymentButtons = () => {
         </button>
         <button
           onClick={() => toast.info('בקרוב - תשלום דרך Paybox')}
-          className="h-12 w-12 rounded-xl bg-[#004B41] p-2 transition-all hover:scale-105 active:scale-95"
+          className="h-12 w-12 rounded-xl bg-[#00A7E5] p-2 transition-all hover:scale-105 active:scale-95"
         >
           <img 
-            src="/placeholder.svg" 
+            src="/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png" 
             alt="Paybox" 
             className="h-full w-full object-contain"
           />
