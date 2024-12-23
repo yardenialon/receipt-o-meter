@@ -11,10 +11,10 @@ const Login = () => {
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
       if (event === 'SIGNED_IN' && session) {
+        // Stay on the login page after successful sign-in
         // Clear any hash or query parameters from the URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, '/login');
         toast.success('התחברת בהצלחה!');
-        navigate('/');
       }
       if (event === 'SIGNED_OUT') {
         toast.info('התנתקת בהצלחה');
