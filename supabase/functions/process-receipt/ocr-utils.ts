@@ -1,5 +1,5 @@
 export interface OCRResult {
-  items: Array<{ name: string; price: number }>;
+  items: Array<{ name: string; price: number; quantity?: number }>;
   total: number;
   storeName: string;
 }
@@ -23,13 +23,18 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'heb',
+        'language': 'heb', // Explicitly set to Hebrew
         'detectOrientation': 'true',
         'scale': 'true',
-        'OCREngine': '2',
+        'OCREngine': '2', // Using more advanced OCR engine
         'isTable': 'true',
         'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto',
         'isOverlayRequired': 'false',
+        'IsCreateSearchablePDF': 'false',
+        'isSearchablePdfHideTextLayer': 'false',
+        'detectCheckbox': 'false',
+        'checkboxTemplate': '0',
+        'pageRange': 'all'
       }),
     });
 
@@ -40,19 +45,19 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
     }
 
     const ocrResult = await ocrResponse.json();
-    console.log('OCR API response received');
+    console.log('OCR API response received:', JSON.stringify(ocrResult));
 
     if (!ocrResult.ParsedResults?.[0]?.ParsedText) {
-      console.error('No parsed text in OCR result');
-      throw new Error('לא זוהה טקסט בקבלה');
+      console.error('No parsed text in OCR result:', ocrResult);
+      throw new Error('לא זוהה טקסט בקבלה - אנא נסה להעלות תמונה ברורה יותר');
     }
 
     const parsedText = ocrResult.ParsedResults[0].ParsedText;
-    console.log('Extracted text length:', parsedText.length);
+    console.log('Extracted text:', parsedText);
 
     // Parse the OCR text into structured data
     const lines = parsedText.split('\n').filter(line => line.trim());
-    const items: Array<{ name: string; price: number }> = [];
+    const items: Array<{ name: string; price: number; quantity?: number }> = [];
     let total = 0;
     let storeName = '';
 
@@ -67,7 +72,8 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
 
     // Process lines to find items and prices
     const pricePattern = /(\d+\.?\d*)/;
-    const skipWords = ['סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי'];
+    const quantityPattern = /[xX](\d+)/;
+    const skipWords = ['סהכ', 'מעמ', 'שקל', 'תשלום', 'מזומן', 'אשראי', 'כרטיס', 'עודף', 'מספר'];
     
     for (const line of lines) {
       // Skip lines containing specific words
@@ -77,25 +83,33 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       if (priceMatch) {
         const price = parseFloat(priceMatch[1]);
         if (!isNaN(price) && price > 0) {
-          const name = line
+          let name = line
             .replace(priceMatch[0], '')
             .replace(/[^\w\s\u0590-\u05FF]/g, '')
             .trim();
 
+          // Check for quantity
+          let quantity: number | undefined;
+          const quantityMatch = line.match(quantityPattern);
+          if (quantityMatch) {
+            quantity = parseInt(quantityMatch[1]);
+            name = name.replace(quantityMatch[0], '').trim();
+          }
+
           if (name && price > 0 && !name.match(/^[\d\s]+$/)) {
-            items.push({ name, price });
-            total += price;
+            items.push({ name, price, ...(quantity && { quantity }) });
+            total += price * (quantity || 1);
           }
         }
       }
     }
 
-    console.log('Parsed items:', items.length);
+    console.log('Parsed items:', items);
     console.log('Total:', total);
     console.log('Store name:', storeName);
 
     if (items.length === 0) {
-      throw new Error('לא זוהו פריטים בקבלה');
+      throw new Error('לא זוהו פריטים בקבלה - אנא נסה להעלות תמונה ברורה יותר');
     }
 
     return { items, total, storeName };
