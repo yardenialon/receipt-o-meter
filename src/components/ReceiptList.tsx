@@ -1,76 +1,14 @@
-import { Receipt, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-
-interface ReceiptItem {
-  id: string;
-  receipt_id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  created_at: string;
-}
-
-interface ReceiptData {
-  id: string;
-  store_name: string;
-  total: number;
-  image_url: string;
-  created_at: string;
-  user_id: string;
-  receipt_items: ReceiptItem[];
-}
+import { ReceiptItem } from './receipt/ReceiptItem';
+import { useReceipts } from './receipt/useReceipts';
 
 const ReceiptList = () => {
   const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
   const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
   const [isDeletingReceipt, setIsDeletingReceipt] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
-  const { data: receipts, isLoading, error } = useQuery({
-    queryKey: ['receipts'],
-    queryFn: async () => {
-      console.log('Fetching receipts...');
-      const { data: receiptsData, error: receiptsError } = await supabase
-        .from('receipts')
-        .select('*, receipt_items(*)')
-        .order('created_at', { ascending: false });
-      
-      if (receiptsError) {
-        console.error('Error fetching receipts:', receiptsError);
-        throw receiptsError;
-      }
-
-      // Update progress for processing receipts
-      const newProgress = { ...processingProgress };
-      receiptsData?.forEach(receipt => {
-        if (receipt.store_name === 'מעבד...') {
-          if (!processingProgress[receipt.id]) {
-            newProgress[receipt.id] = 0;
-          } else {
-            newProgress[receipt.id] = Math.min(95, processingProgress[receipt.id] + 15);
-          }
-        } else {
-          delete newProgress[receipt.id];
-        }
-      });
-      setProcessingProgress(newProgress);
-
-      console.log('Fetched receipts:', receiptsData);
-      return receiptsData as ReceiptData[];
-    },
-    refetchInterval: (query) => {
-      const data = query.state.data as ReceiptData[] | undefined;
-      if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
-        return 2000; // Refetch every 2 seconds if processing
-      }
-      return false; // Stop refetching when no receipts are processing
-    }
-  });
+  const { receipts, isLoading, error, deleteReceipt } = useReceipts(processingProgress, setProcessingProgress);
 
   const toggleReceipt = (receiptId: string) => {
     setExpandedReceipts(prev => 
@@ -83,23 +21,7 @@ const ReceiptList = () => {
   const handleDelete = async (receiptId: string) => {
     try {
       setIsDeletingReceipt(receiptId);
-      
-      // Delete receipt items first (they will be automatically deleted due to cascade)
-      const { error: deleteError } = await supabase
-        .from('receipts')
-        .delete()
-        .eq('id', receiptId);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // Invalidate and refetch the receipts query
-      await queryClient.invalidateQueries({ queryKey: ['receipts'] });
-      toast.success('הקבלה נמחקה בהצלחה');
-    } catch (err) {
-      console.error('Error deleting receipt:', err);
-      toast.error('שגיאה במחיקת הקבלה');
+      await deleteReceipt(receiptId);
     } finally {
       setIsDeletingReceipt(null);
     }
@@ -132,102 +54,15 @@ const ReceiptList = () => {
       <h2 className="text-2xl font-semibold text-gray-800 mb-6">קבלות אחרונות</h2>
       <div className="space-y-4">
         {receipts?.map((receipt) => (
-          <div
+          <ReceiptItem
             key={receipt.id}
-            className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary-200 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div 
-                className="flex items-center space-x-4 flex-grow cursor-pointer"
-                onClick={() => toggleReceipt(receipt.id)}
-              >
-                <Receipt className="w-6 h-6 text-primary-500 ml-4" />
-                <div>
-                  {receipt.store_name === 'מעבד...' ? (
-                    <>
-                      <h3 className="font-medium text-gray-900">מעבד את הקבלה...</h3>
-                      <div className="w-48 mt-2">
-                        <Progress 
-                          value={processingProgress[receipt.id] || 0} 
-                          className="h-2"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="font-medium text-gray-900">{receipt.store_name || 'חנות לא ידועה'}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(receipt.created_at).toLocaleDateString('he-IL')}
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <p className="text-lg font-semibold text-gray-900">
-                  ₪{receipt.total?.toFixed(2) || '0.00'}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(receipt.id);
-                  }}
-                  disabled={isDeletingReceipt === receipt.id || receipt.store_name === 'מעבד...'}
-                  className="text-gray-500 hover:text-red-500"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </Button>
-                {expandedReceipts.includes(receipt.id) ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
-                )}
-              </div>
-            </div>
-
-            {expandedReceipts.includes(receipt.id) && (
-              <div className="mt-4 border-t pt-4">
-                {receipt.receipt_items && receipt.receipt_items.length > 0 ? (
-                  <div className="space-y-2">
-                    {receipt.receipt_items.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm">
-                        <span className="text-gray-700">{item.name}</span>
-                        <div className="flex items-center gap-2">
-                          {item.quantity && item.quantity > 1 && (
-                            <span className="text-gray-500">x{item.quantity}</span>
-                          )}
-                          <span className="text-gray-900 font-medium">₪{item.price.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500 py-2">
-                    {receipt.store_name === 'מעבד...' ? 
-                      'מעבד את פרטי הקבלה...' : 
-                      'לא נמצאו פריטים בקבלה זו'
-                    }
-                  </div>
-                )}
-              </div>
-            )}
-
-            {receipt.image_url && (
-              <div className="mt-4">
-                <img 
-                  src={receipt.image_url} 
-                  alt="תמונת קבלה" 
-                  className="w-full max-w-xs mx-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(receipt.image_url, '_blank');
-                  }}
-                />
-              </div>
-            )}
-          </div>
+            receipt={receipt}
+            isExpanded={expandedReceipts.includes(receipt.id)}
+            processingProgress={processingProgress[receipt.id]}
+            isDeleting={isDeletingReceipt === receipt.id}
+            onToggle={() => toggleReceipt(receipt.id)}
+            onDelete={() => handleDelete(receipt.id)}
+          />
         ))}
       </div>
     </div>
