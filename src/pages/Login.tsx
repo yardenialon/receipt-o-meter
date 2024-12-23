@@ -12,6 +12,7 @@ const Login = () => {
     // Check if user is already logged in
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event);
+      console.log('Session:', session);
       if (session) {
         toast.success('התחברת בהצלחה!');
         navigate('/');
@@ -46,6 +47,7 @@ const Login = () => {
             }
           }}
           providers={['google']}
+          redirectTo={`${window.location.origin}${window.location.pathname}`}
           localization={{
             variables: {
               sign_in: {
