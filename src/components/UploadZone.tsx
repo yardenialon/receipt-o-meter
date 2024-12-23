@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, File, Camera } from 'lucide-react';
 import { toast } from 'sonner';
