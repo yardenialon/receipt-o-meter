@@ -1,3 +1,5 @@
+import { DocumentAIResult } from './types.ts';
+
 interface DocumentAIResult {
   items: Array<{ name: string; price: number; quantity?: number }>;
   total: number;
@@ -10,10 +12,9 @@ export async function processDocument(
   isPDF: boolean,
   accessToken: string
 ): Promise<DocumentAIResult> {
-  // Use the correct project ID from your Google Cloud Console
   const projectId = Deno.env.get('GOOGLE_PROJECT_ID') || '';
-  const location = 'us'; // או 'eu' - תלוי באיזור שבחרת
-  const processorId = '9c913ce7c435a20e'; // המזהה החדש שיצרת
+  const location = 'us';
+  const processorId = '9c913ce7c435a20e';
   
   console.log('Making Document AI API request with project:', projectId);
   const endpoint = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
@@ -45,44 +46,70 @@ export async function processDocument(
   const result = await response.json();
   console.log('Document AI response received');
 
-  // Extract text from the document
   const text = result.document?.text || '';
   console.log('Extracted text:', text);
 
-  // Parse the text into lines and filter out empty lines
   const lines = text.split('\n').filter(line => line.trim());
   
-  // Try to find the store name (usually at the top)
-  const storeName = lines[0] || 'חנות לא ידועה';
+  // מילים שמעידות על שם החנות
+  const storeIndicators = ['בע"מ', 'חשבונית מס', 'קבלה', 'חשבון', 'עסק מורשה'];
+  let storeName = '';
   
-  // Look for items and prices
+  // חיפוש שם החנות בשורות הראשונות
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    if (storeIndicators.some(indicator => lines[i].includes(indicator))) {
+      storeName = lines[i].replace(/(חשבונית מס|קבלה|חשבון|עסק מורשה)/g, '').trim();
+      break;
+    }
+  }
+  if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
+
+  // מילים שמעידות על פריט
+  const itemIndicators = ['יח\'', 'כמות', '@', 'X', 'x', '*'];
+  // מילים שלא יכולות להיות בפריט
+  const nonItemWords = ['סה"כ', 'מע"מ', 'הנחה', 'משלוח', 'אשראי', 'מזומן', 'שולם', 'עודף'];
+  
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
-  // משופר - מזהה מספרים עם מינוס ומספרים עשרוניים
+  // חיפוש מתקדם של מחירים
   const priceRegex = /(?:₪|ש"ח|שח)\s*(-?\d+\.?\d*)|(-?\d+\.?\d*)\s*(?:₪|ש"ח|שח)/;
-  const quantityRegex = /(\d+)\s*(?:יח'?|×|x|יחידות?)/i;
-
-  // מילים שמעידות על שורת סיכום
-  const summaryWords = ['סה"כ', 'סהכ', 'סך הכל', 'לתשלום', 'total', 'סכום'];
+  const quantityRegex = /(\d+(?:\.\d+)?)\s*(?:יח'?|×|x|\*)/i;
   
-  for (let i = 1; i < lines.length; i++) {
+  // מילים שמעידות על שורת סיכום
+  const totalIndicators = [
+    'סה"כ לתשלום',
+    'סה"כ',
+    'סהכ',
+    'סך הכל',
+    'לתשלום',
+    'total',
+    'סכום כולל',
+    'שולם'
+  ];
+
+  let foundTotal = false;
+  
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // דלג על שורות ריקות או שורות קצרות מדי
+    // דלג על שורות ריקות או קצרות מדי
     if (line.length < 2) continue;
     
     // בדוק אם זו שורת סיכום
-    const isSummaryLine = summaryWords.some(word => line.includes(word));
+    const isTotalLine = totalIndicators.some(indicator => 
+      line.toLowerCase().includes(indicator.toLowerCase())
+    );
     
     const priceMatch = line.match(priceRegex);
     if (priceMatch) {
       const price = parseFloat(priceMatch[1] || priceMatch[2]);
       
       // אם זו שורת סיכום, עדכן את הסכום הכולל
-      if (isSummaryLine) {
+      if (isTotalLine) {
         if (!isNaN(price)) {
-          total = Math.abs(price); // הפוך מספרים שליליים לחיוביים
+          total = Math.abs(price);
+          foundTotal = true;
         }
         continue;
       }
@@ -91,9 +118,13 @@ export async function processDocument(
       let name = line.replace(priceRegex, '').trim();
       name = name.replace(/₪|ש"ח|שח/g, '').trim();
       
-      if (name && !isNaN(price)) {
-        const quantityMatch = name.match(quantityRegex);
-        const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+      // בדוק אם השורה מכילה מילים שמעידות על פריט או לא מכילה מילים שלא יכולות להיות בפריט
+      const isLikelyItem = itemIndicators.some(indicator => line.includes(indicator)) ||
+                          !nonItemWords.some(word => line.toLowerCase().includes(word.toLowerCase()));
+      
+      if (name && !isNaN(price) && isLikelyItem) {
+        const quantityMatch = line.match(quantityRegex);
+        const quantity = quantityMatch ? parseFloat(quantityMatch[1]) : 1;
         
         // נקה את הכמות מהשם
         name = name.replace(quantityRegex, '').trim();
@@ -102,7 +133,7 @@ export async function processDocument(
         if (name.length > 0 && Math.abs(price) > 0) {
           items.push({ 
             name, 
-            price: Math.abs(price), // הפוך מספרים שליליים לחיוביים
+            price: Math.abs(price),
             quantity
           });
         }
@@ -111,7 +142,7 @@ export async function processDocument(
   }
 
   // אם לא מצאנו סכום כולל, נחשב אותו מסכום הפריטים
-  if (total === 0 && items.length > 0) {
+  if (!foundTotal && items.length > 0) {
     total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
   }
 
