@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 const PaymentButtons = () => {
   return (
-    <div className="mt-8 text-center">
+    <div className="mt-4 text-center">
       <Button
         variant="default"
         className="mb-4 w-full max-w-xs"

@@ -2,12 +2,14 @@ import { Receipt, ChevronDown, ChevronUp, Trash2, Eye } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
+import PaymentButtons from '../upload/PaymentButtons';
 
 interface ReceiptItemProps {
   receipt: {
     id: string;
     store_name: string;
     total: number;
+    total_refundable: number;
     image_url: string | null;
     created_at: string;
     receipt_items: {
@@ -15,6 +17,7 @@ interface ReceiptItemProps {
       name: string;
       price: number;
       quantity: number;
+      refundable_amount: number;
     }[];
   };
   isExpanded: boolean;
@@ -74,6 +77,9 @@ export const ReceiptItem = ({
                 <p className="text-sm text-gray-500 truncate">
                   {new Date(receipt.created_at).toLocaleDateString('he-IL')}
                 </p>
+                <p className="text-sm text-primary-600 mt-1">
+                  סה"כ צברת {receipt.total_refundable?.toFixed(2) || '0'} ₪ להחזר
+                </p>
               </>
             )}
           </div>
@@ -112,21 +118,24 @@ export const ReceiptItem = ({
         </div>
       </div>
 
-      {isExpanded && validItems.length > 0 && (
+      {isExpanded && (
         <div className="mt-4 border-t border-primary-100 pt-4 animate-slide-up">
-          <div className="space-y-2">
-            {validItems.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm p-2 rounded-lg hover:bg-primary-50 transition-colors">
-                <span className="text-gray-700 truncate flex-1 ml-2">{item.name}</span>
-                <div className="flex items-center gap-2 shrink-0">
-                  {item.quantity > 1 && (
-                    <span className="text-gray-500">x{item.quantity}</span>
-                  )}
-                  <span className="text-primary-600 font-medium">₪{item.price.toFixed(2)}</span>
+          {validItems.length > 0 && (
+            <div className="space-y-2 mb-4">
+              {validItems.map((item) => (
+                <div key={item.id} className="flex justify-between text-sm p-2 rounded-lg hover:bg-primary-50 transition-colors">
+                  <span className="text-gray-700 truncate flex-1 ml-2">{item.name}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {item.quantity > 1 && (
+                      <span className="text-gray-500">x{item.quantity}</span>
+                    )}
+                    <span className="text-primary-600 font-medium">₪{item.price.toFixed(2)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+          <PaymentButtons />
         </div>
       )}
     </div>

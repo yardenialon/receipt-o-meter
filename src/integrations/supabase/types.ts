@@ -35,6 +35,7 @@ export type Database = {
           price: number
           quantity: number | null
           receipt_id: string
+          refundable_amount: number | null
         }
         Insert: {
           created_at?: string
@@ -43,6 +44,7 @@ export type Database = {
           price: number
           quantity?: number | null
           receipt_id: string
+          refundable_amount?: number | null
         }
         Update: {
           created_at?: string
@@ -51,6 +53,7 @@ export type Database = {
           price?: number
           quantity?: number | null
           receipt_id?: string
+          refundable_amount?: number | null
         }
         Relationships: [
           {
@@ -69,6 +72,7 @@ export type Database = {
           image_url: string | null
           store_name: string | null
           total: number | null
+          total_refundable: number | null
           user_id: string
         }
         Insert: {
@@ -77,6 +81,7 @@ export type Database = {
           image_url?: string | null
           store_name?: string | null
           total?: number | null
+          total_refundable?: number | null
           user_id: string
         }
         Update: {
@@ -85,6 +90,7 @@ export type Database = {
           image_url?: string | null
           store_name?: string | null
           total?: number | null
+          total_refundable?: number | null
           user_id?: string
         }
         Relationships: []
