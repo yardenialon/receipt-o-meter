@@ -37,10 +37,11 @@ export const ReceiptItem = ({
 }: ReceiptItemProps) => {
   const isMobile = useIsMobile();
 
-  // Filter items that have all required fields
+  // Filter items that have all required fields AND valid prices
   const validItems = receipt.receipt_items.filter(item => 
     item.name && 
     typeof item.price === 'number' && 
+    item.price > 0 && // Only include items with positive prices
     typeof item.quantity === 'number'
   );
 
@@ -77,17 +78,21 @@ export const ReceiptItem = ({
                 <p className="text-sm text-gray-500 truncate">
                   {new Date(receipt.created_at).toLocaleDateString('he-IL')}
                 </p>
-                <p className="text-sm text-primary-600 mt-1">
-                  סה"כ צברת {receipt.total_refundable?.toFixed(2) || '0'} ₪ להחזר
-                </p>
+                {receipt.total_refundable > 0 && (
+                  <p className="text-sm text-primary-600 mt-1">
+                    סה"כ צברת {receipt.total_refundable?.toFixed(2)} ₪ להחזר
+                  </p>
+                )}
               </>
             )}
           </div>
         </div>
         <div className="flex items-center gap-4 shrink-0">
-          <p className="text-lg font-semibold text-primary-600 whitespace-nowrap">
-            ₪{receipt.total?.toFixed(2) || '0.00'}
-          </p>
+          {receipt.total > 0 && (
+            <p className="text-lg font-semibold text-primary-600 whitespace-nowrap">
+              ₪{receipt.total?.toFixed(2)}
+            </p>
+          )}
           {receipt.image_url && (
             <Button
               variant="ghost"
