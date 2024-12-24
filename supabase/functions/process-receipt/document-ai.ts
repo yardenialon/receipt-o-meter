@@ -79,9 +79,9 @@ export async function processDocument(
       }
     }
 
-    // Find items with prices (must have ₪ symbol)
+    // Find items with prices
     const items: ProcessedItem[] = [];
-    const priceRegex = /([0-9]+[.,]?[0-9]*)\s*₪/;
+    const priceRegex = /([0-9]+[.,]?[0-9]*)/;
     
     for (const line of lines) {
       const priceMatch = line.match(priceRegex);
@@ -112,7 +112,7 @@ export async function processDocument(
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i].toLowerCase();
       if (totalKeywords.some(keyword => line.includes(keyword.toLowerCase()))) {
-        const priceMatch = lines[i].match(priceRegex);
+        const priceMatch = line.match(priceRegex);
         if (priceMatch) {
           total = parseFloat(priceMatch[1].replace(',', ''));
           break;
