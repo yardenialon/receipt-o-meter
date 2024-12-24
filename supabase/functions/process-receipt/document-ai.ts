@@ -22,10 +22,9 @@ export async function processDocument(
       throw new Error('Missing GOOGLE_PROJECT_ID environment variable');
     }
 
-    // Use the correct processor IDs for receipts
-    // These are the default processor IDs for receipt parsing
-    const processorId = isPDF ? 'pretrained-ocr-v1.1-2022-09-12' : 'pretrained-receipt-v1.0-2020-08-24';
-    const processorLocation = 'us'; // Changed back to US location as required by Google Cloud
+    // Use the current processor ID for receipt parsing
+    const processorId = 'pretrained-expense-processor';
+    const processorLocation = 'us';
 
     console.log('Document AI Request:', {
       projectId,
