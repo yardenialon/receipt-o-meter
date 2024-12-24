@@ -29,6 +29,9 @@ const Index = () => {
     return null;
   }
 
+  // Extract username from email
+  const username = user.email?.split('@')[0] || '';
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -48,9 +51,14 @@ const Index = () => {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isMobile ? 'קבלות' : 'ניהול קבלות'}
                 </h1>
-                <p className="text-sm text-gray-500">
-                  {user.email}
-                </p>
+                <div className="flex flex-col gap-1">
+                  <p className="text-lg font-medium text-gray-700">
+                    שלום {username}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {user.email}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
