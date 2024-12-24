@@ -64,86 +64,40 @@ export async function processDocument(
   }
   if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
 
-  // מילים שמעידות על פריט
-  const itemIndicators = ['יח\'', 'כמות', '@', 'X', 'x', '*'];
-  // מילים שלא יכולות להיות בפריט
-  const nonItemWords = ['סה"כ', 'מע"מ', 'הנחה', 'משלוח', 'אשראי', 'מזומן', 'שולם', 'עודף'];
+  // ביטוי רגולרי לזיהוי ברקוד ומחיר
+  // מניח שהברקוד הוא מספר של לפחות 8 ספרות בצד ימין
+  // והמחיר הוא מספר עם אופציה לנקודה עשרונית בצד שמאל
+  const itemRegex = /^.*?(\d{8,})\s+(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
   
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
-  // חיפוש מתקדם של מחירים
-  const priceRegex = /(?:₪|ש"ח|שח)\s*(-?\d+\.?\d*)|(-?\d+\.?\d*)\s*(?:₪|ש"ח|שח)/;
-  const quantityRegex = /(\d+(?:\.\d+)?)\s*(?:יח'?|×|x|\*)/i;
-  
-  // מילים שמעידות על שורת סיכום
-  const totalIndicators = [
-    'סה"כ לתשלום',
-    'סה"כ',
-    'סהכ',
-    'סך הכל',
-    'לתשלום',
-    'total',
-    'סכום כולל',
-    'שולם'
-  ];
-
-  let foundTotal = false;
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    
-    // דלג על שורות ריקות או קצרות מדי
-    if (line.length < 2) continue;
-    
-    // בדוק אם זו שורת סיכום
-    const isTotalLine = totalIndicators.some(indicator => 
-      line.toLowerCase().includes(indicator.toLowerCase())
-    );
-    
-    const priceMatch = line.match(priceRegex);
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1] || priceMatch[2]);
+  // עיבוד כל שורה בקבלה
+  for (const line of lines) {
+    const match = line.match(itemRegex);
+    if (match) {
+      const [, barcode, name, priceStr] = match;
+      const price = parseFloat(priceStr.replace(',', ''));
       
-      // אם זו שורת סיכום, עדכן את הסכום הכולל
-      if (isTotalLine) {
-        if (!isNaN(price)) {
-          total = Math.abs(price);
-          foundTotal = true;
-        }
-        continue;
-      }
-      
-      // נקה את השם מהמחיר ומסימני המטבע
-      let name = line.replace(priceRegex, '').trim();
-      name = name.replace(/₪|ש"ח|שח/g, '').trim();
-      
-      // בדוק אם השורה מכילה מילים שמעידות על פריט או לא מכילה מילים שלא יכולות להיות בפריט
-      const isLikelyItem = itemIndicators.some(indicator => line.includes(indicator)) ||
-                          !nonItemWords.some(word => line.toLowerCase().includes(word.toLowerCase()));
-      
-      if (name && !isNaN(price) && isLikelyItem) {
-        const quantityMatch = line.match(quantityRegex);
-        const quantity = quantityMatch ? parseFloat(quantityMatch[1]) : 1;
-        
-        // נקה את הכמות מהשם
-        name = name.replace(quantityRegex, '').trim();
-        
-        // הוסף רק אם יש שם ומחיר תקינים
-        if (name.length > 0 && Math.abs(price) > 0) {
-          items.push({ 
-            name, 
-            price: Math.abs(price),
-            quantity
-          });
-        }
+      if (!isNaN(price)) {
+        items.push({
+          name: `${name.trim()} (${barcode})`, // שומר את הברקוד כחלק משם הפריט
+          price,
+          quantity: 1
+        });
+        total += price;
       }
     }
   }
 
-  // אם לא מצאנו סכום כולל, נחשב אותו מסכום הפריטים
-  if (!foundTotal && items.length > 0) {
-    total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+  // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה
+  if (items.length === 0) {
+    console.log('No items with barcodes found in receipt');
+    return {
+      items: [],
+      total: 0,
+      storeName: 'לא זוהו פריטים עם ברקוד'
+    };
   }
 
   console.log('Parsed results:', {
