@@ -36,14 +36,20 @@ serve(async (req) => {
     try {
       console.log('Starting Document AI processing for receipt:', receiptId);
       const { items, total, storeName } = await processDocumentAI(base64Image, contentType, isPDF);
-      console.log('Document AI processing completed:', { itemsCount: items.length, total, storeName });
+      console.log('Document AI processing completed:', { itemsCount: items?.length, total, storeName });
 
       // Initialize Supabase client
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Missing Supabase configuration');
+      }
+
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       console.log('Updating receipt details in database:', { receiptId, storeName, total });
+      
       // Update receipt with store name and total
       const { error: updateError } = await supabase
         .from('receipts')
@@ -55,34 +61,44 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating receipt:', updateError);
-        throw new Error('שגיאה בעדכון פרטי הקבלה');
+        throw new Error(`שגיאה בעדכון פרטי הקבלה: ${updateError.message}`);
       }
 
       // Insert items if any were found
-      if (items.length > 0) {
+      if (items && items.length > 0) {
         console.log('Inserting receipt items:', items.length);
-        const { error: itemsError } = await supabase
-          .from('receipt_items')
-          .insert(items.map(item => ({
-            receipt_id: receiptId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity || 1
-          })));
+        
+        // Filter out invalid items
+        const validItems = items.filter(item => 
+          item.name && 
+          typeof item.price === 'number' && 
+          (typeof item.quantity === 'number' || item.quantity === null)
+        );
 
-        if (itemsError) {
-          console.error('Error inserting items:', itemsError);
-          throw new Error('שגיאה בשמירת פריטי הקבלה');
+        if (validItems.length > 0) {
+          const { error: itemsError } = await supabase
+            .from('receipt_items')
+            .insert(validItems.map(item => ({
+              receipt_id: receiptId,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity || 1
+            })));
+
+          if (itemsError) {
+            console.error('Error inserting items:', itemsError);
+            throw new Error(`שגיאה בשמירת פריטי הקבלה: ${itemsError.message}`);
+          }
         }
       }
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          items, 
+          items: items || [], 
           total, 
           storeName,
-          message: `זוהו ${items.length} פריטים בקבלה`
+          message: `זוהו ${items?.length || 0} פריטים בקבלה`
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -93,21 +109,24 @@ serve(async (req) => {
       console.error('Error in Document AI processing:', error);
       
       // Initialize Supabase client for error update
-      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      
-      // Update receipt status to error
-      const { error: updateError } = await supabase
-        .from('receipts')
-        .update({ 
-          store_name: error instanceof Error ? error.message : 'שגיאה בעיבוד',
-          total: 0
-        })
-        .eq('id', receiptId);
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
         
-      if (updateError) {
-        console.error('Error updating receipt status:', updateError);
+        // Update receipt status to error
+        const { error: updateError } = await supabase
+          .from('receipts')
+          .update({ 
+            store_name: error instanceof Error ? error.message : 'שגיאה בעיבוד',
+            total: 0
+          })
+          .eq('id', receiptId);
+          
+        if (updateError) {
+          console.error('Error updating receipt status:', updateError);
+        }
       }
 
       return new Response(
