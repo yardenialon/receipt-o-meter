@@ -8,14 +8,40 @@ export async function processDocumentAI(base64Image: string, contentType: string
     throw new Error('Missing Google Service Account credentials');
   }
 
+  console.log('Raw service account JSON:', serviceAccountJson.substring(0, 50) + '...');
+
   let serviceAccount;
   try {
-    serviceAccount = JSON.parse(serviceAccountJson.replace(/\\n/g, '\n'));
-    console.log('Successfully parsed service account JSON');
+    // First, try to parse it directly
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+      console.log('Successfully parsed service account JSON directly');
+    } catch (directParseError) {
+      console.log('Direct parsing failed, trying with string replacement...');
+      // If direct parsing fails, try with string replacements
+      const cleanedJson = serviceAccountJson
+        .replace(/\\n/g, '\n')
+        .replace(/\\/g, '')
+        .replace(/"{/g, '{')
+        .replace(/}"/g, '}');
+      
+      console.log('Cleaned JSON (first 50 chars):', cleanedJson.substring(0, 50) + '...');
+      serviceAccount = JSON.parse(cleanedJson);
+      console.log('Successfully parsed service account JSON after cleaning');
+    }
   } catch (error) {
-    console.error('Error parsing service account JSON:', error);
-    throw new Error('Invalid service account credentials format');
+    console.error('All parsing attempts failed. Error:', error);
+    console.error('Error parsing service account JSON. Please check the format of the secret in Supabase.');
+    throw new Error('Invalid service account credentials format. Please check the secret format in Supabase.');
   }
+
+  // Verify the parsed object has the required fields
+  if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
+    console.error('Missing required fields in service account JSON');
+    throw new Error('Invalid service account structure - missing required fields');
+  }
+
+  console.log('Service account parsed successfully. Project ID:', serviceAccount.project_id);
   
   // Using the specific project and processor details
   const projectId = serviceAccount.project_id;
