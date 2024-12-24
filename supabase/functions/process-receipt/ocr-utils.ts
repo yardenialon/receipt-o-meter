@@ -3,20 +3,64 @@ export async function processDocumentAI(base64Image: string, contentType: string
   total: number;
   storeName: string;
 }> {
-  const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
-  if (!apiKey) {
-    throw new Error('Missing Google Cloud API key');
+  const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT');
+  if (!serviceAccountJson) {
+    throw new Error('Missing Google Service Account credentials');
   }
 
+  const serviceAccount = JSON.parse(serviceAccountJson);
+  
   // Using the specific project and processor details
-  const projectId = 'cloud-vision-api-445700';
+  const projectId = serviceAccount.project_id;
   const location = 'us'; // Default to US location
   const processorId = 'pretrained-ocr';
 
   try {
     console.log('Starting Document AI processing...');
     
-    // First, get an access token using our API key
+    // First, get an access token using the service account
+    const jwtHeader = {
+      alg: 'RS256',
+      typ: 'JWT',
+      kid: serviceAccount.private_key_id
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    const jwtClaimSet = {
+      iss: serviceAccount.client_email,
+      sub: serviceAccount.client_email,
+      aud: 'https://documentai.googleapis.com/',
+      iat: now,
+      exp: now + 3600, // Token expires in 1 hour
+    };
+
+    // Create JWT
+    const encoder = new TextEncoder();
+    const headerB64 = btoa(JSON.stringify(jwtHeader));
+    const claimSetB64 = btoa(JSON.stringify(jwtClaimSet));
+    const signatureInput = `${headerB64}.${claimSetB64}`;
+    
+    // Sign the JWT
+    const key = await crypto.subtle.importKey(
+      'pkcs8',
+      new TextEncoder().encode(serviceAccount.private_key),
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: 'SHA-256',
+      },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      key,
+      encoder.encode(signatureInput)
+    );
+    
+    const jwt = `${signatureInput}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
+
+    // Get access token using JWT
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
@@ -24,7 +68,7 @@ export async function processDocumentAI(base64Image: string, contentType: string
       },
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: apiKey
+        assertion: jwt
       })
     });
 
