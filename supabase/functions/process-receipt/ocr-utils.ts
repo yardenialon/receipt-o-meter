@@ -16,6 +16,26 @@ export async function processDocumentAI(base64Image: string, contentType: string
   try {
     console.log('Starting Document AI processing...');
     
+    // First, get an access token using our API key
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: apiKey
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Failed to get access token:', errorText);
+      throw new Error('Failed to authenticate with Google Cloud');
+    }
+
+    const { access_token } = await tokenResponse.json();
+    
     const endpoint = `https://documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
     
     console.log('Making request to endpoint:', endpoint);
@@ -23,7 +43,7 @@ export async function processDocumentAI(base64Image: string, contentType: string
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
