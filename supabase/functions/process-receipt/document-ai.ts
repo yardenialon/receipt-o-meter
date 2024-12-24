@@ -22,8 +22,8 @@ export async function processDocument(
       throw new Error('Missing GOOGLE_PROJECT_ID environment variable');
     }
 
-    // Use the current processor ID for receipt parsing
-    const processorId = 'pretrained-expense-processor';
+    // Use the general OCR processor
+    const processorId = 'pretrained-ocr';
     const processorLocation = 'us';
 
     console.log('Document AI Request:', {
