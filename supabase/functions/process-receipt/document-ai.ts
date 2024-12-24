@@ -18,10 +18,26 @@ export async function processDocument(
 }> {
   try {
     const projectId = Deno.env.get('GOOGLE_PROJECT_ID');
-    const processorLocation = 'us';
-    const processorId = isPDF ? 'c3a8a08f923ba2f8' : '1043e374219d8c68';
+    if (!projectId) {
+      throw new Error('Missing GOOGLE_PROJECT_ID environment variable');
+    }
+
+    // Use the correct processor IDs for receipts
+    // These are the default processor IDs for receipt parsing
+    const processorId = isPDF ? 'pretrained-ocr-v1.1-2022-09-12' : 'pretrained-receipt-v1.0-2020-08-24';
+    const processorLocation = 'eu'; // Changed to EU location
+
+    console.log('Document AI Request:', {
+      projectId,
+      processorLocation,
+      processorId,
+      contentType,
+      isPDF
+    });
 
     const url = `https://documentai.googleapis.com/v1/projects/${projectId}/locations/${processorLocation}/processors/${processorId}:process`;
+
+    console.log('Making request to Document AI API:', url);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -38,7 +54,13 @@ export async function processDocument(
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Document AI API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
     }
 
     const data = await response.json();
