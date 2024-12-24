@@ -48,14 +48,21 @@ serve(async (req) => {
 
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      console.log('Updating receipt details in database:', { receiptId, storeName, total });
+      // Format total to ensure it's within numeric(12,2) range
+      const formattedTotal = Math.min(9999999999.99, Math.max(0, Number(total) || 0));
+      
+      console.log('Updating receipt details in database:', { 
+        receiptId, 
+        storeName, 
+        formattedTotal 
+      });
       
       // Update receipt with store name and total
       const { error: updateError } = await supabase
         .from('receipts')
         .update({ 
           store_name: storeName || 'חנות לא ידועה',
-          total: total || 0
+          total: formattedTotal
         })
         .eq('id', receiptId);
 
@@ -66,24 +73,28 @@ serve(async (req) => {
 
       // Insert items if any were found
       if (items && items.length > 0) {
-        console.log('Inserting receipt items:', items.length);
+        console.log('Processing receipt items:', items.length);
         
-        // Filter out invalid items
-        const validItems = items.filter(item => 
-          item.name && 
-          typeof item.price === 'number' && 
-          (typeof item.quantity === 'number' || item.quantity === null)
-        );
+        // Filter out invalid items and format numbers
+        const validItems = items
+          .filter(item => 
+            item.name && 
+            typeof item.price === 'number' && 
+            (typeof item.quantity === 'number' || item.quantity === null)
+          )
+          .map(item => ({
+            receipt_id: receiptId,
+            name: item.name,
+            // Format price and quantity to ensure they're within numeric(12,2) range
+            price: Math.min(9999999999.99, Math.max(0, Number(item.price) || 0)),
+            quantity: Math.min(9999999999.99, Math.max(0, Number(item.quantity) || 1))
+          }));
 
         if (validItems.length > 0) {
+          console.log('Inserting valid items:', validItems);
           const { error: itemsError } = await supabase
             .from('receipt_items')
-            .insert(validItems.map(item => ({
-              receipt_id: receiptId,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity || 1
-            })));
+            .insert(validItems);
 
           if (itemsError) {
             console.error('Error inserting items:', itemsError);
@@ -96,7 +107,7 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           items: items || [], 
-          total, 
+          total: formattedTotal, 
           storeName,
           message: `זוהו ${items?.length || 0} פריטים בקבלה`
         }),
