@@ -12,8 +12,8 @@ export async function processDocument(
 ): Promise<DocumentAIResult> {
   // Use the correct project ID from your Google Cloud Console
   const projectId = Deno.env.get('GOOGLE_PROJECT_ID') || '';
-  const location = 'us';
-  const processorId = 'pretrained-ocr';
+  const location = 'us'; // או 'eu' - תלוי באיזור שבחרת
+  const processorId = '9c913ce7c435a20e'; // המזהה החדש שיצרת
   
   console.log('Making Document AI API request with project:', projectId);
   const endpoint = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
