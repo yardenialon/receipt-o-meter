@@ -64,24 +64,44 @@ export async function processDocument(
   }
   if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
 
-  // ביטוי רגולרי לזיהוי ברקוד ומחיר
-  // מניח שהברקוד הוא מספר של לפחות 8 ספרות בצד ימין
-  // והמחיר הוא מספר עם אופציה לנקודה עשרונית בצד שמאל
-  const itemRegex = /^.*?(\d{8,})\s+(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
-  
+  // ביטוי רגולרי לזיהוי מבצעים ומחירים
+  const specialOfferRegex = /השבוע במבצע\s+(.+?)\s+רק\s+₪?(\d+\.?\d*)/i;
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
   // עיבוד כל שורה בקבלה
   for (const line of lines) {
-    const match = line.match(itemRegex);
-    if (match) {
-      const [, barcode, name, priceStr] = match;
+    // בדיקה אם זה מבצע מיוחד
+    const specialOfferMatch = line.match(specialOfferRegex);
+    if (specialOfferMatch) {
+      const [, description, priceStr] = specialOfferMatch;
+      const price = parseFloat(priceStr);
+      
+      if (!isNaN(price)) {
+        // בדיקה אם יש כמות בתיאור (למשל "2 בקבוקי")
+        const quantityMatch = description.match(/(\d+)\s+/);
+        const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+        
+        items.push({
+          name: description.trim(),
+          price,
+          quantity
+        });
+        total += price;
+      }
+      continue;
+    }
+
+    // בדיקת שורות רגילות עם ברקוד
+    const regularItemRegex = /^.*?(\d{8,})\s+(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+    const regularMatch = line.match(regularItemRegex);
+    if (regularMatch) {
+      const [, barcode, name, priceStr] = regularMatch;
       const price = parseFloat(priceStr.replace(',', ''));
       
       if (!isNaN(price)) {
         items.push({
-          name: `${name.trim()} (${barcode})`, // שומר את הברקוד כחלק משם הפריט
+          name: `${name.trim()} (${barcode})`,
           price,
           quantity: 1
         });
@@ -92,11 +112,11 @@ export async function processDocument(
 
   // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה
   if (items.length === 0) {
-    console.log('No items with barcodes found in receipt');
+    console.log('No items found in receipt');
     return {
       items: [],
       total: 0,
-      storeName: 'לא זוהו פריטים עם ברקוד'
+      storeName: 'לא זוהו פריטים'
     };
   }
 
