@@ -13,22 +13,28 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
 
   const startCamera = async () => {
+    if (isMobile) {
+      // On mobile, trigger the file input which includes camera option
+      fileInputRef.current?.click();
+      return;
+    }
+
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
 
-      // בדיקה אם המכשיר תומך במצלמה
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('מצלמה לא נתמכת במכשיר זה');
       }
 
       const constraints = {
         video: {
-          facingMode: isMobile ? 'environment' : 'user',
+          facingMode: 'user',
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         }
@@ -54,6 +60,20 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
     }
   };
 
+  const handleFileInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        await onPhotoCapture(file);
+      } catch (err) {
+        console.error('Error handling file:', err);
+        toast.error('שגיאה בטעינת הקובץ');
+      }
+    }
+    // Reset the input value to allow selecting the same file again
+    event.target.value = '';
+  };
+
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
@@ -67,7 +87,6 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
       const context = canvasRef.current.getContext('2d');
       if (!context) return;
 
-      // שמירת התמונה באיכות גבוהה
       canvasRef.current.width = videoRef.current.videoWidth;
       canvasRef.current.height = videoRef.current.videoHeight;
       context.drawImage(videoRef.current, 0, 0);
@@ -85,7 +104,7 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
           }
         },
         'image/jpeg',
-        0.95 // איכות תמונה גבוהה
+        0.95
       );
     }
   };
@@ -113,14 +132,24 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
   }
 
   return (
-    <Button
-      onClick={startCamera}
-      variant="outline"
-      className="flex items-center gap-2"
-    >
-      <Camera className="w-4 h-4" />
-      צלם קבלה
-    </Button>
+    <>
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileInput}
+      />
+      <Button
+        onClick={startCamera}
+        variant="outline"
+        className="flex items-center gap-2"
+      >
+        <Camera className="w-4 h-4" />
+        צלם קבלה
+      </Button>
+    </>
   );
 };
 

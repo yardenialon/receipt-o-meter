@@ -1,93 +1,103 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { ReceiptItem } from './receipt/ReceiptItem';
 import { useReceipts } from './receipt/useReceipts';
-import { Button } from './ui/button';
-import { Trash2 } from 'lucide-react';
+import { ReceiptItem } from './receipt/ReceiptItem';
+import { Skeleton } from './ui/skeleton';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+
+interface ReceiptData {
+  id: string;
+  store_name: string;
+  total: number;
+  total_refundable: number;
+  image_url: string;
+  created_at: string;
+  receipt_items: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    refundable_amount: number;
+  }[];
+}
 
 const ReceiptList = () => {
-  const [expandedReceipts, setExpandedReceipts] = useState<string[]>([]);
-  const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
-  const [isDeletingReceipt, setIsDeletingReceipt] = useState<string | null>(null);
-  const [isDeletingAll, setIsDeletingAll] = useState(false);
-
-  const { receipts, isLoading, error, deleteReceipt, deleteAllReceipts } = useReceipts(processingProgress, setProcessingProgress);
-
-  const toggleReceipt = (receiptId: string) => {
-    setExpandedReceipts(prev => 
-      prev.includes(receiptId)
-        ? prev.filter(id => id !== receiptId)
-        : [...prev, receiptId]
-    );
-  };
-
-  const handleDelete = async (receiptId: string) => {
-    try {
-      setIsDeletingReceipt(receiptId);
-      await deleteReceipt(receiptId);
-    } finally {
-      setIsDeletingReceipt(null);
-    }
-  };
-
-  const handleDeleteAll = async () => {
-    try {
-      setIsDeletingAll(true);
-      await deleteAllReceipts();
-    } finally {
-      setIsDeletingAll(false);
-    }
-  };
+  const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
+  const [deletingReceiptId, setDeletingReceiptId] = useState<string | null>(null);
+  const { data: receipts, isLoading, error } = useReceipts();
+  const [processingProgress, setProcessingProgress] = useState<{ [key: string]: number }>({});
 
   if (error) {
-    console.error('Error in ReceiptList:', error);
-    toast.error('שגיאה בטעינת הקבלות');
+    console.error('Error fetching receipts:', error);
     return (
-      <div className="mt-12 text-center text-red-500">
+      <div className="text-red-500 text-center mt-4">
         שגיאה בטעינת הקבלות
       </div>
     );
   }
 
+  const handleDelete = async (receiptId: string) => {
+    try {
+      setDeletingReceiptId(receiptId);
+      
+      // Delete receipt items first
+      const { error: itemsError } = await supabase
+        .from('receipt_items')
+        .delete()
+        .eq('receipt_id', receiptId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the receipt
+      const { error: receiptError } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', receiptId);
+
+      if (receiptError) throw receiptError;
+
+      toast.success('הקבלה נמחקה בהצלחה');
+    } catch (err) {
+      console.error('Error deleting receipt:', err);
+      toast.error('שגיאה במחיקת הקבלה');
+    } finally {
+      setDeletingReceiptId(null);
+    }
+  };
+
   if (isLoading) {
-    return <div className="mt-12 text-center">טוען קבלות...</div>;
+    return (
+      <div className="space-y-4 mt-8">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
+    );
   }
 
   if (!receipts?.length) {
     return (
-      <div className="mt-12 text-center text-gray-500">
-        לא נמצאו קבלות
+      <div className="text-gray-500 text-center mt-8">
+        אין קבלות להצגה
       </div>
     );
   }
 
   return (
-    <div className="mt-12 w-full max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">קבלות אחרונות</h2>
-        <Button
-          variant="destructive"
-          onClick={handleDeleteAll}
-          disabled={isDeletingAll}
-          className="flex items-center gap-2"
-        >
-          <Trash2 className="w-4 h-4" />
-          מחק את כל הקבלות
-        </Button>
-      </div>
-      <div className="space-y-4">
-        {receipts?.map((receipt) => (
-          <ReceiptItem
-            key={receipt.id}
-            receipt={receipt}
-            isExpanded={expandedReceipts.includes(receipt.id)}
-            processingProgress={processingProgress[receipt.id]}
-            isDeleting={isDeletingReceipt === receipt.id}
-            onToggle={() => toggleReceipt(receipt.id)}
-            onDelete={() => handleDelete(receipt.id)}
-          />
-        ))}
-      </div>
+    <div className="space-y-4 mt-8">
+      {receipts.map((receipt: ReceiptData) => (
+        <ReceiptItem
+          key={receipt.id}
+          receipt={receipt}
+          isExpanded={expandedReceiptId === receipt.id}
+          processingProgress={processingProgress[receipt.id] || 0}
+          isDeleting={deletingReceiptId === receipt.id}
+          onToggle={() => setExpandedReceiptId(
+            expandedReceiptId === receipt.id ? null : receipt.id
+          )}
+          onDelete={() => handleDelete(receipt.id)}
+        />
+      ))}
     </div>
   );
 };
