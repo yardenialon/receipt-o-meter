@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import UploadZone from '../components/UploadZone';
 import ReceiptList from '../components/ReceiptList';
-import { LogOut, Receipt } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import Lottie from 'lottie-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,8 +41,12 @@ const Index = () => {
 
         <div className="flex justify-between items-center mb-12">
           <div className="flex items-center gap-3">
-            <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
-              <Receipt className="w-8 h-8 text-primary-500" />
+            <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in w-16 h-16 flex items-center justify-center">
+              <Lottie 
+                animationData="https://lottie.host/37b258a0-4c07-419c-80b3-2dda87d5d789/MiupA8JcV1.lottie"
+                loop={true}
+                className="w-full h-full"
+              />
             </div>
             <div className="animate-slide-up">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
