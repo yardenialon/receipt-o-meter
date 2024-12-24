@@ -8,7 +8,14 @@ export async function processDocumentAI(base64Image: string, contentType: string
     throw new Error('Missing Google Service Account credentials');
   }
 
-  const serviceAccount = JSON.parse(serviceAccountJson);
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson.replace(/\\n/g, '\n'));
+    console.log('Successfully parsed service account JSON');
+  } catch (error) {
+    console.error('Error parsing service account JSON:', error);
+    throw new Error('Invalid service account credentials format');
+  }
   
   // Using the specific project and processor details
   const projectId = serviceAccount.project_id;
