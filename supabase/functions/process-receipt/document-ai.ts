@@ -59,32 +59,58 @@ export async function processDocument(
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
-  // Improved price detection regex for Hebrew receipts
-  const priceRegex = /(?:₪|ש"ח|שח)\s*(\d+\.?\d*)|(\d+\.?\d*)\s*(?:₪|ש"ח|שח)/;
+  // משופר - מזהה מספרים עם מינוס ומספרים עשרוניים
+  const priceRegex = /(?:₪|ש"ח|שח)\s*(-?\d+\.?\d*)|(-?\d+\.?\d*)\s*(?:₪|ש"ח|שח)/;
+  const quantityRegex = /(\d+)\s*(?:יח'?|×|x|יחידות?)/i;
 
-  for (const line of lines) {
+  // מילים שמעידות על שורת סיכום
+  const summaryWords = ['סה"כ', 'סהכ', 'סך הכל', 'לתשלום', 'total', 'סכום'];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // דלג על שורות ריקות או שורות קצרות מדי
+    if (line.length < 2) continue;
+    
+    // בדוק אם זו שורת סיכום
+    const isSummaryLine = summaryWords.some(word => line.includes(word));
+    
     const priceMatch = line.match(priceRegex);
     if (priceMatch) {
       const price = parseFloat(priceMatch[1] || priceMatch[2]);
-      const name = line.replace(priceRegex, '').trim();
       
-      if (name && price && !isNaN(price)) {
-        const quantityMatch = name.match(/(\d+)\s*(?:יח'?|×|x)/i);
+      // אם זו שורת סיכום, עדכן את הסכום הכולל
+      if (isSummaryLine) {
+        if (!isNaN(price)) {
+          total = Math.abs(price); // הפוך מספרים שליליים לחיוביים
+        }
+        continue;
+      }
+      
+      // נקה את השם מהמחיר ומסימני המטבע
+      let name = line.replace(priceRegex, '').trim();
+      name = name.replace(/₪|ש"ח|שח/g, '').trim();
+      
+      if (name && !isNaN(price)) {
+        const quantityMatch = name.match(quantityRegex);
         const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
         
-        const cleanName = name.replace(/\d+\s*(?:יח'?|×|x)/i, '').trim();
+        // נקה את הכמות מהשם
+        name = name.replace(quantityRegex, '').trim();
         
-        items.push({ 
-          name: cleanName, 
-          price,
-          quantity
-        });
-        total += price * quantity;
+        // הוסף רק אם יש שם ומחיר תקינים
+        if (name.length > 0 && Math.abs(price) > 0) {
+          items.push({ 
+            name, 
+            price: Math.abs(price), // הפוך מספרים שליליים לחיוביים
+            quantity
+          });
+        }
       }
     }
   }
 
-  // If no total was found in the regular parsing, use the sum of items
+  // אם לא מצאנו סכום כולל, נחשב אותו מסכום הפריטים
   if (total === 0 && items.length > 0) {
     total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
   }
@@ -92,7 +118,8 @@ export async function processDocument(
   console.log('Parsed results:', {
     storeName,
     itemCount: items.length,
-    total
+    total,
+    items
   });
 
   return {
