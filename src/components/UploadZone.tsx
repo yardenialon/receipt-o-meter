@@ -5,9 +5,11 @@ import CameraCapture from './upload/CameraCapture';
 import DropZone from './upload/DropZone';
 import PaymentButtons from './upload/PaymentButtons';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const UploadZone = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleFile = async (file: Blob) => {
     // Check file size
@@ -87,6 +89,9 @@ const UploadZone = () => {
             console.error('Error updating receipt status:', updateError);
           }
         }
+
+        // Invalidate and refetch receipts query after successful upload
+        await queryClient.invalidateQueries({ queryKey: ['receipts'] });
       }
     } catch (err) {
       console.error('Upload error:', err);
