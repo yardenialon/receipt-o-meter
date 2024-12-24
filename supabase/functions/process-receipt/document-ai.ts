@@ -67,18 +67,21 @@ export async function processDocument(
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
-  // מילים שמעידות על סכום סופי
-  const totalIndicators = ['סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'לתשלום', 'total'];
-  let foundTotal = false;
+  // מילים שמעידות על סכום סופי - רק אחרי המילים האלו נחפש את הסכום הסופי
+  const totalIndicators = ['סה"כ לתשלום', 'סה״כ'];
 
-  // ביטוי רגולרי משופר לזיהוי פריטים ומחירים
-  const itemRegex = /^([א-ת\s\d]+)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  // מילים שמעידות על פריט
+  const itemIndicators = ['קוד', 'מק"ט', 'פריט', 'תאור', 'שם פריט', 'כמות'];
+  
+  // ביטוי רגולרי לזיהוי מחיר - מספר עם אופציה לנקודה עשרונית ואופציה לסימן מטבע
   const priceRegex = /([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+
+  let foundTotal = false;
   
   // עיבוד כל שורה בקבלה
   for (const line of lines) {
     // בדיקה אם זו שורת סה"כ
-    if (totalIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
+    if (!foundTotal && totalIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
       const match = line.match(priceRegex);
       if (match) {
         total = parseFloat(match[1].replace(',', ''));
@@ -87,21 +90,35 @@ export async function processDocument(
       }
     }
 
-    // זיהוי פריטים רק אם הם לא מכילים מילות מפתח של כותרות
-    if (!storeIndicators.some(indicator => line.includes(indicator)) &&
+    // זיהוי פריטים
+    if (!storeIndicators.some(indicator => line.includes(indicator)) && 
         !totalIndicators.some(indicator => line.includes(indicator))) {
-      const itemMatch = line.match(itemRegex);
-      if (itemMatch) {
-        const [, name, priceStr] = itemMatch;
-        const price = parseFloat(priceStr.replace(',', ''));
-        
-        // וידוא שהשם לא מכיל רק מספרים או תווים מיוחדים
-        if (!isNaN(price) && /[א-ת]/.test(name)) {
-          items.push({
-            name: name.trim(),
-            price,
-            quantity: 1
-          });
+      
+      // בדיקה אם השורה מכילה מאפיין של פריט
+      const isItemLine = itemIndicators.some(indicator => line.includes(indicator)) || 
+                        /[א-ת]/.test(line); // מכיל אותיות בעברית
+      
+      if (isItemLine) {
+        const priceMatch = line.match(priceRegex);
+        if (priceMatch) {
+          const price = parseFloat(priceMatch[1].replace(',', ''));
+          const name = line
+            .replace(priceMatch[0], '') // הסרת המחיר
+            .replace(/^\d+\s*/, '') // הסרת מספרים בתחילת השורה (כמו מק"ט)
+            .trim();
+
+          // וידוא שיש שם תקין לפריט ומחיר חיובי
+          if (name && !isNaN(price) && price > 0) {
+            // חיפוש כמות בשורה
+            const quantityMatch = line.match(/x\s*(\d+)/i) || line.match(/כמות:?\s*(\d+)/);
+            const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+
+            items.push({
+              name,
+              price,
+              quantity
+            });
+          }
         }
       }
     }
@@ -110,16 +127,6 @@ export async function processDocument(
   // אם לא מצאנו סה"כ, נחשב אותו מסכום הפריטים
   if (!foundTotal && items.length > 0) {
     total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-  }
-
-  // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה
-  if (items.length === 0) {
-    console.log('No items found in receipt');
-    return {
-      items: [],
-      total: 0,
-      storeName: 'לא זוהו פריטים'
-    };
   }
 
   console.log('Parsed results:', {
