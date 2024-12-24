@@ -1,4 +1,4 @@
-import { Receipt, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Receipt, ChevronDown, ChevronUp, Trash2, Eye } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -41,6 +41,13 @@ export const ReceiptItem = ({
     typeof item.quantity === 'number'
   );
 
+  const handleViewImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (receipt.image_url) {
+      window.open(receipt.image_url, '_blank');
+    }
+  };
+
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-primary-100/50 hover:border-primary-200 transition-all duration-300 hover:shadow-xl">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -75,6 +82,16 @@ export const ReceiptItem = ({
           <p className="text-lg font-semibold text-primary-600 whitespace-nowrap">
             ₪{receipt.total?.toFixed(2) || '0.00'}
           </p>
+          {receipt.image_url && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleViewImage}
+              className="text-gray-500 hover:text-primary-500 hover:bg-primary-50"
+            >
+              <Eye className="w-5 h-5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
