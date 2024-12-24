@@ -67,47 +67,49 @@ export async function processDocument(
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
+  // מילים שמעידות על סכום סופי
+  const totalIndicators = ['סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'לתשלום', 'total'];
+  let foundTotal = false;
+
   // ביטוי רגולרי משופר לזיהוי פריטים ומחירים
-  // מזהה שורות שמתחילות במספר (מחיר) ומכילות טקסט בעברית
-  const itemRegex = /^(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+)\s+(.+?)(?:\s+\d+\.?\d*)?$/;
+  const itemRegex = /^([א-ת\s\d]+)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  const priceRegex = /([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
   
   // עיבוד כל שורה בקבלה
   for (const line of lines) {
-    const itemMatch = line.match(itemRegex);
-    if (itemMatch) {
-      const [, unitPrice, totalPrice, quantity, name] = itemMatch;
-      const price = parseFloat(totalPrice);
-      
-      if (!isNaN(price)) {
-        items.push({
-          name: name.trim(),
-          price,
-          quantity: parseInt(quantity)
-        });
-        total += price;
+    // בדיקה אם זו שורת סה"כ
+    if (totalIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
+      const match = line.match(priceRegex);
+      if (match) {
+        total = parseFloat(match[1].replace(',', ''));
+        foundTotal = true;
+        continue;
       }
     }
-  }
 
-  // אם לא מצאנו פריטים, ננסה לחפש בפורמט אחר
-  if (items.length === 0) {
-    const simpleItemRegex = /^(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
-    for (const line of lines) {
-      const itemMatch = line.match(simpleItemRegex);
+    // זיהוי פריטים רק אם הם לא מכילים מילות מפתח של כותרות
+    if (!storeIndicators.some(indicator => line.includes(indicator)) &&
+        !totalIndicators.some(indicator => line.includes(indicator))) {
+      const itemMatch = line.match(itemRegex);
       if (itemMatch) {
         const [, name, priceStr] = itemMatch;
         const price = parseFloat(priceStr.replace(',', ''));
         
-        if (!isNaN(price)) {
+        // וידוא שהשם לא מכיל רק מספרים או תווים מיוחדים
+        if (!isNaN(price) && /[א-ת]/.test(name)) {
           items.push({
             name: name.trim(),
             price,
             quantity: 1
           });
-          total += price;
         }
       }
     }
+  }
+
+  // אם לא מצאנו סה"כ, נחשב אותו מסכום הפריטים
+  if (!foundTotal && items.length > 0) {
+    total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
   }
 
   // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה

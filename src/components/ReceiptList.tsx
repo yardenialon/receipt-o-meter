@@ -24,8 +24,8 @@ interface ReceiptData {
 const ReceiptList = () => {
   const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
   const [deletingReceiptId, setDeletingReceiptId] = useState<string | null>(null);
-  const { data: receipts, isLoading, error } = useReceipts();
   const [processingProgress, setProcessingProgress] = useState<{ [key: string]: number }>({});
+  const { receipts, isLoading, error } = useReceipts(processingProgress, setProcessingProgress);
 
   if (error) {
     console.error('Error fetching receipts:', error);
