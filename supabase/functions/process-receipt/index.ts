@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { processOCR } from "./ocr-utils.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +14,9 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Processing receipt request...');
     const { base64Image, receiptId, contentType, isPDF } = await req.json();
-    console.log('Processing receipt request:', { receiptId, contentType, isPDF });
-
+    
     if (!base64Image || !receiptId || !contentType) {
       console.error('Missing required fields:', { 
         hasBase64: !!base64Image, 
@@ -25,14 +25,7 @@ serve(async (req) => {
       });
       
       return new Response(
-        JSON.stringify({ 
-          error: 'חסרים שדות נדרשים',
-          details: {
-            base64Image: !base64Image ? 'חסר' : 'קיים',
-            receiptId: !receiptId ? 'חסר' : 'קיים',
-            contentType: !contentType ? 'חסר' : 'קיים'
-          }
-        }),
+        JSON.stringify({ error: 'חסרים שדות נדרשים' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400
