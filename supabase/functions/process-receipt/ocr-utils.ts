@@ -22,10 +22,10 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'heb', // Using 'heb' which is the correct value for Hebrew
+        'language': 'Hebrew', // Using 'Hebrew' as specified in the API documentation
         'detectOrientation': 'true',
         'scale': 'true',
-        'OCREngine': '2',
+        'OCREngine': '2', // Using OCR Engine 2 which has better support for non-Latin scripts
         'isTable': 'true',
         'isOverlayRequired': 'false',
         'isCreateSearchablePDF': 'false',
