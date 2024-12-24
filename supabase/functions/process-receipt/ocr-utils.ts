@@ -4,7 +4,7 @@ export interface OCRResult {
   storeName: string;
 }
 
-export async function processOCR(imageBase64: string, fileType: string): Promise<OCRResult> {
+export async function processOCR(imageBase64: string, fileType: string, isPDF: boolean): Promise<OCRResult> {
   try {
     console.log('Starting OCR processing with content type:', fileType);
     
@@ -22,14 +22,14 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'Hebrew', // Using 'Hebrew' as specified in the API documentation
+        'language': 'heb', // Changed from 'Hebrew' to 'heb' which is the correct code
         'detectOrientation': 'true',
         'scale': 'true',
         'OCREngine': '2', // Using OCR Engine 2 which has better support for non-Latin scripts
         'isTable': 'true',
         'isOverlayRequired': 'false',
         'isCreateSearchablePDF': 'false',
-        'filetype': fileType === 'application/pdf' ? 'PDF' : 'Auto'
+        'filetype': isPDF ? 'PDF' : 'Auto'
       }),
     });
 
