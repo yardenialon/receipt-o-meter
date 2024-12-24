@@ -43,8 +43,20 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in w-16 h-16 flex items-center justify-center">
               <Lottie 
-                animationData="https://lottie.host/37b258a0-4c07-419c-80b3-2dda87d5d789/MiupA8JcV1.lottie"
-                loop={true}
+                lottieRef={(ref) => {
+                  if (ref) {
+                    fetch('https://lottie.host/37b258a0-4c07-419c-80b3-2dda87d5d789/MiupA8JcV1.lottie')
+                      .then(response => response.json())
+                      .then(animationData => {
+                        ref.loadAnimation({
+                          animationData,
+                          loop: true,
+                          autoplay: true,
+                        });
+                      })
+                      .catch(console.error);
+                  }
+                }}
                 className="w-full h-full"
               />
             </div>
