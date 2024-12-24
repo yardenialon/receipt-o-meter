@@ -25,7 +25,7 @@ export async function processDocument(
     // Use the correct processor IDs for receipts
     // These are the default processor IDs for receipt parsing
     const processorId = isPDF ? 'pretrained-ocr-v1.1-2022-09-12' : 'pretrained-receipt-v1.0-2020-08-24';
-    const processorLocation = 'eu'; // Changed to EU location
+    const processorLocation = 'us'; // Changed back to US location as required by Google Cloud
 
     console.log('Document AI Request:', {
       projectId,
