@@ -8,15 +8,17 @@ export async function processDocumentAI(base64Image: string, contentType: string
     throw new Error('Missing Google Cloud API key');
   }
 
-  // Use the general Document processor for now since we don't have a specific receipt processor
-  const projectId = '1234567890'; // Replace with your actual Google Cloud project ID
-  const location = 'us'; // The location where your processor is deployed
-  const processorId = 'pretrained-ocr'; // Using the general OCR processor
+  // Using the specific project and processor details
+  const projectId = 'cloud-vision-api-445700';
+  const location = 'us'; // Default to US location
+  const processorId = 'pretrained-ocr';
 
   try {
     console.log('Starting Document AI processing...');
     
     const endpoint = `https://documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
+    
+    console.log('Making request to endpoint:', endpoint);
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -39,7 +41,7 @@ export async function processDocumentAI(base64Image: string, contentType: string
         statusText: response.statusText,
         error: errorText
       });
-      throw new Error(`Document AI API error: ${response.status} ${response.statusText}`);
+      throw new Error(`שגיאה בזיהוי הקבלה: ${response.status} ${response.statusText}`);
     }
 
     const result = await response.json();
@@ -49,8 +51,7 @@ export async function processDocumentAI(base64Image: string, contentType: string
     const text = result.document?.text || '';
     console.log('Extracted text:', text);
 
-    // For now, we'll use a simple parsing approach
-    // This can be enhanced later with more sophisticated parsing logic
+    // Parse the text into lines and filter out empty lines
     const lines = text.split('\n').filter(line => line.trim());
     
     // Try to find the store name (usually at the top)
@@ -60,19 +61,36 @@ export async function processDocumentAI(base64Image: string, contentType: string
     const items: Array<{ name: string; price: number; quantity?: number }> = [];
     let total = 0;
 
+    // Improved price detection regex for Hebrew receipts
+    const priceRegex = /(?:₪|ש"ח|שח)\s*(\d+\.?\d*)|(\d+\.?\d*)\s*(?:₪|ש"ח|שח)/;
+
     for (const line of lines) {
-      // Look for price patterns (numbers followed by ₪ or preceded by ₪)
-      const priceMatch = line.match(/(\d+\.?\d*)\s*₪|₪\s*(\d+\.?\d*)/);
+      const priceMatch = line.match(priceRegex);
       if (priceMatch) {
         const price = parseFloat(priceMatch[1] || priceMatch[2]);
-        // Remove the price from the line to get the item name
-        const name = line.replace(/(\d+\.?\d*)\s*₪|₪\s*(\d+\.?\d*)/, '').trim();
+        // Remove the price and currency symbols from the line to get the item name
+        const name = line.replace(priceRegex, '').trim();
         
-        if (name && price) {
-          items.push({ name, price });
-          total += price;
+        if (name && price && !isNaN(price)) {
+          // Look for quantity patterns (e.g., "2 יח'" or "x2")
+          const quantityMatch = name.match(/(\d+)\s*(?:יח'?|×|x)/i);
+          const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+          
+          const cleanName = name.replace(/\d+\s*(?:יח'?|×|x)/i, '').trim();
+          
+          items.push({ 
+            name: cleanName, 
+            price,
+            quantity
+          });
+          total += price * quantity;
         }
       }
+    }
+
+    // If no total was found in the regular parsing, use the sum of items
+    if (total === 0 && items.length > 0) {
+      total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
     }
 
     console.log('Parsed results:', {
