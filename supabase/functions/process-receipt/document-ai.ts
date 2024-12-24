@@ -67,30 +67,39 @@ export async function processDocument(
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
 
-  // מילים שמעידות על סכום סופי - רק אחרי המילים האלו נחפש את הסכום הסופי
-  const totalIndicators = ['סה"כ לתשלום', 'סה״כ'];
-
+  // ביטויים שמעידים על סכום סופי
+  const totalIndicators = [
+    'סה"כ לתשלום',
+    'סה״כ לתשלום',
+    'סה"כ',
+    'סה״כ',
+    'לתשלום',
+    'סכום לתשלום',
+    'סך הכל לתשלום'
+  ];
+  
   // מילים שמעידות על פריט
   const itemIndicators = ['קוד', 'מק"ט', 'פריט', 'תאור', 'שם פריט', 'כמות'];
   
   // ביטוי רגולרי לזיהוי מחיר - מספר עם אופציה לנקודה עשרונית ואופציה לסימן מטבע
-  const priceRegex = /([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  const priceRegex = /([0-9,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
 
   let foundTotal = false;
   
-  // עיבוד כל שורה בקבלה
+  // חיפוש הסכום הסופי
   for (const line of lines) {
     // בדיקה אם זו שורת סה"כ
     if (!foundTotal && totalIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
       const match = line.match(priceRegex);
       if (match) {
-        total = parseFloat(match[1].replace(',', ''));
+        total = parseFloat(match[1].replace(/,/g, ''));
         foundTotal = true;
+        console.log('Found total amount:', total, 'in line:', line);
         continue;
       }
     }
 
-    // זיהוי פריטים
+    // זיהוי פריטים רק אם יש מאפיינים של פריט
     if (!storeIndicators.some(indicator => line.includes(indicator)) && 
         !totalIndicators.some(indicator => line.includes(indicator))) {
       
@@ -101,7 +110,7 @@ export async function processDocument(
       if (isItemLine) {
         const priceMatch = line.match(priceRegex);
         if (priceMatch) {
-          const price = parseFloat(priceMatch[1].replace(',', ''));
+          const price = parseFloat(priceMatch[1].replace(/,/g, ''));
           const name = line
             .replace(priceMatch[0], '') // הסרת המחיר
             .replace(/^\d+\s*/, '') // הסרת מספרים בתחילת השורה (כמו מק"ט)
@@ -124,9 +133,20 @@ export async function processDocument(
     }
   }
 
-  // אם לא מצאנו סה"כ, נחשב אותו מסכום הפריטים
-  if (!foundTotal && items.length > 0) {
-    total = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+  // אם לא מצאנו סה"כ, ננסה לחפש את המספר האחרון בקבלה שמופיע אחרי אחד מהביטויים
+  if (!foundTotal) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (totalIndicators.some(indicator => line.includes(indicator))) {
+        const match = line.match(priceRegex);
+        if (match) {
+          total = parseFloat(match[1].replace(/,/g, ''));
+          foundTotal = true;
+          console.log('Found total amount from bottom search:', total, 'in line:', line);
+          break;
+        }
+      }
+    }
   }
 
   console.log('Parsed results:', {
