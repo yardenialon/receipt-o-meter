@@ -22,7 +22,7 @@ export async function processOCR(imageBase64: string, fileType: string, isPDF: b
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'heb', // Changed from 'Hebrew' to 'heb' which is the correct code
+        'language': 'heb,eng', // Using both Hebrew and English for better recognition
         'detectOrientation': 'true',
         'scale': 'true',
         'OCREngine': '2', // Using OCR Engine 2 which has better support for non-Latin scripts
