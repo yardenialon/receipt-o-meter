@@ -10,12 +10,13 @@ export async function processDocument(
   isPDF: boolean,
   accessToken: string
 ): Promise<DocumentAIResult> {
-  const projectId = 'lovable-receipts';
+  // Use the correct project ID from your Google Cloud Console
+  const projectId = Deno.env.get('GOOGLE_PROJECT_ID') || '';
   const location = 'us';
   const processorId = 'pretrained-ocr';
   
-  console.log('Making Document AI API request...');
-  const endpoint = `https://documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
+  console.log('Making Document AI API request with project:', projectId);
+  const endpoint = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
   
   const response = await fetch(endpoint, {
     method: 'POST',
