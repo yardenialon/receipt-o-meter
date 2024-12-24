@@ -15,22 +15,22 @@ const PaymentButtons = () => {
       <div className="flex justify-center gap-6">
         <button
           onClick={() => toast.info('בקרוב - תשלום דרך Bit')}
-          className="group relative h-12 w-20 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
+          className="group relative h-16 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
         >
           <img 
             src="/lovable-uploads/a7f676f4-a172-4122-9bca-dc35a811739a.png" 
             alt="Bit" 
-            className="h-full w-full object-contain transition-transform group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform group-hover:scale-110"
           />
         </button>
         <button
           onClick={() => toast.info('בקרוב - תשלום דרך Paybox')}
-          className="group relative h-12 w-20 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
+          className="group relative h-16 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
         >
           <img 
             src="/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png" 
             alt="Paybox" 
-            className="h-full w-full object-contain transition-transform group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform group-hover:scale-110"
           />
         </button>
       </div>
