@@ -14,10 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const { base64Image, receiptId, contentType } = await req.json();
+    const { base64Image, receiptId, contentType, isPDF } = await req.json();
+    console.log('Processing receipt request:', { receiptId, contentType, isPDF });
 
     if (!base64Image || !receiptId || !contentType) {
-      console.error('Missing required fields:', { base64Image: !!base64Image, receiptId: !!receiptId, contentType: !!contentType });
+      console.error('Missing required fields:', { 
+        hasBase64: !!base64Image, 
+        hasReceiptId: !!receiptId, 
+        hasContentType: !!contentType 
+      });
+      
       return new Response(
         JSON.stringify({ 
           error: 'חסרים שדות נדרשים',
@@ -34,16 +40,17 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing receipt:', { receiptId, contentType });
-
     try {
-      const { items, total, storeName } = await processOCR(base64Image, contentType);
+      console.log('Starting OCR processing for receipt:', receiptId);
+      const { items, total, storeName } = await processOCR(base64Image, contentType, isPDF);
+      console.log('OCR processing completed:', { itemsCount: items.length, total, storeName });
 
       // Initialize Supabase client
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
       const supabase = createClient(supabaseUrl, supabaseKey);
 
+      console.log('Updating receipt details in database:', { receiptId, storeName, total });
       // Update receipt with store name and total
       const { error: updateError } = await supabase
         .from('receipts')
@@ -58,8 +65,9 @@ serve(async (req) => {
         throw new Error('שגיאה בעדכון פרטי הקבלה');
       }
 
-      // Insert items
+      // Insert items if any were found
       if (items.length > 0) {
+        console.log('Inserting receipt items:', items.length);
         const { error: itemsError } = await supabase
           .from('receipt_items')
           .insert(items.map(item => ({
