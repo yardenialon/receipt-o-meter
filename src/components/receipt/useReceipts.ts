@@ -8,6 +8,7 @@ export interface ReceiptItem {
   name: string;
   price: number;
   quantity: number;
+  refundable_amount: number;
   created_at: string;
 }
 
@@ -15,7 +16,8 @@ export interface ReceiptData {
   id: string;
   store_name: string;
   total: number;
-  image_url: string;
+  total_refundable: number;
+  image_url: string | null;
   created_at: string;
   user_id: string;
   receipt_items: ReceiptItem[];

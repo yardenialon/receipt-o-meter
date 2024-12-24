@@ -1,25 +1,9 @@
 import { useState } from 'react';
-import { useReceipts } from './receipt/useReceipts';
+import { useReceipts, ReceiptData } from './receipt/useReceipts';
 import { ReceiptItem } from './receipt/ReceiptItem';
 import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-
-interface ReceiptData {
-  id: string;
-  store_name: string;
-  total: number;
-  total_refundable: number;
-  image_url: string;
-  created_at: string;
-  receipt_items: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    refundable_amount: number;
-  }[];
-}
 
 const ReceiptList = () => {
   const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
