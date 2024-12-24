@@ -46,9 +46,10 @@ export async function getGoogleAccessToken(serviceAccountJson: string): Promise<
   const jwtClaimSet = {
     iss: serviceAccount.client_email,
     sub: serviceAccount.client_email,
-    aud: 'https://documentai.googleapis.com/',
+    aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/cloud-platform'
   };
 
   // Create JWT
