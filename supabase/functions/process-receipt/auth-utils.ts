@@ -58,10 +58,20 @@ export async function getGoogleAccessToken(serviceAccountJson: string): Promise<
   const signatureInput = `${headerB64}.${claimSetB64}`;
 
   try {
-    // Sign the JWT
+    // Convert PEM to DER format
+    const pemHeader = '-----BEGIN PRIVATE KEY-----';
+    const pemFooter = '-----END PRIVATE KEY-----';
+    const pemContents = serviceAccount.private_key
+      .replace(pemHeader, '')
+      .replace(pemFooter, '')
+      .replace(/\s/g, '');
+    
+    const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+    // Import the key
     const key = await crypto.subtle.importKey(
       'pkcs8',
-      encoder.encode(serviceAccount.private_key),
+      binaryDer,
       {
         name: 'RSASSA-PKCS1-v1_5',
         hash: 'SHA-256',
@@ -76,7 +86,10 @@ export async function getGoogleAccessToken(serviceAccountJson: string): Promise<
       encoder.encode(signatureInput)
     );
 
-    const jwt = `${signatureInput}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
+    const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
+    const jwt = `${signatureInput}.${signatureB64}`;
+
+    console.log('Successfully created JWT, requesting access token...');
 
     // Get access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -97,9 +110,10 @@ export async function getGoogleAccessToken(serviceAccountJson: string): Promise<
     }
 
     const { access_token } = await tokenResponse.json();
+    console.log('Successfully obtained access token');
     return access_token;
   } catch (error) {
     console.error('Error getting access token:', error);
-    throw new Error('Failed to authenticate with Google Cloud');
+    throw new Error(`Failed to authenticate with Google Cloud: ${error.message}`);
   }
 }
