@@ -1,138 +1,164 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { DocumentAIResult } from './types.ts';
 
-interface ProcessedItem {
-  name: string;
-  price: number;
-  quantity?: number;
+interface DocumentAIResult {
+  items: Array<{ name: string; price: number; quantity?: number }>;
+  total: number;
+  storeName: string;
 }
 
 export async function processDocument(
-  base64Image: string,
-  contentType: string,
+  base64Image: string, 
+  contentType: string, 
   isPDF: boolean,
   accessToken: string
-): Promise<{
-  items: ProcessedItem[];
-  total: number;
-  storeName: string;
-}> {
-  try {
-    const projectId = Deno.env.get('GOOGLE_PROJECT_ID');
-    if (!projectId) {
-      throw new Error('Missing GOOGLE_PROJECT_ID environment variable');
-    }
+): Promise<DocumentAIResult> {
+  const projectId = Deno.env.get('GOOGLE_PROJECT_ID') || '';
+  const location = 'us';
+  const processorId = '9c913ce7c435a20e';
+  
+  console.log('Making Document AI API request with project:', projectId);
+  const endpoint = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`;
+  
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      rawDocument: {
+        content: base64Image,
+        mimeType: contentType,
+      }
+    })
+  });
 
-    // Use the general OCR processor
-    const processorId = 'pretrained-ocr';
-    const processorLocation = 'us';
-
-    console.log('Document AI Request:', {
-      projectId,
-      processorLocation,
-      processorId,
-      contentType,
-      isPDF
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Document AI API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText
     });
+    throw new Error(`Error processing document: ${response.status} ${response.statusText}`);
+  }
 
-    const url = `https://documentai.googleapis.com/v1/projects/${projectId}/locations/${processorLocation}/processors/${processorId}:process`;
+  const result = await response.json();
+  console.log('Document AI response received');
 
-    console.log('Making request to Document AI API:', url);
+  const text = result.document?.text || '';
+  console.log('Extracted text:', text);
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        rawDocument: {
-          content: base64Image,
-          mimeType: contentType,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Document AI API Error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText
-      });
-      throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
+  const lines = text.split('\n').filter(line => line.trim());
+  
+  // מילים שמעידות על שם החנות
+  const storeIndicators = ['בע"מ', 'חשבונית מס', 'קבלה', 'חשבון', 'עסק מורשה'];
+  let storeName = '';
+  
+  // חיפוש שם החנות בשורות הראשונות
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    if (storeIndicators.some(indicator => lines[i].includes(indicator))) {
+      storeName = lines[i].replace(/(חשבונית מס|קבלה|חשבון|עסק מורשה)/g, '').trim();
+      break;
     }
+  }
+  if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
 
-    const data = await response.json();
-    console.log('Document AI response:', JSON.stringify(data, null, 2));
+  const items: Array<{ name: string; price: number; quantity?: number }> = [];
+  let total = 0;
 
-    const text = data.document.text;
-    const lines = text.split('\n');
+  // ביטויים שמעידים על סכום סופי
+  const totalIndicators = [
+    'סה"כ לתשלום',
+    'סה״כ לתשלום',
+    'סה"כ',
+    'סה״כ',
+    'לתשלום',
+    'סכום לתשלום',
+    'סך הכל לתשלום'
+  ];
+  
+  // מילים שמעידות על פריט
+  const itemIndicators = ['קוד', 'מק"ט', 'פריט', 'תאור', 'שם פריט', 'כמות'];
+  
+  // ביטוי רגולרי לזיהוי מחיר - מספר עם אופציה לנקודה עשרונית ואופציה לסימן מטבע
+  const priceRegex = /([0-9,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
 
-    // Find store name (usually in the first few lines)
-    let storeName = '';
-    for (let i = 0; i < Math.min(5, lines.length); i++) {
-      const line = lines[i].trim();
-      if (line && line.length > 2 && !line.match(/^\d/)) {
-        storeName = line;
-        break;
+  let foundTotal = false;
+  
+  // חיפוש הסכום הסופי
+  for (const line of lines) {
+    // בדיקה אם זו שורת סה"כ
+    if (!foundTotal && totalIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
+      const match = line.match(priceRegex);
+      if (match) {
+        total = parseFloat(match[1].replace(/,/g, ''));
+        foundTotal = true;
+        console.log('Found total amount:', total, 'in line:', line);
+        continue;
       }
     }
 
-    // Find items with prices
-    const items: ProcessedItem[] = [];
-    const priceRegex = /([0-9]+[.,]?[0-9]*)/;
-    
-    for (const line of lines) {
-      const priceMatch = line.match(priceRegex);
-      if (priceMatch) {
-        const price = parseFloat(priceMatch[1].replace(',', ''));
-        if (!isNaN(price) && price > 0) {
-          // Extract item name (everything before the price)
-          let name = line.substring(0, priceMatch.index).trim();
-          // Remove any leading numbers or special characters
-          name = name.replace(/^[\d\W]+/, '').trim();
-          
-          if (name) {
+    // זיהוי פריטים רק אם יש מאפיינים של פריט
+    if (!storeIndicators.some(indicator => line.includes(indicator)) && 
+        !totalIndicators.some(indicator => line.includes(indicator))) {
+      
+      // בדיקה אם השורה מכילה מאפיין של פריט
+      const isItemLine = itemIndicators.some(indicator => line.includes(indicator)) || 
+                        /[א-ת]/.test(line); // מכיל אותיות בעברית
+      
+      if (isItemLine) {
+        const priceMatch = line.match(priceRegex);
+        if (priceMatch) {
+          const price = parseFloat(priceMatch[1].replace(/,/g, ''));
+          const name = line
+            .replace(priceMatch[0], '') // הסרת המחיר
+            .replace(/^\d+\s*/, '') // הסרת מספרים בתחילת השורה (כמו מק"ט)
+            .trim();
+
+          // וידוא שיש שם תקין לפריט ומחיר חיובי
+          if (name && !isNaN(price) && price > 0) {
+            // חיפוש כמות בשורה
+            const quantityMatch = line.match(/x\s*(\d+)/i) || line.match(/כמות:?\s*(\d+)/);
+            const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+
             items.push({
               name,
               price,
-              quantity: 1
+              quantity
             });
           }
         }
       }
     }
+  }
 
-    // Find total amount (looking for specific keywords)
-    let total = 0;
-    const totalKeywords = ['סה"כ לתשלום', 'סה"כ', 'לתשלום', 'total'];
-    
-    // Search from bottom to top for total amount
+  // אם לא מצאנו סה"כ, ננסה לחפש את המספר האחרון בקבלה שמופיע אחרי אחד מהביטויים
+  if (!foundTotal) {
     for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i].toLowerCase();
-      if (totalKeywords.some(keyword => line.includes(keyword.toLowerCase()))) {
-        const priceMatch = line.match(priceRegex);
-        if (priceMatch) {
-          total = parseFloat(priceMatch[1].replace(',', ''));
+      const line = lines[i];
+      if (totalIndicators.some(indicator => line.includes(indicator))) {
+        const match = line.match(priceRegex);
+        if (match) {
+          total = parseFloat(match[1].replace(/,/g, ''));
+          foundTotal = true;
+          console.log('Found total amount from bottom search:', total, 'in line:', line);
           break;
         }
       }
     }
-
-    console.log('Processed receipt:', {
-      storeName,
-      itemsCount: items.length,
-      total,
-      items
-    });
-
-    return {
-      items,
-      total,
-      storeName
-    };
-  } catch (error) {
-    console.error('Error processing document:', error);
-    throw error;
   }
+
+  console.log('Parsed results:', {
+    storeName,
+    itemCount: items.length,
+    total,
+    items
+  });
+
+  return {
+    items,
+    total,
+    storeName
+  };
 }
