@@ -22,7 +22,7 @@ export async function processOCR(imageBase64: string, fileType: string): Promise
       },
       body: new URLSearchParams({
         'base64Image': base64Image,
-        'language': 'Hebrew', // Changed from 'heb' to 'Hebrew'
+        'language': 'heb', // Changed from 'Hebrew' to 'heb'
         'detectOrientation': 'true',
         'scale': 'true',
         'OCREngine': '2',
