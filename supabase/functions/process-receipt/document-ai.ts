@@ -64,50 +64,69 @@ export async function processDocument(
   }
   if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
 
-  // ביטוי רגולרי לזיהוי מבצעים ומחירים
-  const specialOfferRegex = /השבוע במבצע\s+(.+?)\s+רק\s+₪?(\d+\.?\d*)/i;
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
+  let foundTotal = false;
+
+  // ביטוי רגולרי לזיהוי כמות פריטים
+  const itemCountRegex = /כמות פריטים:?\s*(\d+)/i;
+  let expectedItemCount = 0;
+
+  // חיפוש כמות פריטים
+  for (const line of lines) {
+    const countMatch = line.match(itemCountRegex);
+    if (countMatch) {
+      expectedItemCount = parseInt(countMatch[1]);
+      console.log('Expected item count:', expectedItemCount);
+      break;
+    }
+  }
+
+  // ביטוי רגולרי לזיהוי פריטים ומחירים
+  const itemRegex = /^([^₪]+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  
+  // ביטוי רגולרי לזיהוי סכום כולל
+  const totalRegex = /(?:סה"כ|סה"כ לתשלום|סכום כולל|לתשלום)[:\s]*₪?\s*([\d,]+\.?\d*)/i;
 
   // עיבוד כל שורה בקבלה
   for (const line of lines) {
-    // בדיקה אם זה מבצע מיוחד
-    const specialOfferMatch = line.match(specialOfferRegex);
-    if (specialOfferMatch) {
-      const [, description, priceStr] = specialOfferMatch;
-      const price = parseFloat(priceStr);
-      
-      if (!isNaN(price)) {
-        // בדיקה אם יש כמות בתיאור (למשל "2 בקבוקי")
-        const quantityMatch = description.match(/(\d+)\s+/);
-        const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-        
-        items.push({
-          name: description.trim(),
-          price,
-          quantity
-        });
-        total += price;
+    // קודם נבדוק אם זה סכום כולל
+    const totalMatch = line.match(totalRegex);
+    if (totalMatch && !foundTotal) {
+      const totalAmount = parseFloat(totalMatch[1].replace(',', ''));
+      if (!isNaN(totalAmount)) {
+        total = totalAmount;
+        foundTotal = true;
+        console.log('Found total amount:', total);
       }
       continue;
     }
 
-    // בדיקת שורות רגילות עם ברקוד
-    const regularItemRegex = /^.*?(\d{8,})\s+(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
-    const regularMatch = line.match(regularItemRegex);
-    if (regularMatch) {
-      const [, barcode, name, priceStr] = regularMatch;
+    // אם זו לא שורת סיכום, ננסה לזהות פריט
+    const itemMatch = line.match(itemRegex);
+    if (itemMatch) {
+      const [, name, priceStr] = itemMatch;
       const price = parseFloat(priceStr.replace(',', ''));
       
-      if (!isNaN(price)) {
+      // נוודא שזה לא מבצע
+      if (!line.includes('השבוע במבצע') && !isNaN(price)) {
         items.push({
-          name: `${name.trim()} (${barcode})`,
+          name: name.trim(),
           price,
           quantity: 1
         });
-        total += price;
+        
+        // אם לא מצאנו סכום כולל, נחשב אותו
+        if (!foundTotal) {
+          total += price;
+        }
       }
     }
+  }
+
+  // אם מצאנו כמות פריטים צפויה, נוודא שזיהינו את כל הפריטים
+  if (expectedItemCount > 0 && items.length < expectedItemCount) {
+    console.log(`Warning: Found only ${items.length} items out of ${expectedItemCount} expected items`);
   }
 
   // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה
@@ -123,6 +142,7 @@ export async function processDocument(
   console.log('Parsed results:', {
     storeName,
     itemCount: items.length,
+    expectedItemCount,
     total,
     items
   });
