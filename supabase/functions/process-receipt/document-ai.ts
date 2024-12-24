@@ -66,67 +66,48 @@ export async function processDocument(
 
   const items: Array<{ name: string; price: number; quantity?: number }> = [];
   let total = 0;
-  let foundTotal = false;
 
-  // ביטוי רגולרי לזיהוי כמות פריטים
-  const itemCountRegex = /כמות פריטים:?\s*(\d+)/i;
-  let expectedItemCount = 0;
-
-  // חיפוש כמות פריטים
-  for (const line of lines) {
-    const countMatch = line.match(itemCountRegex);
-    if (countMatch) {
-      expectedItemCount = parseInt(countMatch[1]);
-      console.log('Expected item count:', expectedItemCount);
-      break;
-    }
-  }
-
-  // ביטוי רגולרי לזיהוי פריטים ומחירים
-  const itemRegex = /^([^₪]+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  // ביטוי רגולרי משופר לזיהוי פריטים ומחירים
+  // מזהה שורות שמתחילות במספר (מחיר) ומכילות טקסט בעברית
+  const itemRegex = /^(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+)\s+(.+?)(?:\s+\d+\.?\d*)?$/;
   
-  // ביטוי רגולרי לזיהוי סכום כולל
-  const totalRegex = /(?:סה"כ|סה"כ לתשלום|סכום כולל|לתשלום)[:\s]*₪?\s*([\d,]+\.?\d*)/i;
-
   // עיבוד כל שורה בקבלה
   for (const line of lines) {
-    // קודם נבדוק אם זה סכום כולל
-    const totalMatch = line.match(totalRegex);
-    if (totalMatch && !foundTotal) {
-      const totalAmount = parseFloat(totalMatch[1].replace(',', ''));
-      if (!isNaN(totalAmount)) {
-        total = totalAmount;
-        foundTotal = true;
-        console.log('Found total amount:', total);
-      }
-      continue;
-    }
-
-    // אם זו לא שורת סיכום, ננסה לזהות פריט
     const itemMatch = line.match(itemRegex);
     if (itemMatch) {
-      const [, name, priceStr] = itemMatch;
-      const price = parseFloat(priceStr.replace(',', ''));
+      const [, unitPrice, totalPrice, quantity, name] = itemMatch;
+      const price = parseFloat(totalPrice);
       
-      // נוודא שזה לא מבצע
-      if (!line.includes('השבוע במבצע') && !isNaN(price)) {
+      if (!isNaN(price)) {
         items.push({
           name: name.trim(),
           price,
-          quantity: 1
+          quantity: parseInt(quantity)
         });
+        total += price;
+      }
+    }
+  }
+
+  // אם לא מצאנו פריטים, ננסה לחפש בפורמט אחר
+  if (items.length === 0) {
+    const simpleItemRegex = /^(.+?)\s+([\d,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+    for (const line of lines) {
+      const itemMatch = line.match(simpleItemRegex);
+      if (itemMatch) {
+        const [, name, priceStr] = itemMatch;
+        const price = parseFloat(priceStr.replace(',', ''));
         
-        // אם לא מצאנו סכום כולל, נחשב אותו
-        if (!foundTotal) {
+        if (!isNaN(price)) {
+          items.push({
+            name: name.trim(),
+            price,
+            quantity: 1
+          });
           total += price;
         }
       }
     }
-  }
-
-  // אם מצאנו כמות פריטים צפויה, נוודא שזיהינו את כל הפריטים
-  if (expectedItemCount > 0 && items.length < expectedItemCount) {
-    console.log(`Warning: Found only ${items.length} items out of ${expectedItemCount} expected items`);
   }
 
   // אם לא מצאנו פריטים, נחזיר הודעת שגיאה מתאימה
@@ -142,7 +123,6 @@ export async function processDocument(
   console.log('Parsed results:', {
     storeName,
     itemCount: items.length,
-    expectedItemCount,
     total,
     items
   });
