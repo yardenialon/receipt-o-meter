@@ -28,7 +28,7 @@ const PaymentButtons = () => {
           className="group relative h-12 w-20 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-all hover:scale-105 hover:shadow-md active:scale-95"
         >
           <img 
-            src="/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png" 
+            src="/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png" 
             alt="Paybox" 
             className="h-full w-full object-contain transition-transform group-hover:scale-110"
           />
