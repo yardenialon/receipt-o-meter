@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { processOCR } from "./ocr-utils.ts"
+import { processDocumentAI } from "./ocr-utils.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,9 +34,9 @@ serve(async (req) => {
     }
 
     try {
-      console.log('Starting OCR processing for receipt:', receiptId);
-      const { items, total, storeName } = await processOCR(base64Image, contentType, isPDF);
-      console.log('OCR processing completed:', { itemsCount: items.length, total, storeName });
+      console.log('Starting Document AI processing for receipt:', receiptId);
+      const { items, total, storeName } = await processDocumentAI(base64Image, contentType, isPDF);
+      console.log('Document AI processing completed:', { itemsCount: items.length, total, storeName });
 
       // Initialize Supabase client
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -90,7 +90,7 @@ serve(async (req) => {
         }
       );
     } catch (error) {
-      console.error('Error in OCR processing:', error);
+      console.error('Error in Document AI processing:', error);
       
       // Initialize Supabase client for error update
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';

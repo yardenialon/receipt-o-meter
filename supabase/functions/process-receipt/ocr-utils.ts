@@ -4,109 +4,87 @@ interface OCRResult {
   storeName: string;
 }
 
-async function detectText(imageBytes: string): Promise<string[]> {
+async function processDocumentAI(imageBytes: string, contentType: string, isPDF: boolean): Promise<OCRResult> {
   const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY');
   if (!apiKey) {
     throw new Error('Missing Google Cloud API key');
   }
 
-  const response = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        requests: [
-          {
-            image: {
-              content: imageBytes,
-            },
-            features: [
-              {
-                type: 'TEXT_DETECTION',
-                model: 'builtin/latest',
-              },
-            ],
-            imageContext: {
-              languageHints: ['he', 'en'],
-            },
-          },
-        ],
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Google Vision API error:', error);
-    throw new Error(`שגיאה בזיהוי טקסט: ${response.status} ${response.statusText}`);
-  }
-
-  const result = await response.json();
-  if (!result.responses?.[0]?.textAnnotations?.[0]?.description) {
-    throw new Error('לא זוהה טקסט בתמונה');
-  }
-
-  return result.responses[0].textAnnotations[0].description.split('\n');
-}
-
-export async function processOCR(
-  base64Image: string,
-  contentType: string,
-  isPDF: boolean
-): Promise<OCRResult> {
-  console.log('Starting OCR processing with params:', { contentType, isPDF });
-
   try {
-    const textLines = await detectText(base64Image);
-    console.log('Extracted text lines:', textLines);
+    // First, process the document using Document AI
+    const response = await fetch(
+      `https://documentai.googleapis.com/v1/projects/1234567890/locations/us/processors/RECEIPT_PROCESSOR_ID/process`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rawDocument: {
+            content: imageBytes,
+            mimeType: contentType,
+          },
+        }),
+      }
+    );
 
-    // Process the text to extract items, total, and store name
-    const items: Array<{ name: string; price: number; quantity?: number }> = [];
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Google Document AI API error:', error);
+      throw new Error(`שגיאה בזיהוי הקבלה: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('Document AI response:', result);
+
+    // Extract structured data from the Document AI response
+    const document = result.document;
+    const entities = document.entities || [];
+    
+    // Initialize variables
     let total = 0;
     let storeName = '';
+    const items: Array<{ name: string; price: number; quantity?: number }> = [];
 
-    // Try to find store name in first few lines
-    for (let i = 0; i < Math.min(3, textLines.length); i++) {
-      if (textLines[i].length > 3 && !/[₪0-9]/.test(textLines[i])) {
-        storeName = textLines[i].trim();
-        break;
-      }
-    }
+    // Process entities
+    entities.forEach((entity: any) => {
+      switch (entity.type) {
+        case 'receipt_total':
+          total = parseFloat(entity.mentionText) || 0;
+          break;
+        case 'supplier_name':
+          storeName = entity.mentionText || '';
+          break;
+        case 'line_item':
+          const item = {
+            name: entity.mentionText || '',
+            price: 0,
+            quantity: 1
+          };
 
-    // Look for price patterns in the text
-    const priceRegex = /(\d+(?:\.\d{2})?)\s*(?:₪|ש"ח|שח)/;
-    let maxPrice = 0;
+          // Look for associated properties
+          entity.properties?.forEach((prop: any) => {
+            if (prop.type === 'line_item_price') {
+              item.price = parseFloat(prop.mentionText) || 0;
+            } else if (prop.type === 'line_item_quantity') {
+              item.quantity = parseFloat(prop.mentionText) || 1;
+            }
+          });
 
-    textLines.forEach((line) => {
-      const match = line.match(priceRegex);
-      if (match) {
-        const price = parseFloat(match[1]);
-        if (price > maxPrice) {
-          maxPrice = price;
-          total = price; // Assume the highest price is the total
-        }
-        if (price < total) {
-          // Assume this is an item
-          const name = line.split(match[0])[0].trim();
-          if (name && name.length > 1) {
-            items.push({ name, price });
+          if (item.name && item.price > 0) {
+            items.push(item);
           }
-        }
+          break;
       }
     });
 
-    console.log('Processed receipt data:', {
-      storeName,
-      total,
-      itemCount: items.length,
-    });
-
+    console.log('Extracted data:', { storeName, total, itemCount: items.length });
     return { items, total, storeName };
   } catch (error) {
-    console.error('Error in OCR processing:', error);
+    console.error('Error in Document AI processing:', error);
     throw new Error(`שגיאה בעיבוד הקבלה: ${error.message}`);
   }
 }
+
+export { processDocumentAI };
