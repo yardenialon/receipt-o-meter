@@ -56,10 +56,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
-      <div className="container mx-auto px-6 py-12">
-        <div className="flex items-center gap-6 mb-12">
-          <BillBeLogo size={64} className="text-primary-600" />
-          <div>
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex flex-col items-center mb-16">
+          <BillBeLogo size={96} className="text-primary-600 mb-8" />
+          <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
               ניהול קבלות
             </h1>
