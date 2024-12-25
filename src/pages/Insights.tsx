@@ -1,15 +1,17 @@
-import { SpendingByCategory } from "@/components/analytics/SpendingByCategory";
-import { MonthlyTrends } from "@/components/analytics/MonthlyTrends";
-import { TopStores } from "@/components/analytics/TopStores";
+import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
+import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
+import { TopStores } from '@/components/analytics/TopStores';
 
 const Insights = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">תובנות והוצאות</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <SpendingByCategory />
+    <div className="p-6 space-y-6 w-full">
+      <h1 className="text-2xl font-bold mb-6">תובנות</h1>
+      <div className="grid gap-6">
         <MonthlyTrends />
-        <TopStores />
+        <div className="grid md:grid-cols-2 gap-6">
+          <SpendingByCategory />
+          <TopStores />
+        </div>
       </div>
     </div>
   );

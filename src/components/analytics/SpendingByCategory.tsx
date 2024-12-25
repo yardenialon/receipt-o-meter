@@ -43,11 +43,11 @@ export const SpendingByCategory = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full h-full">
         <CardHeader>
           <CardTitle>הוצאות לפי קטגוריה</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
+        <CardContent className="h-[500px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -55,18 +55,18 @@ export const SpendingByCategory = () => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full h-full">
       <CardHeader>
         <CardTitle>הוצאות לפי קטגוריה</CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px] px-2">
+      <CardContent className="h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+          <PieChart margin={{ top: 20, right: 100, bottom: 20, left: 100 }}>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
-              outerRadius={140}
+              outerRadius={160}
               fill="#8884d8"
               dataKey="value"
               label={({ name, value, percent }) => 

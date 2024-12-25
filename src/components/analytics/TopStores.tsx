@@ -25,11 +25,11 @@ export const TopStores = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full h-full">
         <CardHeader>
           <CardTitle>חנויות מובילות</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
+        <CardContent className="h-[500px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -37,30 +37,30 @@ export const TopStores = () => {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full h-full">
       <CardHeader>
         <CardTitle>חנויות מובילות</CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px] px-2">
+      <CardContent className="h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 20, right: 80, left: 140, bottom: 20 }}
+            margin={{ top: 20, right: 100, left: 160, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               type="number"
               tickFormatter={(value) => `₪${value}`}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={15}
+              tickMargin={20}
             />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={140}
+              width={160}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={15}
+              tickMargin={20}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}

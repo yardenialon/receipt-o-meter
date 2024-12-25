@@ -46,7 +46,7 @@ export const MonthlyTrends = () => {
         <CardHeader>
           <CardTitle>מגמות חודשיות</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
+        <CardContent className="h-[500px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -66,23 +66,23 @@ export const MonthlyTrends = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[400px] px-2">
+      <CardContent className="h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={monthlyData}
-            margin={{ top: 30, right: 60, left: 60, bottom: 30 }}
+            margin={{ top: 30, right: 80, left: 80, bottom: 30 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="month"
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={15}
+              tickMargin={20}
             />
             <YAxis 
-              width={80}
+              width={100}
               tickFormatter={(value) => `₪${value}`}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={15}
+              tickMargin={20}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
