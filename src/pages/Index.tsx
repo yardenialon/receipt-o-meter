@@ -5,17 +5,41 @@ import ReceiptList from '@/components/ReceiptList';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
-import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
-import { TopStores } from '@/components/analytics/TopStores';
 import { BillBeLogo } from '@/components/BillBeLogo';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut, isLoading } = useAuth();
   const isMobile = useIsMobile();
 
-  // Handle loading state
+  const { data: monthlyStats } = useQuery({
+    queryKey: ['monthly-stats'],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: receipts, error } = await supabase
+        .from('receipts')
+        .select('total, created_at')
+        .gte('created_at', startOfMonth.toISOString());
+
+      if (error) throw error;
+
+      const total = receipts.reduce((sum, receipt) => sum + (receipt.total || 0), 0);
+      const count = receipts.length;
+
+      return {
+        total,
+        count,
+        month: startOfMonth.toLocaleString('he-IL', { month: 'long' })
+      };
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex items-center justify-center">
@@ -27,13 +51,11 @@ const Index = () => {
     );
   }
 
-  // Redirect if not authenticated
   if (!user) {
     navigate('/login');
     return null;
   }
 
-  // Extract username from email
   const username = user.email?.split('@')[0] || '';
 
   const handleSignOut = async () => {
@@ -77,14 +99,30 @@ const Index = () => {
           </Button>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">תובנות והוצאות</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <SpendingByCategory />
-            <MonthlyTrends />
-            <TopStores />
+        {monthlyStats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>סה"כ הוצאות {monthlyStats.month}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-primary-600">
+                  ₪{monthlyStats.total.toFixed(2)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>מספר קבלות החודש</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-primary-600">
+                  {monthlyStats.count}
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        )}
 
         <UploadZone />
         <ReceiptList />
