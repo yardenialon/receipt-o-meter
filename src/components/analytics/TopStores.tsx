@@ -48,7 +48,7 @@ export const TopStores = () => {
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" width={100} />
             <Tooltip formatter={(value) => `₪${value}`} />
-            <Bar dataKey="total" fill="#82ca9d" />
+            <Bar dataKey="total" fill="#47d193" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

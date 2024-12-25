@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+const COLORS = ['#47d193', '#6ee7b7', '#a7f3d0', '#d1fae5', '#ecfdf3'];
 
 export const SpendingByCategory = () => {
   const { data: categoryData, isLoading } = useQuery({
@@ -65,16 +65,16 @@ export const SpendingByCategory = () => {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, value }) => `${name}: ₪${value}`}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
+              label={({ name, value }) => `${name}: ₪${value}`}
             >
               {categoryData?.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip formatter={(value) => `₪${value}`} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>

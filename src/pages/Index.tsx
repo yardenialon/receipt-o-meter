@@ -75,9 +75,6 @@ const Index = () => {
           </Button>
         </div>
 
-        <UploadZone />
-        <ReceiptList />
-        
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-4">תובנות והוצאות</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -86,6 +83,9 @@ const Index = () => {
             <TopStores />
           </div>
         </div>
+
+        <UploadZone />
+        <ReceiptList />
       </div>
     </div>
   );

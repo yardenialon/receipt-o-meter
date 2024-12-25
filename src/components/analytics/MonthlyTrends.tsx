@@ -72,9 +72,9 @@ export const MonthlyTrends = () => {
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis />
+            <YAxis width={50} />
             <Tooltip formatter={(value) => `₪${value}`} />
-            <Bar dataKey="total" fill="#8884d8" />
+            <Bar dataKey="total" fill="#47d193" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
