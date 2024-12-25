@@ -27,6 +27,42 @@ export type Database = {
         }
         Relationships: []
       }
+      product_alternatives: {
+        Row: {
+          alternative_name: string
+          alternative_type: string
+          benefits: string
+          category: string
+          created_at: string
+          id: string
+          price_range_max: number | null
+          price_range_min: number | null
+          product_name: string
+        }
+        Insert: {
+          alternative_name: string
+          alternative_type: string
+          benefits: string
+          category: string
+          created_at?: string
+          id?: string
+          price_range_max?: number | null
+          price_range_min?: number | null
+          product_name: string
+        }
+        Update: {
+          alternative_name?: string
+          alternative_type?: string
+          benefits?: string
+          category?: string
+          created_at?: string
+          id?: string
+          price_range_max?: number | null
+          price_range_min?: number | null
+          product_name?: string
+        }
+        Relationships: []
+      }
       receipt_items: {
         Row: {
           category: string | null
