@@ -1,4 +1,4 @@
-import { Home, LogOut, Menu, PieChart, X } from "lucide-react";
+import { Grid3x3, Home, LogOut, PieChart, X } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -45,7 +45,7 @@ export function AppSidebar() {
       {/* המבורגר למובייל */}
       <div className="fixed top-0 left-0 p-4 z-50 md:hidden">
         <SidebarTrigger>
-          <Menu className="h-6 w-6" />
+          <Grid3x3 className="h-6 w-6" />
         </SidebarTrigger>
       </div>
 
