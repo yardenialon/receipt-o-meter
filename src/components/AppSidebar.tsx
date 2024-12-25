@@ -58,13 +58,13 @@ export function AppSidebar() {
   return (
     <>
       {/* המבורגר למובייל */}
-      <div className="fixed top-0 left-0 p-4 z-50 md:hidden">
+      <div className="fixed top-4 left-4 z-50 md:hidden">
         <SidebarTrigger>
           <MenuIcon />
         </SidebarTrigger>
       </div>
 
-      <Sidebar>
+      <Sidebar className="fixed inset-y-0 right-0 z-40">
         <SidebarContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex justify-between items-center p-4 md:hidden">
             <span className="font-semibold">תפריט</span>
