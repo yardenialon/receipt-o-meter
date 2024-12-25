@@ -32,20 +32,22 @@ export const SpendingByCategory = () => {
         return acc;
       }, {});
 
-      return Object.entries(categoryTotals).map(([name, value]) => ({
-        name,
-        value: Number(value.toFixed(2))
-      }));
+      return Object.entries(categoryTotals)
+        .map(([name, value]) => ({
+          name,
+          value: Number(value.toFixed(2))
+        }))
+        .sort((a, b) => b.value - a.value); // מיון לפי ערך יורד
     }
   });
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>הוצאות לפי קטגוריה</CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
+        <CardContent className="h-[400px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -53,31 +55,49 @@ export const SpendingByCategory = () => {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>הוצאות לפי קטגוריה</CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[400px] px-2">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius={120}
               fill="#8884d8"
               dataKey="value"
-              label={({ name, value }) => `${name}: ₪${value}`}
+              label={({ name, value, percent }) => 
+                `${name}: ₪${value} (${(percent * 100).toFixed(0)}%)`
+              }
               labelLine={true}
               isAnimationActive={false}
             >
               {categoryData?.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={COLORS[index % COLORS.length]}
+                  strokeWidth={2}
+                />
               ))}
             </Pie>
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ direction: 'rtl' }}
+              contentStyle={{ 
+                direction: 'rtl', 
+                fontSize: '14px', 
+                padding: '10px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+              }}
+            />
+            <Legend 
+              verticalAlign="bottom" 
+              height={36}
+              formatter={(value) => <span style={{ fontSize: '14px' }}>{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>

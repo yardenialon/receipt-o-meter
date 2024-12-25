@@ -25,11 +25,11 @@ export const TopStores = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>חנויות מובילות</CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
+        <CardContent className="h-[400px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -37,44 +37,47 @@ export const TopStores = () => {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>חנויות מובילות</CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[400px] px-2">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 5, right: 60, left: 120, bottom: 5 }}
+            margin={{ top: 20, right: 60, left: 120, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               type="number"
               tickFormatter={(value) => `₪${value}`}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: '#374151', fontSize: 14 }}
+              tickMargin={10}
             />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={100}
-              tick={{ fill: '#374151' }}
+              width={120}
+              tick={{ fill: '#374151', fontSize: 14 }}
+              tickMargin={10}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ direction: 'rtl' }}
+              contentStyle={{ direction: 'rtl', fontSize: '14px', padding: '10px' }}
               wrapperStyle={{ zIndex: 1000 }}
             />
             <Bar 
               dataKey="total" 
               fill="#47d193"
+              radius={[0, 4, 4, 0]}
               isAnimationActive={false}
               label={{ 
                 position: 'right',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                dx: 5,
-                className: 'text-sm'
+                fontSize: 14,
+                dx: 10
               }}
             />
           </BarChart>

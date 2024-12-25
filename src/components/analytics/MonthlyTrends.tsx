@@ -42,11 +42,11 @@ export const MonthlyTrends = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>מגמות חודשיות</CardTitle>
         </CardHeader>
-        <CardContent className="h-[300px] flex items-center justify-center">
+        <CardContent className="h-[400px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -54,7 +54,7 @@ export const MonthlyTrends = () => {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           מגמות חודשיות
@@ -66,37 +66,40 @@ export const MonthlyTrends = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[400px] px-2">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={monthlyData}
-            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
+            margin={{ top: 30, right: 40, left: 40, bottom: 30 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="month"
-              tick={{ fill: '#374151' }}
+              tick={{ fill: '#374151', fontSize: 14 }}
+              tickMargin={10}
             />
             <YAxis 
-              width={50}
+              width={80}
               tickFormatter={(value) => `₪${value}`}
-              tick={{ fill: '#374151' }}
+              tick={{ fill: '#374151', fontSize: 14 }}
+              tickMargin={10}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ direction: 'rtl' }}
+              contentStyle={{ direction: 'rtl', fontSize: '14px', padding: '10px' }}
               wrapperStyle={{ zIndex: 1000 }}
             />
             <Bar 
               dataKey="total" 
               fill="#47d193"
+              radius={[4, 4, 0, 0]}
               isAnimationActive={false}
               label={{ 
                 position: 'top',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                dy: -10,
-                className: 'text-sm'
+                fontSize: 14,
+                dy: -10
               }}
             />
           </BarChart>
