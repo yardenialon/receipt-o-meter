@@ -29,7 +29,7 @@ const Index = () => {
     return null;
   }
 
-  // Extract username from email
+  // Extract username from email and translate the greeting
   const username = user.email?.split('@')[0] || '';
 
   return (
@@ -46,7 +46,7 @@ const Index = () => {
                 </h1>
                 <div className="flex flex-col gap-1">
                   <p className="text-lg font-medium text-gray-700">
-                    שלום {username}
+                    שלום {username}!
                   </p>
                   <p className="text-sm text-gray-500">
                     {user.email}
