@@ -5,6 +5,9 @@ import ReceiptList from '@/components/ReceiptList';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
+import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
+import { TopStores } from '@/components/analytics/TopStores';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -74,6 +77,15 @@ const Index = () => {
 
         <UploadZone />
         <ReceiptList />
+        
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">תובנות והוצאות</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SpendingByCategory />
+            <MonthlyTrends />
+            <TopStores />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ export type Database = {
       }
       receipt_items: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           name: string
@@ -38,6 +39,7 @@ export type Database = {
           refundable_amount: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           name: string
@@ -47,6 +49,7 @@ export type Database = {
           refundable_amount?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           name?: string
