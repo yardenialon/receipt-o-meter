@@ -2,17 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import UploadZone from '@/components/UploadZone';
 import ReceiptList from '@/components/ReceiptList';
-import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
-import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
-import { TopStores } from '@/components/analytics/TopStores';
 import { BillBeLogo } from '@/components/BillBeLogo';
+import { AppSidebar } from '@/components/AppSidebar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const isMobile = useIsMobile();
 
   // Handle loading state
@@ -36,21 +32,13 @@ const Index = () => {
   // Extract username from email
   const username = user.email?.split('@')[0] || '';
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+      <AppSidebar />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <div className="flex items-center gap-3">
+        <div className="flex justify-center items-center mb-8">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
               <BillBeLogo size={48} className="text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -66,23 +54,6 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">תובנות והוצאות</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <SpendingByCategory />
-            <MonthlyTrends />
-            <TopStores />
           </div>
         </div>
 
