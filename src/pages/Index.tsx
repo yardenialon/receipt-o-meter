@@ -11,7 +11,6 @@ const Index = () => {
   const { user, isLoading } = useAuth();
   const isMobile = useIsMobile();
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex items-center justify-center">
@@ -23,13 +22,11 @@ const Index = () => {
     );
   }
 
-  // Redirect if not authenticated
   if (!user) {
     navigate('/login');
     return null;
   }
 
-  // Extract username from email and translate the greeting
   const username = user.email?.split('@')[0] || '';
 
   return (
@@ -38,8 +35,8 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center mb-8">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <BillBeLogo size={48} className="text-primary-600" />
+            <div className="flex flex-col items-center justify-center gap-3 mb-4">
+              <BillBeLogo size={isMobile ? 150 : 200} className="mb-4" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isMobile ? 'קבלות' : 'ניהול קבלות'}
