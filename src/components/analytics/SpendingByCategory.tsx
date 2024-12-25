@@ -37,7 +37,7 @@ export const SpendingByCategory = () => {
           name,
           value: Number(value.toFixed(2))
         }))
-        .sort((a, b) => b.value - a.value); // מיון לפי ערך יורד
+        .sort((a, b) => b.value - a.value);
     }
   });
 
@@ -61,18 +61,18 @@ export const SpendingByCategory = () => {
       </CardHeader>
       <CardContent className="h-[400px] px-2">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
-              outerRadius={120}
+              outerRadius={140}
               fill="#8884d8"
               dataKey="value"
               label={({ name, value, percent }) => 
                 `${name}: ₪${value} (${(percent * 100).toFixed(0)}%)`
               }
-              labelLine={true}
+              labelLine={{ strokeWidth: 2, stroke: '#374151' }}
               isAnimationActive={false}
             >
               {categoryData?.map((entry, index) => (
@@ -95,7 +95,7 @@ export const SpendingByCategory = () => {
               }}
             />
             <Legend 
-              verticalAlign="bottom" 
+              verticalAlign="bottom"
               height={36}
               formatter={(value) => <span style={{ fontSize: '14px' }}>{value}</span>}
             />

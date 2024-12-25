@@ -70,23 +70,30 @@ export const MonthlyTrends = () => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={monthlyData}
-            margin={{ top: 30, right: 40, left: 40, bottom: 30 }}
+            margin={{ top: 30, right: 60, left: 60, bottom: 30 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="month"
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={10}
+              tickMargin={15}
             />
             <YAxis 
               width={80}
               tickFormatter={(value) => `₪${value}`}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={10}
+              tickMargin={15}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ direction: 'rtl', fontSize: '14px', padding: '10px' }}
+              contentStyle={{ 
+                direction: 'rtl', 
+                fontSize: '14px', 
+                padding: '10px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+              }}
               wrapperStyle={{ zIndex: 1000 }}
             />
             <Bar 

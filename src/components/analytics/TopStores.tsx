@@ -46,25 +46,32 @@ export const TopStores = () => {
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 20, right: 60, left: 120, bottom: 20 }}
+            margin={{ top: 20, right: 80, left: 140, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               type="number"
               tickFormatter={(value) => `₪${value}`}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={10}
+              tickMargin={15}
             />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={120}
+              width={140}
               tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={10}
+              tickMargin={15}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ direction: 'rtl', fontSize: '14px', padding: '10px' }}
+              contentStyle={{ 
+                direction: 'rtl', 
+                fontSize: '14px', 
+                padding: '10px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+              }}
               wrapperStyle={{ zIndex: 1000 }}
             />
             <Bar 
