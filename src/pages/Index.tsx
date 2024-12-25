@@ -2,9 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import UploadZone from '@/components/UploadZone';
 import ReceiptList from '@/components/ReceiptList';
-import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { BillBeLogo } from '@/components/BillBeLogo';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -12,9 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut, isLoading } = useAuth();
-  const isMobile = useIsMobile();
-
+  const { user, isLoading } = useAuth();
+  
   const { data: monthlyStats } = useQuery({
     queryKey: ['monthly-stats'],
     queryFn: async () => {
@@ -58,45 +54,24 @@ const Index = () => {
 
   const username = user.email?.split('@')[0] || '';
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-3 mb-8">
+          <BillBeLogo size={48} className="text-primary-600" />
           <div>
-            <div className="flex items-center gap-3">
-              <BillBeLogo size={48} className="text-primary-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {isMobile ? 'קבלות' : 'ניהול קבלות'}
-                </h1>
-                <div className="flex flex-col gap-1">
-                  <p className="text-lg font-medium text-gray-700">
-                    שלום {username}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              ניהול קבלות
+            </h1>
+            <div className="flex flex-col gap-1">
+              <p className="text-lg font-medium text-gray-700">
+                שלום {username}
+              </p>
+              <p className="text-sm text-gray-500">
+                {user.email}
+              </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
-          >
-            <LogOut className="w-5 h-5" />
-          </Button>
         </div>
 
         {monthlyStats && (

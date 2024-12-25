@@ -1,4 +1,4 @@
-import { Home, Menu, PieChart } from "lucide-react";
+import { Home, LogOut, Menu, PieChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,8 +10,8 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "./ui/button";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 const items = [
   {
@@ -28,11 +28,22 @@ const items = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <>
       {/* המבורגר למובייל */}
-      <div className="flex items-center p-4 md:hidden">
+      <div className="fixed top-0 left-0 p-4 z-50 md:hidden">
         <SidebarTrigger>
           <Menu className="h-6 w-6" />
         </SidebarTrigger>
@@ -57,6 +68,12 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleSignOut}>
+                    <LogOut className="w-5 h-5" />
+                    <span>התנתק</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

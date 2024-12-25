@@ -10,7 +10,7 @@ function App() {
   return (
     <Router>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
+        <div className="min-h-screen flex">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
@@ -18,12 +18,12 @@ function App() {
               element={
                 <>
                   <AppSidebar />
-                  <div className="flex-1 w-full">
+                  <main className="flex-1">
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/insights" element={<Insights />} />
                     </Routes>
-                  </div>
+                  </main>
                 </>
               }
             />
