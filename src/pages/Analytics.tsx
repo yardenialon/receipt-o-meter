@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
 import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
 import { TopStores } from '@/components/analytics/TopStores';
+import { ProductRecommendations } from '@/components/analytics/ProductRecommendations';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -25,7 +26,6 @@ const Analytics = () => {
     enabled: !!user
   });
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex items-center justify-center">
@@ -37,14 +37,13 @@ const Analytics = () => {
     );
   }
 
-  // Redirect if not authenticated
   if (!user) {
     navigate('/login');
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white p-4">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white p-4 animate-fade-in">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">תובנות חכמות</h1>
@@ -54,14 +53,13 @@ const Analytics = () => {
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="col-span-full lg:col-span-2">
+          <div className="col-span-full lg:col-span-2 space-y-6">
             <MonthlyTrends />
-          </div>
-          <div className="col-span-full md:col-span-1">
-            <SpendingByCategory />
-          </div>
-          <div className="col-span-full">
             <TopStores />
+          </div>
+          <div className="col-span-full lg:col-span-1 space-y-6">
+            <SpendingByCategory />
+            <ProductRecommendations />
           </div>
         </div>
       </div>
