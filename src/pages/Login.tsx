@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { Receipt } from 'lucide-react';
+import { BillBeLogo } from '@/components/BillBeLogo';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ const Login = () => {
         <div className="text-center mb-8 animate-slide-up">
           <div className="flex justify-center mb-4">
             <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
-              <Receipt className="w-8 h-8 text-primary-500" />
+              <BillBeLogo className="text-primary-500" size={48} showText={false} />
             </div>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-2">
