@@ -45,7 +45,7 @@ const Login = () => {
             </div>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-2">
-            CashBackly
+            BillBe
           </h1>
           <p className="text-primary-700 text-sm">
             מערכת חכמה לניהול קבלות
