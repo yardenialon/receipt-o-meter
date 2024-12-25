@@ -43,11 +43,26 @@ export const TopStores = () => {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={storeData} layout="vertical">
+          <BarChart 
+            data={storeData} 
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={100} />
-            <Tooltip formatter={(value) => `₪${value}`} />
+            <XAxis 
+              type="number"
+              tickFormatter={(value) => `₪${value}`}
+            />
+            <YAxis 
+              dataKey="name" 
+              type="category" 
+              width={100}
+              tick={{ fill: '#374151' }}
+            />
+            <Tooltip 
+              formatter={(value) => `₪${value}`}
+              contentStyle={{ direction: 'rtl' }}
+            />
             <Bar dataKey="total" fill="#47d193" />
           </BarChart>
         </ResponsiveContainer>

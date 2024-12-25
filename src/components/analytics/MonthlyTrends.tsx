@@ -8,7 +8,6 @@ export const MonthlyTrends = () => {
   const { data: monthlyData, isLoading } = useQuery({
     queryKey: ['monthly-trends'],
     queryFn: async () => {
-      // Get data for the last 3 months
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
@@ -69,12 +68,33 @@ export const MonthlyTrends = () => {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={monthlyData}>
+          <BarChart 
+            data={monthlyData}
+            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis width={50} />
-            <Tooltip formatter={(value) => `₪${value}`} />
-            <Bar dataKey="total" fill="#47d193" />
+            <XAxis 
+              dataKey="month"
+              tick={{ fill: '#374151' }}
+            />
+            <YAxis 
+              width={50}
+              tickFormatter={(value) => `₪${value}`}
+              tick={{ fill: '#374151' }}
+            />
+            <Tooltip 
+              formatter={(value) => `₪${value}`}
+              contentStyle={{ direction: 'rtl' }}
+            />
+            <Bar 
+              dataKey="total" 
+              fill="#47d193"
+              label={{ 
+                position: 'top',
+                formatter: (value) => `₪${value}`,
+                fill: '#374151'
+              }}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
