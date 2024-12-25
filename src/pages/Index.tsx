@@ -2,40 +2,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import UploadZone from '@/components/UploadZone';
 import ReceiptList from '@/components/ReceiptList';
+import { LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
+import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
+import { TopStores } from '@/components/analytics/TopStores';
 import { BillBeLogo } from '@/components/BillBeLogo';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  
-  const { data: monthlyStats } = useQuery({
-    queryKey: ['monthly-stats'],
-    queryFn: async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+  const { user, signOut, isLoading } = useAuth();
+  const isMobile = useIsMobile();
 
-      const { data: receipts, error } = await supabase
-        .from('receipts')
-        .select('total, created_at')
-        .gte('created_at', startOfMonth.toISOString());
-
-      if (error) throw error;
-
-      const total = receipts.reduce((sum, receipt) => sum + (receipt.total || 0), 0);
-      const count = receipts.length;
-
-      return {
-        total,
-        count,
-        month: startOfMonth.toLocaleString('he-IL', { month: 'long' })
-      };
-    }
-  });
-
+  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex items-center justify-center">
@@ -47,62 +27,67 @@ const Index = () => {
     );
   }
 
+  // Redirect if not authenticated
   if (!user) {
     navigate('/login');
     return null;
   }
 
+  // Extract username from email
   const username = user.email?.split('@')[0] || '';
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-primary-50 to-white">
-      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col items-center mb-12">
-          <BillBeLogo size={96} className="text-primary-600 mb-8" />
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">
-              ניהול קבלות
-            </h1>
-            <div className="flex flex-col gap-1.5">
-              <p className="text-xl font-medium text-gray-700">
-                שלום {username}
-              </p>
-              <p className="text-sm text-gray-500">
-                {user.email}
-              </p>
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <BillBeLogo size={48} className="text-primary-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isMobile ? 'קבלות' : 'ניהול קבלות'}
+                </h1>
+                <div className="flex flex-col gap-1">
+                  <p className="text-lg font-medium text-gray-700">
+                    שלום {username}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {user.email}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSignOut}
+            className="text-gray-500 hover:text-red-500 hover:bg-red-50"
+          >
+            <LogOut className="w-5 h-5" />
+          </Button>
         </div>
 
-        {monthlyStats && (
-          <div className="grid grid-cols-1 gap-4 mb-12">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl">סה"כ הוצאות {monthlyStats.month}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-primary-600">
-                  ₪{monthlyStats.total.toFixed(2)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl">מספר קבלות החודש</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold text-primary-600">
-                  {monthlyStats.count}
-                </p>
-              </CardContent>
-            </Card>
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">תובנות והוצאות</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SpendingByCategory />
+            <MonthlyTrends />
+            <TopStores />
           </div>
-        )}
-
-        <div className="w-full space-y-8">
-          <UploadZone />
-          <ReceiptList />
         </div>
+
+        <UploadZone />
+        <ReceiptList />
       </div>
     </div>
   );

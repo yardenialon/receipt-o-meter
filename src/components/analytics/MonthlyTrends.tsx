@@ -42,11 +42,11 @@ export const MonthlyTrends = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card>
         <CardHeader>
           <CardTitle>מגמות חודשיות</CardTitle>
         </CardHeader>
-        <CardContent className="h-[500px] flex items-center justify-center">
+        <CardContent className="h-[300px] flex items-center justify-center">
           טוען...
         </CardContent>
       </Card>
@@ -54,7 +54,7 @@ export const MonthlyTrends = () => {
   }
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           מגמות חודשיות
@@ -66,47 +66,37 @@ export const MonthlyTrends = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-[500px]">
+      <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={monthlyData}
-            margin={{ top: 30, right: 80, left: 80, bottom: 30 }}
+            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="month"
-              tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={20}
+              tick={{ fill: '#374151' }}
             />
             <YAxis 
-              width={100}
+              width={50}
               tickFormatter={(value) => `₪${value}`}
-              tick={{ fill: '#374151', fontSize: 14 }}
-              tickMargin={20}
+              tick={{ fill: '#374151' }}
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
-              contentStyle={{ 
-                direction: 'rtl', 
-                fontSize: '14px', 
-                padding: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
-              }}
+              contentStyle={{ direction: 'rtl' }}
               wrapperStyle={{ zIndex: 1000 }}
             />
             <Bar 
               dataKey="total" 
               fill="#47d193"
-              radius={[4, 4, 0, 0]}
               isAnimationActive={false}
               label={{ 
                 position: 'top',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                fontSize: 14,
-                dy: -10
+                dy: -10,
+                className: 'text-sm'
               }}
             />
           </BarChart>

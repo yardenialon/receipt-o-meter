@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { BillBeLogo } from '@/components/BillBeLogo';
+import { Receipt } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -38,11 +38,16 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4 animate-fade-in" dir="rtl">
       <div className="w-full max-w-md">
-        <div className="text-center mb-12 animate-slide-up">
-          <div className="flex justify-center mb-8">
-            <BillBeLogo className="text-primary-600" size={96} />
+        <div className="text-center mb-8 animate-slide-up">
+          <div className="flex justify-center mb-4">
+            <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
+              <Receipt className="w-8 h-8 text-primary-500" />
+            </div>
           </div>
-          <p className="text-base text-primary-700 font-medium">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-2">
+            BillBe
+          </h1>
+          <p className="text-primary-700 text-sm">
             מערכת חכמה לניהול קבלות
           </p>
         </div>

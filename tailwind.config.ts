@@ -20,7 +20,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Noto Sans Hebrew", "sans-serif"],
-        montserrat: ["Montserrat", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
