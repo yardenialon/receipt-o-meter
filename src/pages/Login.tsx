@@ -40,13 +40,8 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-12 animate-slide-up">
           <div className="flex justify-center mb-8">
-            <div className="bg-white p-6 rounded-3xl shadow-lg animate-scale-in">
-              <BillBeLogo className="text-primary-500" size={72} showText={false} />
-            </div>
+            <BillBeLogo className="text-primary-600" size={96} />
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
-            BillBe
-          </h1>
           <p className="text-base text-primary-700 font-medium">
             מערכת חכמה לניהול קבלות
           </p>
