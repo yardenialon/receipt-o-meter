@@ -12,8 +12,37 @@ export const BillBeLogo = ({ className = "", size = 24, showText = true }: { cla
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
+      {showText && (
+        <>
+          {/* Text BillBe */}
+          <text 
+            x={20 * scale} 
+            y={65 * scale} 
+            fontFamily="Montserrat, Arial, sans-serif" 
+            fontSize={54 * scale} 
+            fontWeight="600" 
+            letterSpacing="1"
+          >
+            <tspan fill="currentColor">Bill</tspan>
+            <tspan fill="currentColor" opacity="0.8">Be</tspan>
+          </text>
+          
+          {/* Tagline in Hebrew */}
+          <text 
+            x={23 * scale} 
+            y={85 * scale} 
+            fontFamily="Noto Sans Hebrew, Arial, sans-serif" 
+            fontSize={14 * scale} 
+            fill="currentColor" 
+            opacity="0.6"
+          >
+            תובנות חכמות לניהול הוצאות
+          </text>
+        </>
+      )}
+
       {/* Icon: Stylized receipt with checkmark */}
-      <g transform={`translate(20, 10) scale(${scale})`}>
+      <g transform={`translate(${showText ? 280 : 20}, 10) scale(${scale})`}>
         {/* Receipt base shape */}
         <path 
           d="M35 10 L65 10 L65 70 L58 65 L50 70 L42 65 L35 70 Z" 
@@ -40,35 +69,6 @@ export const BillBeLogo = ({ className = "", size = 24, showText = true }: { cla
           strokeLinejoin="round"
         />
       </g>
-      
-      {showText && (
-        <>
-          {/* Text BillBe */}
-          <text 
-            x={110 * scale} 
-            y={65 * scale} 
-            fontFamily="Montserrat, Arial, sans-serif" 
-            fontSize={54 * scale} 
-            fontWeight="600" 
-            letterSpacing="1"
-          >
-            <tspan fill="currentColor">Bill</tspan>
-            <tspan fill="currentColor" opacity="0.8">Be</tspan>
-          </text>
-          
-          {/* Tagline in Hebrew */}
-          <text 
-            x={113 * scale} 
-            y={85 * scale} 
-            fontFamily="Noto Sans Hebrew, Arial, sans-serif" 
-            fontSize={14 * scale} 
-            fill="currentColor" 
-            opacity="0.6"
-          >
-            תובנות חכמות לניהול הוצאות
-          </text>
-        </>
-      )}
     </svg>
   );
 };
