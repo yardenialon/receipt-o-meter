@@ -5,6 +5,7 @@ import ReceiptList from '@/components/ReceiptList';
 import { BillBeLogo } from '@/components/BillBeLogo';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ReceiptStats } from '@/components/stats/ReceiptStats';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -54,8 +55,11 @@ const Index = () => {
           </div>
         </div>
 
-        <UploadZone />
-        <ReceiptList />
+        <div className="space-y-8">
+          <ReceiptStats />
+          <UploadZone />
+          <ReceiptList />
+        </div>
       </div>
     </div>
   );
