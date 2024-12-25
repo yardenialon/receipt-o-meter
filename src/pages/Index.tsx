@@ -55,9 +55,9 @@ const Index = () => {
   const username = user.email?.split('@')[0] || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex flex-col items-center mb-16">
+    <div className="min-h-screen w-full bg-gradient-to-b from-primary-50 to-white">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col items-center mb-12">
           <BillBeLogo size={96} className="text-primary-600 mb-8" />
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -75,7 +75,7 @@ const Index = () => {
         </div>
 
         {monthlyStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-12">
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">סה"כ הוצאות {monthlyStats.month}</CardTitle>
@@ -99,8 +99,10 @@ const Index = () => {
           </div>
         )}
 
-        <UploadZone />
-        <ReceiptList />
+        <div className="w-full">
+          <UploadZone />
+          <ReceiptList />
+        </div>
       </div>
     </div>
   );
