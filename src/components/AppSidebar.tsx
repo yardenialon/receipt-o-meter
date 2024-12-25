@@ -1,4 +1,4 @@
-import { Grid3x3, Home, LogOut, PieChart, X } from "lucide-react";
+import { Home, LogOut, PieChart, X } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +26,21 @@ const items = [
   },
 ];
 
+const MenuIcon = () => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="text-primary-400"
+  >
+    <rect y="4" width="24" height="3" rx="1.5" fill="currentColor" />
+    <rect y="10.5" width="24" height="3" rx="1.5" fill="currentColor" />
+    <rect y="17" width="24" height="3" rx="1.5" fill="currentColor" />
+  </svg>
+);
+
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -45,7 +60,7 @@ export function AppSidebar() {
       {/* המבורגר למובייל */}
       <div className="fixed top-0 left-0 p-4 z-50 md:hidden">
         <SidebarTrigger>
-          <Grid3x3 className="h-6 w-6" />
+          <MenuIcon />
         </SidebarTrigger>
       </div>
 
