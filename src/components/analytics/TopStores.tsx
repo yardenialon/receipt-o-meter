@@ -46,7 +46,7 @@ export const TopStores = () => {
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 20, right: 100, left: 160, bottom: 20 }}
+            margin={{ top: 20, right: 120, left: 200, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -58,7 +58,7 @@ export const TopStores = () => {
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={160}
+              width={180}
               tick={{ fill: '#374151', fontSize: 14 }}
               tickMargin={20}
             />

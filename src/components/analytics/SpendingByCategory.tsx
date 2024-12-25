@@ -61,18 +61,18 @@ export const SpendingByCategory = () => {
       </CardHeader>
       <CardContent className="h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 20, right: 100, bottom: 20, left: 100 }}>
+          <PieChart margin={{ top: 20, right: 200, bottom: 20, left: 200 }}>
             <Pie
               data={categoryData}
               cx="50%"
               cy="50%"
-              outerRadius={160}
+              outerRadius={180}
               fill="#8884d8"
               dataKey="value"
               label={({ name, value, percent }) => 
                 `${name}: ₪${value} (${(percent * 100).toFixed(0)}%)`
               }
-              labelLine={{ strokeWidth: 2, stroke: '#374151' }}
+              labelLine={{ strokeWidth: 2, stroke: '#374151', strokeDasharray: '2 2' }}
               isAnimationActive={false}
             >
               {categoryData?.map((entry, index) => (
@@ -95,9 +95,13 @@ export const SpendingByCategory = () => {
               }}
             />
             <Legend 
-              verticalAlign="bottom"
-              height={36}
-              formatter={(value) => <span style={{ fontSize: '14px' }}>{value}</span>}
+              verticalAlign="middle"
+              align="right"
+              layout="vertical"
+              wrapperStyle={{
+                paddingRight: '20px',
+                fontSize: '14px'
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
