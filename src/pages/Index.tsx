@@ -56,7 +56,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-primary-50 to-white">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col items-center mb-12">
           <BillBeLogo size={96} className="text-primary-600 mb-8" />
           <div className="text-center mb-8">
@@ -75,7 +75,7 @@ const Index = () => {
         </div>
 
         {monthlyStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-12">
+          <div className="grid grid-cols-1 gap-4 mb-12">
             <Card>
               <CardHeader>
                 <CardTitle className="text-xl">סה"כ הוצאות {monthlyStats.month}</CardTitle>
@@ -99,7 +99,7 @@ const Index = () => {
           </div>
         )}
 
-        <div className="w-full">
+        <div className="w-full space-y-8">
           <UploadZone />
           <ReceiptList />
         </div>

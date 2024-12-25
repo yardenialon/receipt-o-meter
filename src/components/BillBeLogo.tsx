@@ -13,7 +13,7 @@ export const BillBeLogo = ({ className = "", size = 24, showText = true }: { cla
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Icon: Stylized receipt with checkmark */}
-      <g transform={`translate(20, 10) scale(${scale})`}>
+      <g transform={`translate(280, 10) scale(${scale})`}>
         {/* Receipt base shape */}
         <path 
           d="M35 10 L65 10 L65 70 L58 65 L50 70 L42 65 L35 70 Z" 
@@ -42,7 +42,7 @@ export const BillBeLogo = ({ className = "", size = 24, showText = true }: { cla
         <>
           {/* Text BillBe */}
           <text 
-            x={110 * scale} 
+            x={20 * scale} 
             y={55 * scale} 
             fontFamily="Montserrat, Arial, sans-serif" 
             fontSize={64 * scale} 
@@ -55,7 +55,7 @@ export const BillBeLogo = ({ className = "", size = 24, showText = true }: { cla
           
           {/* Tagline in Hebrew */}
           <text 
-            x={113 * scale} 
+            x={23 * scale} 
             y={80 * scale} 
             fontFamily="Noto Sans Hebrew, Arial, sans-serif" 
             fontSize={16 * scale} 
