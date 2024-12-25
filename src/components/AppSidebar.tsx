@@ -1,4 +1,4 @@
-import { Home, LogOut, Menu, PieChart } from "lucide-react";
+import { Home, LogOut, Menu, PieChart, X } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -50,7 +50,13 @@ export function AppSidebar() {
       </div>
 
       <Sidebar>
-        <SidebarContent>
+        <SidebarContent className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex justify-between items-center p-4 md:hidden">
+            <span className="font-semibold">תפריט</span>
+            <SidebarTrigger>
+              <X className="h-5 w-5" />
+            </SidebarTrigger>
+          </div>
           <SidebarGroup>
             <SidebarGroupLabel>תפריט</SidebarGroupLabel>
             <SidebarGroupContent>
