@@ -1,12 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Tag, ShoppingCart } from 'lucide-react';
+import { Leaf, Tag, ShoppingCart, TrendingDown } from 'lucide-react';
+
+interface PurchasePattern {
+  category: string;
+  avgPrice: number;
+  frequency: number;
+  items: string[];
+}
 
 export const ProductRecommendations = () => {
   const { data: recommendations } = useQuery({
     queryKey: ['product-recommendations'],
     queryFn: async () => {
+      // Get last 3 months of purchases
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
       const { data: items, error } = await supabase
         .from('receipt_items')
         .select(`
@@ -16,47 +27,49 @@ export const ProductRecommendations = () => {
           category,
           receipts!inner(created_at)
         `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .gte('receipts.created_at', threeMonthsAgo.toISOString())
+        .order('receipts.created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Group items by category and calculate average prices
-      const categoryAverages = items.reduce((acc: { [key: string]: { count: number, totalPrice: number } }, item) => {
+      // Analyze purchase patterns by category
+      const patterns: { [key: string]: PurchasePattern } = {};
+      items.forEach(item => {
         const category = item.category || 'אחר';
-        if (!acc[category]) {
-          acc[category] = { count: 0, totalPrice: 0 };
+        if (!patterns[category]) {
+          patterns[category] = {
+            category,
+            avgPrice: 0,
+            frequency: 0,
+            items: []
+          };
         }
-        acc[category].count++;
-        acc[category].totalPrice += item.price || 0;
-        return acc;
-      }, {});
+        patterns[category].items.push(item.name);
+        patterns[category].avgPrice += item.price || 0;
+        patterns[category].frequency++;
+      });
 
-      // Generate recommendations based on purchase patterns
+      // Calculate averages and generate recommendations
+      Object.values(patterns).forEach(pattern => {
+        pattern.avgPrice = pattern.avgPrice / pattern.frequency;
+      });
+
+      // Generate personalized recommendations
       const recommendations = [
         {
-          title: 'מוצרים בריאים יותר',
+          title: 'חלופות בריאות יותר',
           icon: Leaf,
-          items: [
-            { name: 'ירקות טריים', reason: 'מומלץ להגדיל צריכת ירקות טריים' },
-            { name: 'פירות עונתיים', reason: 'מקור טבעי לויטמינים ומינרלים' },
-          ]
+          items: generateHealthyAlternatives(patterns)
         },
         {
-          title: 'חסכון בהוצאות',
+          title: 'הזדמנויות לחיסכון',
           icon: Tag,
-          items: [
-            { name: 'קניות בסיטונאות', reason: 'חיסכון של עד 20% בקנייה מרוכזת' },
-            { name: 'מוצרים עונתיים', reason: 'זולים יותר ובאיכות טובה יותר' },
-          ]
+          items: generateSavingOpportunities(patterns)
         },
         {
-          title: 'הרגלי קנייה',
+          title: 'המלצות מותאמות אישית',
           icon: ShoppingCart,
-          items: [
-            { name: 'תכנון קניות מראש', reason: 'מונע קניות מיותרות וחוסך כסף' },
-            { name: 'קנייה בימי מבצעים', reason: 'ניצול הנחות ומבצעים שבועיים' },
-          ]
+          items: generatePersonalizedRecommendations(patterns)
         }
       ];
 
@@ -95,3 +108,111 @@ export const ProductRecommendations = () => {
     </Card>
   );
 };
+
+// Helper functions to generate recommendations based on purchase patterns
+function generateHealthyAlternatives(patterns: { [key: string]: PurchasePattern }) {
+  const recommendations = [];
+  
+  if (patterns['חטיפים'] || patterns['ממתקים']) {
+    recommendations.push({
+      name: 'פירות טריים',
+      reason: 'חלופה טבעית ובריאה יותר לחטיפים מתוקים'
+    });
+  }
+
+  if (patterns['משקאות']) {
+    recommendations.push({
+      name: 'מים מינרלים',
+      reason: 'להפחתת צריכת משקאות ממותקים'
+    });
+  }
+
+  // Add general healthy recommendations if we don't have enough data
+  if (recommendations.length < 2) {
+    recommendations.push({
+      name: 'ירקות עונתיים',
+      reason: 'להגדלת צריכת ויטמינים ומינרלים טבעיים'
+    });
+  }
+
+  return recommendations;
+}
+
+function generateSavingOpportunities(patterns: { [key: string]: PurchasePattern }) {
+  const recommendations = [];
+
+  // Find categories with high average prices
+  const expensiveCategories = Object.values(patterns)
+    .filter(p => p.avgPrice > 50)
+    .sort((a, b) => b.avgPrice - a.avgPrice);
+
+  if (expensiveCategories.length > 0) {
+    recommendations.push({
+      name: `קניות מרוכזות ב${expensiveCategories[0].category}`,
+      reason: `חיסכון של עד 20% בקנייה בסיטונאות`
+    });
+  }
+
+  // Add general saving recommendations
+  recommendations.push({
+    name: 'מעקב אחר מבצעים',
+    reason: 'שימוש באפליקציות השוואת מחירים לחיסכון משמעותי'
+  });
+
+  return recommendations;
+}
+
+function generatePersonalizedRecommendations(patterns: { [key: string]: PurchasePattern }) {
+  const recommendations = [];
+
+  // Find most frequent categories
+  const frequentCategories = Object.values(patterns)
+    .sort((a, b) => b.frequency - a.frequency);
+
+  if (frequentCategories.length > 0) {
+    const topCategory = frequentCategories[0];
+    recommendations.push({
+      name: `מבצעי ${topCategory.category}`,
+      reason: `התראות על מבצעים בקטגוריה המועדפת עליך`
+    });
+  }
+
+  // Add seasonal recommendation
+  const currentMonth = new Date().getMonth();
+  const seasonalRec = getSeasonalRecommendation(currentMonth);
+  recommendations.push(seasonalRec);
+
+  return recommendations;
+}
+
+function getSeasonalRecommendation(month: number) {
+  // Seasonal recommendations based on the current month
+  const seasons = {
+    winter: [11, 0, 1],
+    spring: [2, 3, 4],
+    summer: [5, 6, 7],
+    autumn: [8, 9, 10]
+  };
+
+  if (seasons.winter.includes(month)) {
+    return {
+      name: 'מרק ביתי',
+      reason: 'חסכוני ובריא במיוחד לחורף'
+    };
+  } else if (seasons.summer.includes(month)) {
+    return {
+      name: 'פירות קיץ',
+      reason: 'במחירים נמוכים במיוחד בעונה'
+    };
+  } else if (seasons.spring.includes(month)) {
+    return {
+      name: 'ירקות אביביים',
+      reason: 'טריים ובמחיר טוב בעונה זו'
+    };
+  } else {
+    return {
+      name: 'פירות וירקות סתוויים',
+      reason: 'טריים ועשירים בויטמינים לחיזוק החורף'
+    };
+  }
+}
