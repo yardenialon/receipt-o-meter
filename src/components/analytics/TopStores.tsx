@@ -46,7 +46,7 @@ export const TopStores = () => {
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 5, right: 100, left: 120, bottom: 5 }}
+            margin={{ top: 5, right: 60, left: 120, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
@@ -72,7 +72,8 @@ export const TopStores = () => {
                 position: 'right',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                offset: 10
+                dx: 5,
+                className: 'text-sm'
               }}
             />
           </BarChart>

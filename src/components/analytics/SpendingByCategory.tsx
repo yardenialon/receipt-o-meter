@@ -59,10 +59,10 @@ export const SpendingByCategory = () => {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 0, right: 120, bottom: 0, left: 0 }}>
+          <PieChart>
             <Pie
               data={categoryData}
-              cx="35%"
+              cx="50%"
               cy="50%"
               outerRadius={80}
               fill="#8884d8"
@@ -82,7 +82,12 @@ export const SpendingByCategory = () => {
               align="right"
               verticalAlign="middle"
               formatter={(value, entry: any) => `${value}: ₪${entry.payload.value}`}
-              wrapperStyle={{ right: -10, top: '50%', transform: 'translateY(-50%)' }}
+              wrapperStyle={{ 
+                right: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                lineHeight: '24px'
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
