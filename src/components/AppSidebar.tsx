@@ -1,11 +1,10 @@
-import { LogOut, ChartBar, ChartPie, BarChart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LogOut, Home, PieChart } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { BillBeLogo } from '@/components/BillBeLogo';
 import { Button } from '@/components/ui/button';
-import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
-import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
-import { TopStores } from '@/components/analytics/TopStores';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import {
   Sheet,
   SheetContent,
@@ -16,7 +15,23 @@ import {
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const location = useLocation();
+  const { user, signOut } = useAuth();
+  
+  const { data: totalRefundable } = useQuery({
+    queryKey: ['total-refundable'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('receipts')
+        .select('total_refundable')
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      return data.reduce((sum, receipt) => sum + (receipt.total_refundable || 0), 0);
+    },
+    enabled: !!user
+  });
 
   const handleSignOut = async () => {
     try {
@@ -27,6 +42,11 @@ export function AppSidebar() {
     }
   };
 
+  const menuItems = [
+    { icon: Home, label: 'דף הבית', path: '/' },
+    { icon: PieChart, label: 'תובנות', path: '/analytics' },
+  ];
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -35,48 +55,41 @@ export function AppSidebar() {
           size="icon" 
           className="fixed top-4 left-4 z-50 bg-white/50 backdrop-blur-sm hover:bg-white/80"
         >
-          <BarChart className="h-5 w-5" />
+          <PieChart className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent 
         side="left" 
-        className="w-full sm:w-[540px] overflow-y-auto bg-white"
+        className="w-full sm:w-[300px] overflow-y-auto bg-white"
       >
         <SheetHeader className="space-y-4 pb-4 border-b">
           <SheetTitle className="flex items-center gap-3 justify-center">
             <BillBeLogo size={48} className="text-primary-600" />
             <div className="text-right">
               <h3 className="text-2xl font-bold">Bill Be</h3>
-              <p className="text-sm text-muted-foreground">תובנות חכמות לניהול הוצאות</p>
+              <p className="text-sm text-primary-600">
+                סה"כ צברת {new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(totalRefundable || 0)} להחזר
+              </p>
             </div>
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <ChartBar className="h-5 w-5 text-primary-600" />
-              <h4 className="text-lg font-semibold">מגמות חודשיות</h4>
-            </div>
-            <MonthlyTrends />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <ChartPie className="h-5 w-5 text-primary-600" />
-              <h4 className="text-lg font-semibold">הוצאות לפי קטגוריה</h4>
-            </div>
-            <SpendingByCategory />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <BarChart className="h-5 w-5 text-primary-600" />
-              <h4 className="text-lg font-semibold">חנויות מובילות</h4>
-            </div>
-            <TopStores />
-          </div>
-        </div>
+        <nav className="mt-8 space-y-2">
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                location.pathname === item.path
+                  ? 'bg-primary-50 text-primary-600'
+                  : 'hover:bg-gray-100'
+              }`}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
 
         <Button
           variant="ghost"
