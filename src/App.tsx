@@ -18,7 +18,7 @@ function App() {
               element={
                 <>
                   <AppSidebar />
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/insights" element={<Insights />} />
