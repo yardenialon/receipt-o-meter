@@ -59,17 +59,15 @@ export const SpendingByCategory = () => {
       </CardHeader>
       <CardContent className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart margin={{ top: 0, right: 120, bottom: 0, left: 0 }}>
             <Pie
               data={categoryData}
-              cx="50%"
+              cx="35%"
               cy="50%"
-              labelLine={true}
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
-              label={({ name, value }) => `${name}: ₪${value}`}
-              labelStyle={{ fill: '#374151' }}
+              label={false}
             >
               {categoryData?.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -83,7 +81,8 @@ export const SpendingByCategory = () => {
               layout="vertical"
               align="right"
               verticalAlign="middle"
-              formatter={(value, entry) => `${value}: ₪${entry.payload.value}`}
+              formatter={(value, entry: any) => `${value}: ₪${entry.payload.value}`}
+              wrapperStyle={{ right: -10, top: '50%', transform: 'translateY(-50%)' }}
             />
           </PieChart>
         </ResponsiveContainer>

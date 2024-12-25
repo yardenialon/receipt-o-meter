@@ -46,12 +46,13 @@ export const TopStores = () => {
           <BarChart 
             data={storeData} 
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
+            margin={{ top: 5, right: 100, left: 120, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               type="number"
               tickFormatter={(value) => `₪${value}`}
+              tick={{ fill: '#374151' }}
             />
             <YAxis 
               dataKey="name" 
@@ -62,8 +63,18 @@ export const TopStores = () => {
             <Tooltip 
               formatter={(value) => `₪${value}`}
               contentStyle={{ direction: 'rtl' }}
+              wrapperStyle={{ zIndex: 1000 }}
             />
-            <Bar dataKey="total" fill="#47d193" />
+            <Bar 
+              dataKey="total" 
+              fill="#47d193"
+              label={{ 
+                position: 'right',
+                formatter: (value) => `₪${value}`,
+                fill: '#374151',
+                offset: 10
+              }}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
