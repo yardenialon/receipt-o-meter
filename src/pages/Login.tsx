@@ -38,16 +38,16 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4 animate-fade-in" dir="rtl">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 animate-slide-up">
-          <div className="flex justify-center mb-4">
-            <div className="bg-white p-3 rounded-2xl shadow-lg animate-scale-in">
-              <BillBeLogo className="text-primary-500" size={48} showText={false} />
+        <div className="text-center mb-12 animate-slide-up">
+          <div className="flex justify-center mb-8">
+            <div className="bg-white p-6 rounded-3xl shadow-lg animate-scale-in">
+              <BillBeLogo className="text-primary-500" size={72} showText={false} />
             </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
             BillBe
           </h1>
-          <p className="text-primary-700 text-sm">
+          <p className="text-base text-primary-700 font-medium">
             מערכת חכמה לניהול קבלות
           </p>
         </div>

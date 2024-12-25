@@ -56,15 +56,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <BillBeLogo size={48} className="text-primary-600" />
+      <div className="container mx-auto px-6 py-12">
+        <div className="flex items-center gap-6 mb-12">
+          <BillBeLogo size={64} className="text-primary-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
               ניהול קבלות
             </h1>
-            <div className="flex flex-col gap-1">
-              <p className="text-lg font-medium text-gray-700">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xl font-medium text-gray-700">
                 שלום {username}
               </p>
               <p className="text-sm text-gray-500">
@@ -75,23 +75,23 @@ const Index = () => {
         </div>
 
         {monthlyStats && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
             <Card>
               <CardHeader>
-                <CardTitle>סה"כ הוצאות {monthlyStats.month}</CardTitle>
+                <CardTitle className="text-xl">סה"כ הוצאות {monthlyStats.month}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-primary-600">
+                <p className="text-4xl font-bold text-primary-600">
                   ₪{monthlyStats.total.toFixed(2)}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>מספר קבלות החודש</CardTitle>
+                <CardTitle className="text-xl">מספר קבלות החודש</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-primary-600">
+                <p className="text-4xl font-bold text-primary-600">
                   {monthlyStats.count}
                 </p>
               </CardContent>
