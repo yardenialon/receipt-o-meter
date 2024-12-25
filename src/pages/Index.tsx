@@ -8,6 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
 import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
 import { TopStores } from '@/components/analytics/TopStores';
+import { BillBeLogo } from '@/components/BillBeLogo';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ const Index = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <div className="flex items-center gap-3">
+              <BillBeLogo size={48} className="text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isMobile ? 'קבלות' : 'ניהול קבלות'}
