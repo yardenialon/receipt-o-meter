@@ -67,7 +67,9 @@ export const SpendingByCategory = () => {
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
-              label={false}
+              label={({ name, value }) => `${name}: ₪${value}`}
+              labelLine={true}
+              isAnimationActive={false}
             >
               {categoryData?.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -76,18 +78,6 @@ export const SpendingByCategory = () => {
             <Tooltip 
               formatter={(value) => `₪${value}`}
               contentStyle={{ direction: 'rtl' }}
-            />
-            <Legend 
-              layout="vertical"
-              align="right"
-              verticalAlign="middle"
-              formatter={(value, entry: any) => `${value}: ₪${entry.payload.value}`}
-              wrapperStyle={{ 
-                right: 0,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                lineHeight: '24px'
-              }}
             />
           </PieChart>
         </ResponsiveContainer>

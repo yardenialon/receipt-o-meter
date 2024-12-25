@@ -68,6 +68,7 @@ export const TopStores = () => {
             <Bar 
               dataKey="total" 
               fill="#47d193"
+              isAnimationActive={false}
               label={{ 
                 position: 'right',
                 formatter: (value) => `₪${value}`,

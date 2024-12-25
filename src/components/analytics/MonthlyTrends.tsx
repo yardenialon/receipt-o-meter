@@ -90,11 +90,12 @@ export const MonthlyTrends = () => {
             <Bar 
               dataKey="total" 
               fill="#47d193"
+              isAnimationActive={false}
               label={{ 
                 position: 'top',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                dy: -5,
+                dy: -10,
                 className: 'text-sm'
               }}
             />
