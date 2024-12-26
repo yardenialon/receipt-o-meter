@@ -1,10 +1,10 @@
 import { supabase } from '@/lib/supabase';
 
-export const uploadProductsToSupabase = async (xmlUrl: string) => {
-  console.log('Calling Edge Function with URL:', xmlUrl);
+export const uploadProductsToSupabase = async (xmlContent: string) => {
+  console.log('Processing XML content directly...');
   
   const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-    body: { driveUrl: xmlUrl }
+    body: { xmlContent }
   });
 
   if (error) {

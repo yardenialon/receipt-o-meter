@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 import { XmlDropZone } from './XmlDropZone';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const [driveUrl, setDriveUrl] = useState('');
+  const [xmlContent, setXmlContent] = useState('');
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
@@ -25,6 +26,7 @@ const XmlUpload = () => {
       const text = await file.text();
       const count = await uploadProductsToSupabase(text);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
+      setXmlContent(''); // Clear the textarea after successful upload
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
@@ -33,26 +35,22 @@ const XmlUpload = () => {
     }
   };
 
-  const handleDriveUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!driveUrl) {
-      toast.error('אנא הזן כתובת URL');
+  const handleXmlContentUpload = async () => {
+    if (!xmlContent.trim()) {
+      toast.error('אנא הכנס תוכן XML');
       return;
     }
 
     setIsUploading(true);
-    toast.loading('מוריד את הקובץ מ-Google Drive...');
-
     try {
-      console.log('Starting upload from Drive URL:', driveUrl);
-      const count = await uploadProductsToSupabase(driveUrl);
+      const count = await uploadProductsToSupabase(xmlContent);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
+      setXmlContent(''); // Clear the textarea after successful upload
     } catch (error) {
-      console.error('Drive upload error:', error);
-      toast.error('שגיאה בהורדת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
+      console.error('Upload error:', error);
+      toast.error('שגיאה בהעלאת התוכן: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
     } finally {
       setIsUploading(false);
-      setDriveUrl('');
     }
   };
 
@@ -71,7 +69,7 @@ const XmlUpload = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          חשוב: בעת העלאת קובץ מ-Google Drive, יש לוודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link)
+          ניתן להעלות קובץ XML או להדביק את תוכן ה-XML ישירות בתיבת הטקסט למטה
         </AlertDescription>
       </Alert>
 
@@ -88,35 +86,30 @@ const XmlUpload = () => {
         <div className="flex-grow border-t border-gray-200" />
       </div>
 
-      <form onSubmit={handleDriveUpload} className="w-full max-w-xl mx-auto space-y-4">
-        <div className="flex gap-2">
-          <div className="flex-grow">
-            <Input
-              type="url"
-              placeholder="הדבק כתובת URL של קובץ XML מ-Google Drive"
-              value={driveUrl}
-              onChange={(e) => setDriveUrl(e.target.value)}
-              className="w-full"
-              dir="ltr"
-              disabled={isUploading}
-            />
-          </div>
-          <Button 
-            type="submit" 
-            disabled={isUploading || !driveUrl}
-            className="flex items-center gap-2"
-          >
-            {isUploading ? (
-              <div className="animate-spin">
-                <File className="w-4 h-4" />
-              </div>
-            ) : (
-              <LinkIcon className="w-4 h-4" />
-            )}
-            העלה מ-Drive
-          </Button>
-        </div>
-      </form>
+      <div className="w-full max-w-xl mx-auto space-y-4">
+        <Textarea
+          placeholder="הדבק כאן את תוכן ה-XML"
+          value={xmlContent}
+          onChange={(e) => setXmlContent(e.target.value)}
+          className="min-h-[200px] font-mono text-sm"
+          dir="ltr"
+          disabled={isUploading}
+        />
+        <Button 
+          onClick={handleXmlContentUpload}
+          disabled={isUploading || !xmlContent.trim()}
+          className="w-full flex items-center justify-center gap-2"
+        >
+          {isUploading ? (
+            <div className="animate-spin">
+              <File className="w-4 h-4" />
+            </div>
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          העלה תוכן XML
+        </Button>
+      </div>
     </div>
   );
 };
