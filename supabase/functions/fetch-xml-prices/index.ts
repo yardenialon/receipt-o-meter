@@ -1,4 +1,3 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { parse as xmlParse } from "https://deno.land/x/xml@2.1.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
@@ -39,28 +38,17 @@ serve(async (req) => {
     try {
       data = xmlParse(cleanXmlContent);
       console.log('XML parsed successfully');
-      console.log('Root keys:', Object.keys(data));
-      if (data.root) {
-        console.log('Root children keys:', Object.keys(data.root));
-      }
+      console.log('Root structure:', JSON.stringify(data.root, null, 2));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    // Try different possible paths to find items
-    let items = [];
-    if (data.root?.Items?.[0]?.Item) {
-      items = data.root.Items[0].Item;
-    } else if (data.root?.Item) {
-      items = Array.isArray(data.root.Item) ? data.root.Item : [data.root.Item];
-    } else if (data.Items?.[0]?.Item) {
-      items = data.Items[0].Item;
-    }
-
-    console.log('Items found:', items.length);
-    if (items.length > 0) {
-      console.log('First item structure:', JSON.stringify(items[0], null, 2));
+    // Extract items directly from the Items array
+    const items = data.root?.Items?.[0]?.Item;
+    console.log('Items found:', items?.length);
+    if (items?.[0]) {
+      console.log('First item example:', JSON.stringify(items[0], null, 2));
     }
 
     if (!items || items.length === 0) {
@@ -90,10 +78,12 @@ serve(async (req) => {
           product_name: item.ItemName?.[0] || '',
           manufacturer: item.ManufacturerName?.[0] || null,
           price: parseFloat(item.ItemPrice?.[0] || '0'),
-          unit_quantity: item.UnitQty?.[0] || null,
+          unit_quantity: item.Quantity?.[0] || null,
           unit_of_measure: item.UnitOfMeasure?.[0] || null,
-          price_update_date: new Date().toISOString(),
-          category: item.ItemSection?.[0] || null
+          price_update_date: item.PriceUpdateDate?.[0] 
+            ? new Date(item.PriceUpdateDate[0]).toISOString()
+            : new Date().toISOString(),
+          category: null
         };
 
         if (i === 0) {
