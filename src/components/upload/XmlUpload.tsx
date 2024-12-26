@@ -8,49 +8,88 @@ const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   const parseXmlAndUpload = async (xmlText: string) => {
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-    const items = xmlDoc.getElementsByTagName('Item');
-    
-    const products = Array.from(items).map(item => ({
-      store_chain: 'שופרסל',
-      store_id: '001',
-      product_code: item.getElementsByTagName('ItemCode')[0]?.textContent || '',
-      product_name: item.getElementsByTagName('ItemName')[0]?.textContent || '',
-      manufacturer: item.getElementsByTagName('ManufacturerName')[0]?.textContent || '',
-      price: parseFloat(item.getElementsByTagName('ItemPrice')[0]?.textContent || '0'),
-      unit_quantity: item.getElementsByTagName('UnitQty')[0]?.textContent || '',
-      unit_of_measure: item.getElementsByTagName('UnitMeasure')[0]?.textContent || '',
-      category: item.getElementsByTagName('ItemSection')[0]?.textContent || 'אחר',
-      price_update_date: new Date().toISOString()
-    }));
-
-    // Batch insert products
-    for (let i = 0; i < products.length; i += 100) {
-      const batch = products.slice(i, i + 100);
-      const { error } = await supabase
-        .from('store_products')
-        .upsert(batch, { 
-          onConflict: 'product_code,store_chain',
-          ignoreDuplicates: false 
-        });
-
-      if (error) {
-        console.error('Error uploading batch:', error);
-        throw error;
+    try {
+      console.log('Starting XML parsing...');
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      
+      // Check for parsing errors
+      const parserError = xmlDoc.querySelector('parsererror');
+      if (parserError) {
+        console.error('XML parsing error:', parserError.textContent);
+        throw new Error('קובץ ה-XML אינו תקין');
       }
-    }
 
-    return products.length;
+      const items = xmlDoc.getElementsByTagName('Item');
+      console.log(`Found ${items.length} items in XML`);
+      
+      if (items.length === 0) {
+        throw new Error('לא נמצאו פריטים בקובץ ה-XML');
+      }
+
+      const products = Array.from(items).map(item => {
+        const product = {
+          store_chain: 'שופרסל',
+          store_id: '001',
+          product_code: item.getElementsByTagName('ItemCode')[0]?.textContent || '',
+          product_name: item.getElementsByTagName('ItemName')[0]?.textContent || '',
+          manufacturer: item.getElementsByTagName('ManufacturerName')[0]?.textContent || '',
+          price: parseFloat(item.getElementsByTagName('ItemPrice')[0]?.textContent || '0'),
+          unit_quantity: item.getElementsByTagName('UnitQty')[0]?.textContent || '',
+          unit_of_measure: item.getElementsByTagName('UnitMeasure')[0]?.textContent || '',
+          category: item.getElementsByTagName('ItemSection')[0]?.textContent || 'אחר',
+          price_update_date: new Date().toISOString()
+        };
+
+        // Validate required fields
+        if (!product.product_code || !product.product_name) {
+          console.error('Invalid product data:', product);
+          throw new Error('נתוני מוצר חסרים בקובץ');
+        }
+
+        return product;
+      });
+
+      console.log('Starting batch upload of products...');
+      // Batch insert products
+      for (let i = 0; i < products.length; i += 100) {
+        const batch = products.slice(i, i + 100);
+        const { error } = await supabase
+          .from('store_products')
+          .upsert(batch, { 
+            onConflict: 'product_code,store_chain',
+            ignoreDuplicates: false 
+          });
+
+        if (error) {
+          console.error('Error uploading batch:', error);
+          throw error;
+        }
+        
+        console.log(`Uploaded batch ${i/100 + 1} of ${Math.ceil(products.length/100)}`);
+      }
+
+      return products.length;
+    } catch (error) {
+      console.error('Error in parseXmlAndUpload:', error);
+      throw error;
+    }
   };
 
   const onDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
+    if (acceptedFiles.length === 0) {
+      toast.error('לא נבחר קובץ');
+      return;
+    }
 
     setIsUploading(true);
     try {
       const file = acceptedFiles[0];
+      console.log('Reading file:', file.name);
+      
       const text = await file.text();
+      console.log('File content length:', text.length);
+      
       const count = await parseXmlAndUpload(text);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
     } catch (error) {
