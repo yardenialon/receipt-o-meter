@@ -38,22 +38,36 @@ serve(async (req) => {
 
     // Parse XML
     console.log('Parsing XML content...');
-    let data;
+    let parsedXml;
     try {
-      data = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully');
-      console.log('Items count:', data.root?.Items?.['@Count']);
+      parsedXml = xmlParse(cleanXmlContent);
+      console.log('XML structure:', JSON.stringify(parsedXml, null, 2));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    // Extract items from the XML structure
-    const items = data?.root?.Items?.Item;
-    console.log('Items array found:', Array.isArray(items));
-    console.log('Items length:', items?.length);
+    // Try different possible paths to find items
+    let items = null;
     
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    // Check common XML structures
+    if (parsedXml.root?.Items?.Item) {
+      items = Array.isArray(parsedXml.root.Items.Item) 
+        ? parsedXml.root.Items.Item 
+        : [parsedXml.root.Items.Item];
+    } else if (parsedXml.Items?.Item) {
+      items = Array.isArray(parsedXml.Items.Item) 
+        ? parsedXml.Items.Item 
+        : [parsedXml.Items.Item];
+    } else if (parsedXml.PriceFull?.Items?.Item) {
+      items = Array.isArray(parsedXml.PriceFull.Items.Item) 
+        ? parsedXml.PriceFull.Items.Item 
+        : [parsedXml.PriceFull.Items.Item];
+    }
+
+    console.log('Items found:', items ? items.length : 0);
+    
+    if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
     }
 
@@ -68,24 +82,19 @@ serve(async (req) => {
     let processed = 0;
     let successCount = 0;
 
-    const storeChain = networkName;
-    const storeId = branchName;
-
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize).map(item => {
         const product = {
-          store_chain: storeChain,
-          store_id: storeId,
-          product_code: item.ItemCode,
-          product_name: item.ItemName,
-          manufacturer: item.ManufacturerName,
-          price: parseFloat(item.ItemPrice),
-          unit_quantity: item.Quantity,
-          unit_of_measure: item.UnitOfMeasure,
-          price_update_date: item.PriceUpdateDate 
-            ? new Date(item.PriceUpdateDate).toISOString()
-            : new Date().toISOString(),
-          category: null
+          store_chain: networkName,
+          store_id: branchName,
+          product_code: item.ItemCode || item.PriceCode || item.Code,
+          product_name: item.ItemName || item.PriceName || item.Name,
+          manufacturer: item.ManufacturerName || item.Manufacturer || '',
+          price: parseFloat(item.ItemPrice || item.Price || '0'),
+          unit_quantity: item.Quantity || item.UnitQty || '',
+          unit_of_measure: item.UnitOfMeasure || item.Unit || '',
+          price_update_date: new Date().toISOString(),
+          category: item.ItemSection || item.Category || null
         };
 
         if (i === 0) {
