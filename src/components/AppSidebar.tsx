@@ -7,16 +7,22 @@ import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from './ui/sidebar';
 import { BillBeLogo } from './BillBeLogo';
+import { useAuth } from '@/hooks/use-auth';
 
 export function AppSidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { state, openMobile, setOpenMobile } = useSidebar();
+  const { user } = useAuth();
+
+  // Check if user is admin (first user)
+  const isAdmin = user?.id === 'e8f53b8e-499b-4c5c-9fb9-e49d38f93e0f';
 
   const links = [
     { href: '/', label: 'קבלות' },
     { href: '/analytics', label: 'ניתוח' },
-    { href: '/products', label: 'מוצרים' },
+    // Only show Products link if user is admin
+    ...(isAdmin ? [{ href: '/products', label: 'מוצרים' }] : []),
   ];
 
   const sidebarContent = (
