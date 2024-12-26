@@ -1,20 +1,20 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { parse as xmlParse } from "https://deno.land/x/xml@2.1.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { xmlContent } = await req.json()
+    const { xmlContent } = await req.json();
     
     if (!xmlContent) {
       throw new Error('לא התקבל תוכן XML')
@@ -50,10 +50,10 @@ serve(async (req) => {
       .replace(/&#39;/g, "'")
       .trim()
 
-    // Basic XML validation
+    // Add XML declaration if missing
     if (!cleanXmlContent.includes('<?xml')) {
-      console.error('Content does not appear to be XML')
-      throw new Error('לא נמצא תוכן XML תקין בקובץ. אנא העתק את תוכן ה-XML עצמו')
+      console.log('Adding XML declaration to content')
+      cleanXmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n' + cleanXmlContent
     }
 
     // Parse XML with better error handling
