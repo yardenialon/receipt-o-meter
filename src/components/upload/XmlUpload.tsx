@@ -17,37 +17,51 @@ const XmlUpload = () => {
       const parserError = xmlDoc.querySelector('parsererror');
       if (parserError) {
         console.error('XML parsing error:', parserError.textContent);
-        throw new Error('קובץ ה-XML אינו תקין');
+        throw new Error('קובץ ה-XML אינו תקין. אנא ודא שהקובץ תקין ונסה שוב');
       }
+
+      // Log the XML structure for debugging
+      console.log('XML Structure:', xmlDoc.documentElement.outerHTML);
 
       const items = xmlDoc.getElementsByTagName('Item');
       console.log(`Found ${items.length} items in XML`);
       
       if (items.length === 0) {
-        throw new Error('לא נמצאו פריטים בקובץ ה-XML');
+        throw new Error('לא נמצאו פריטים בקובץ ה-XML. אנא ודא שהקובץ מכיל תגיות <Item>');
       }
 
-      const products = Array.from(items).map(item => {
-        const product = {
-          store_chain: 'שופרסל',
-          store_id: '001',
-          product_code: item.getElementsByTagName('ItemCode')[0]?.textContent || '',
-          product_name: item.getElementsByTagName('ItemName')[0]?.textContent || '',
-          manufacturer: item.getElementsByTagName('ManufacturerName')[0]?.textContent || '',
-          price: parseFloat(item.getElementsByTagName('ItemPrice')[0]?.textContent || '0'),
-          unit_quantity: item.getElementsByTagName('UnitQty')[0]?.textContent || '',
-          unit_of_measure: item.getElementsByTagName('UnitMeasure')[0]?.textContent || '',
-          category: item.getElementsByTagName('ItemSection')[0]?.textContent || 'אחר',
-          price_update_date: new Date().toISOString()
-        };
+      const products = Array.from(items).map((item, index) => {
+        try {
+          const product = {
+            store_chain: 'שופרסל',
+            store_id: '001',
+            product_code: item.getElementsByTagName('ItemCode')[0]?.textContent || '',
+            product_name: item.getElementsByTagName('ItemName')[0]?.textContent || '',
+            manufacturer: item.getElementsByTagName('ManufacturerName')[0]?.textContent || '',
+            price: parseFloat(item.getElementsByTagName('ItemPrice')[0]?.textContent || '0'),
+            unit_quantity: item.getElementsByTagName('UnitQty')[0]?.textContent || '',
+            unit_of_measure: item.getElementsByTagName('UnitMeasure')[0]?.textContent || '',
+            category: item.getElementsByTagName('ItemSection')[0]?.textContent || 'אחר',
+            price_update_date: new Date().toISOString()
+          };
 
-        // Validate required fields
-        if (!product.product_code || !product.product_name) {
-          console.error('Invalid product data:', product);
-          throw new Error('נתוני מוצר חסרים בקובץ');
+          // Log each product for debugging
+          console.log(`Parsing product ${index + 1}:`, product);
+
+          // Validate required fields
+          if (!product.product_code || !product.product_name) {
+            throw new Error(`מוצר ${index + 1} חסר קוד מוצר או שם מוצר`);
+          }
+
+          if (isNaN(product.price) || product.price < 0) {
+            throw new Error(`מוצר ${index + 1} מחיר לא תקין: ${product.price}`);
+          }
+
+          return product;
+        } catch (error) {
+          console.error(`Error parsing product ${index + 1}:`, error);
+          throw new Error(`שגיאה בפרסור מוצר ${index + 1}: ${error.message}`);
         }
-
-        return product;
       });
 
       console.log('Starting batch upload of products...');
@@ -63,10 +77,12 @@ const XmlUpload = () => {
 
         if (error) {
           console.error('Error uploading batch:', error);
-          throw error;
+          throw new Error(`שגיאה בהעלאת קבוצת מוצרים ${i/100 + 1}: ${error.message}`);
         }
         
         console.log(`Uploaded batch ${i/100 + 1} of ${Math.ceil(products.length/100)}`);
+        // Show progress toast
+        toast.success(`הועלתה קבוצה ${i/100 + 1} מתוך ${Math.ceil(products.length/100)}`);
       }
 
       return products.length;
@@ -89,6 +105,7 @@ const XmlUpload = () => {
       
       const text = await file.text();
       console.log('File content length:', text.length);
+      console.log('First 500 characters of file:', text.substring(0, 500));
       
       const count = await parseXmlAndUpload(text);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
