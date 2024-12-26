@@ -15,8 +15,11 @@ const XmlUpload = () => {
 
   const processXmlContent = async (xmlText: string) => {
     try {
+      console.log('Processing XML content...');
       const items = await parseXmlContent(xmlText);
+      console.log('Parsed XML items:', items.length);
       const products = parseXmlItems(items);
+      console.log('Parsed products:', products.length);
       const count = await uploadProductsToSupabase(products);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
     } catch (error) {
@@ -40,6 +43,7 @@ const XmlUpload = () => {
       await processXmlContent(text);
     } catch (error) {
       console.error('Upload error:', error);
+      toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
     } finally {
       setIsUploading(false);
     }
@@ -53,9 +57,16 @@ const XmlUpload = () => {
     }
 
     setIsUploading(true);
+    toast.loading('מוריד את הקובץ מ-Google Drive...');
+
     try {
+      console.log('Fetching from Drive URL:', driveUrl);
       const text = await fetchGoogleDriveFile(driveUrl);
+      console.log('Successfully fetched file from Drive');
       await processXmlContent(text);
+    } catch (error) {
+      console.error('Drive upload error:', error);
+      toast.error('שגיאה בהורדת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
     } finally {
       setIsUploading(false);
       setDriveUrl('');
@@ -97,6 +108,7 @@ const XmlUpload = () => {
               onChange={(e) => setDriveUrl(e.target.value)}
               className="w-full"
               dir="ltr"
+              disabled={isUploading}
             />
           </div>
           <Button 
@@ -104,7 +116,13 @@ const XmlUpload = () => {
             disabled={isUploading || !driveUrl}
             className="flex items-center gap-2"
           >
-            <LinkIcon className="w-4 h-4" />
+            {isUploading ? (
+              <div className="animate-spin">
+                <File className="w-4 h-4" />
+              </div>
+            ) : (
+              <LinkIcon className="w-4 h-4" />
+            )}
             העלה מ-Drive
           </Button>
         </div>
