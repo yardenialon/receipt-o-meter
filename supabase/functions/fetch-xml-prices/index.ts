@@ -22,6 +22,7 @@ serve(async (req) => {
     }
 
     console.log('Received content length:', xmlContent.length);
+    console.log('First 200 characters:', xmlContent.substring(0, 200));
     
     // Clean up the XML content
     let cleanXmlContent = xmlContent
@@ -34,30 +35,25 @@ serve(async (req) => {
 
     // Add XML declaration if missing
     if (!cleanXmlContent.includes('<?xml')) {
-      console.log('Adding XML declaration to content');
       cleanXmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n' + cleanXmlContent;
     }
 
-    // Parse XML with better error handling
+    // Parse XML
     console.log('Parsing XML content...');
-    console.log('First 100 characters:', cleanXmlContent.substring(0, 100));
-    
     let data;
     try {
       data = xmlParse(cleanXmlContent);
+      console.log('XML parsed successfully. Structure:', JSON.stringify(data.root, null, 2).substring(0, 500));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
-      throw new Error('שגיאה בפרסור ה-XML: ' + 
-        (parseError.message === 'UnexpectedEof' 
-          ? 'הקובץ אינו שלם או חסרות תגיות סגירה' 
-          : parseError.message));
+      throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
     // Extract items from the specific XML structure
-    const items = data.root?.Items?.[0]?.Item || [];
-    console.log(`Found ${items.length} items in the XML content`);
+    const items = data.root?.Items?.[0]?.Item;
+    console.log(`Found ${items?.length || 0} items in the XML content`);
 
-    if (!items.length) {
+    if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
     }
 
@@ -72,10 +68,13 @@ serve(async (req) => {
     let processed = 0;
     let successCount = 0;
 
+    const storeChain = 'שופרסל';
+    const storeId = data.root?.StoreId?.[0] || '001';
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize).map(item => ({
-        store_chain: 'שופרסל',
-        store_id: data.root?.StoreId?.[0] || '001',
+        store_chain: storeChain,
+        store_id: storeId,
         product_code: item.ItemCode?.[0] || '',
         product_name: item.ItemName?.[0] || '',
         manufacturer: item.ManufacturerName?.[0] || null,
@@ -85,8 +84,10 @@ serve(async (req) => {
         price_update_date: item.PriceUpdateDate?.[0] 
           ? new Date(item.PriceUpdateDate[0]).toISOString()
           : new Date().toISOString(),
-        category: null // You might want to add category mapping later
+        category: null
       }));
+
+      console.log(`Processing batch ${i/batchSize + 1}, first item:`, batch[0]);
 
       const { error } = await supabase
         .from('store_products')
@@ -95,10 +96,11 @@ serve(async (req) => {
           ignoreDuplicates: false
         });
 
-      if (!error) {
-        successCount += batch.length;
-      } else {
+      if (error) {
         console.error('Error inserting batch:', error);
+        throw error;
+      } else {
+        successCount += batch.length;
       }
 
       processed += batch.length;
