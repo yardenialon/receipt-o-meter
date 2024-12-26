@@ -43,14 +43,15 @@ serve(async (req) => {
     let data;
     try {
       data = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully. Structure:', JSON.stringify(data.root, null, 2).substring(0, 500));
+      console.log('XML parsed successfully. Root structure:', JSON.stringify(Object.keys(data), null, 2));
+      console.log('Items structure:', JSON.stringify(data.root?.Items, null, 2));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
     // Extract items from the specific XML structure
-    const items = data.root?.Items?.[0]?.Item;
+    const items = data.root?.Items?.[0]?.Item || [];
     console.log(`Found ${items?.length || 0} items in the XML content`);
 
     if (!items || items.length === 0) {
@@ -72,22 +73,30 @@ serve(async (req) => {
     const storeId = data.root?.StoreId?.[0] || '001';
 
     for (let i = 0; i < items.length; i += batchSize) {
-      const batch = items.slice(i, i + batchSize).map(item => ({
-        store_chain: storeChain,
-        store_id: storeId,
-        product_code: item.ItemCode?.[0] || '',
-        product_name: item.ItemName?.[0] || '',
-        manufacturer: item.ManufacturerName?.[0] || null,
-        price: parseFloat(item.ItemPrice?.[0] || '0'),
-        unit_quantity: item.Quantity?.[0] || null,
-        unit_of_measure: item.UnitOfMeasure?.[0] || null,
-        price_update_date: item.PriceUpdateDate?.[0] 
-          ? new Date(item.PriceUpdateDate[0]).toISOString()
-          : new Date().toISOString(),
-        category: null
-      }));
+      const batch = items.slice(i, i + batchSize).map(item => {
+        const product = {
+          store_chain: storeChain,
+          store_id: storeId,
+          product_code: item.ItemCode?.[0] || '',
+          product_name: item.ItemName?.[0] || '',
+          manufacturer: item.ManufacturerName?.[0] || null,
+          price: parseFloat(item.ItemPrice?.[0] || '0'),
+          unit_quantity: item.UnitQty?.[0] || null,
+          unit_of_measure: item.UnitOfMeasure?.[0] || null,
+          price_update_date: item.PriceUpdateDate?.[0] 
+            ? new Date(item.PriceUpdateDate[0]).toISOString()
+            : new Date().toISOString(),
+          category: null
+        };
 
-      console.log(`Processing batch ${i/batchSize + 1}, first item:`, batch[0]);
+        if (i === 0) {
+          console.log('Sample product data:', product);
+        }
+
+        return product;
+      });
+
+      console.log(`Processing batch ${i/batchSize + 1}, items ${i} to ${i + batch.length}`);
 
       const { error } = await supabase
         .from('store_products')
