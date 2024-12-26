@@ -14,9 +14,10 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
 
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
+    console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(products.length/batchSize)}`);
     
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('store_products')
         .upsert(batch, {
           onConflict: 'product_code,store_chain',
@@ -25,13 +26,19 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
 
       if (error) {
         console.error(`Error inserting batch ${i/batchSize + 1}:`, error);
+        console.error('First product in failed batch:', batch[0]);
         continue;
       }
 
       successCount += batch.length;
-      console.log(`Processed ${successCount}/${products.length} products`);
+      console.log(`Successfully processed batch ${i/batchSize + 1}. Total success: ${successCount}/${products.length}`);
     } catch (error) {
       console.error(`Error processing batch ${i/batchSize + 1}:`, error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
     }
   }
 

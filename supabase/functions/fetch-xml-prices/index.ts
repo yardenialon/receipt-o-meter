@@ -9,12 +9,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Starting XML processing request');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { xmlContent, networkName, branchName } = await req.json();
+    const requestData = await req.json();
+    console.log('Request data received:', {
+      hasXmlContent: !!requestData.xmlContent,
+      networkName: requestData.networkName,
+      branchName: requestData.branchName
+    });
+    
+    const { xmlContent, networkName, branchName } = requestData;
     
     if (!xmlContent) {
       throw new Error('לא התקבל תוכן XML');
@@ -37,34 +46,46 @@ serve(async (req) => {
       .replace(/&#39;/g, "'")
       .trim();
 
+    console.log('XML content length:', cleanXmlContent.length);
+    console.log('First 200 characters of XML:', cleanXmlContent.substring(0, 200));
+
     // Parse XML
-    console.log('Parsing XML content...');
+    console.log('Attempting to parse XML content...');
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully');
+      console.log('XML parsed successfully. Root element:', parsedXml?.root?.tagName || 'No root element found');
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
     if (!parsedXml) {
+      console.error('XML parsing resulted in null');
       throw new Error('XML parsing resulted in null');
     }
 
     // Parse items from XML
-    const products = parseXmlItems(parsedXml).map(product => ({
-      ...product,
-      store_chain: networkName,
-      store_id: branchName
-    }));
+    console.log('Starting to parse XML items...');
+    const products = parseXmlItems(parsedXml).map(product => {
+      console.log('Processing product:', product.product_code);
+      return {
+        ...product,
+        store_chain: networkName,
+        store_id: branchName
+      };
+    });
+
+    console.log(`Found ${products.length} products to process`);
 
     if (products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים ב-XML');
     }
 
     // Insert products into database
+    console.log('Attempting to insert products into database...');
     const successCount = await insertProducts(products);
+    console.log(`Successfully inserted ${successCount} products`);
 
     if (successCount === 0) {
       throw new Error('לא הצלחנו לעבד אף מוצר מה-XML');
@@ -83,7 +104,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
