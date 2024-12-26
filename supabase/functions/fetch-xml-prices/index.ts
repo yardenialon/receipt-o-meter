@@ -21,17 +21,17 @@ serve(async (req) => {
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
     const requestData = await req.json();
+    console.log('Request data received:', {
+      hasXmlContent: !!requestData?.xmlContent,
+      contentLength: requestData?.xmlContent?.length,
+      networkName: requestData?.networkName,
+      branchName: requestData?.branchName
+    });
+
     if (!requestData) {
       console.error('Request data is null or undefined');
-      throw new Error('Invalid request data');
+      throw new Error('בקשה לא תקינה - חסרים נתונים');
     }
-
-    console.log('Request data received:', {
-      hasXmlContent: !!requestData.xmlContent,
-      contentLength: requestData.xmlContent?.length,
-      networkName: requestData.networkName,
-      branchName: requestData.branchName
-    });
     
     const { xmlContent, networkName, branchName } = requestData;
     
@@ -71,51 +71,39 @@ serve(async (req) => {
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      if (!parsedXml) {
-        console.error('XML parsing resulted in null');
-        throw new Error('XML parsing resulted in null');
-      }
-      console.log('XML parsed successfully. Root element:', parsedXml?.root?.tagName || 'No root element found');
-      console.log('XML structure:', JSON.stringify(parsedXml, null, 2).substring(0, 500) + '...');
+      console.log('XML parsed successfully');
+      console.log('XML structure:', JSON.stringify(parsedXml).substring(0, 500) + '...');
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    // Parse items from XML with additional logging
+    if (!parsedXml) {
+      console.error('XML parsing resulted in null');
+      throw new Error('פרסור ה-XML נכשל');
+    }
+
+    // Parse items from XML
     console.log('Starting to parse XML items...');
-    const products = parseXmlItems(parsedXml).map(product => {
-      if (!product) {
-        console.error('Encountered null product during mapping');
-        return null;
-      }
-      console.log('Processing product:', product.product_code);
-      return {
-        ...product,
-        store_chain: networkName,
-        store_id: branchName
-      };
-    }).filter(Boolean); // Remove any null products
+    const products = parseXmlItems(parsedXml).map(product => ({
+      ...product,
+      store_chain: networkName,
+      store_id: branchName
+    }));
 
     console.log(`Found ${products.length} products to process`);
-
     if (products.length === 0) {
       console.error('No valid products found in XML');
       throw new Error('לא נמצאו מוצרים תקינים ב-XML');
     }
 
-    // Log sample of products for debugging
+    // Log sample of products
     console.log('Sample of first 3 products:', products.slice(0, 3));
 
-    // Insert products into database with error handling
+    // Insert products into database
     console.log('Attempting to insert products into database...');
     const successCount = await insertProducts(products);
     console.log(`Successfully inserted ${successCount} products`);
-
-    if (successCount === 0) {
-      console.error('No products were successfully inserted');
-      throw new Error('לא הצלחנו לעבד אף מוצר מה-XML');
-    }
 
     return new Response(
       JSON.stringify({ 
@@ -130,12 +118,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error details:', {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack,
-      error: error // Log the entire error object
-    });
+    console.error('Error processing request:', error);
     
     return new Response(
       JSON.stringify({ 
@@ -145,7 +128,7 @@ serve(async (req) => {
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 400
       }
     );
   }
