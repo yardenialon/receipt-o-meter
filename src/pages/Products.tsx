@@ -11,13 +11,15 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import XmlUpload from '@/components/upload/XmlUpload';
+import { Input } from "@/components/ui/input";
 
 const Products = () => {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { data: products, isLoading, error, refetch } = useQuery({
     queryKey: ['products'],
@@ -32,6 +34,17 @@ const Products = () => {
       return data;
     }
   });
+
+  // Calculate statistics
+  const totalProducts = products?.length || 0;
+  const storeChains = [...new Set(products?.map(p => p.store_chain) || [])];
+  const totalStoreChains = storeChains.length;
+
+  // Filter products based on search term
+  const filteredProducts = products?.filter(product => 
+    product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleUpdatePrices = async () => {
     setIsUpdating(true);
@@ -72,7 +85,7 @@ const Products = () => {
   }
 
   // Group products by category
-  const productsByCategory = products?.reduce((acc, product) => {
+  const productsByCategory = filteredProducts?.reduce((acc, product) => {
     const category = product.category || 'אחר';
     if (!acc[category]) {
       acc[category] = [];
@@ -93,6 +106,34 @@ const Products = () => {
           {isUpdating && <Loader2 className="h-4 w-4 animate-spin" />}
           עדכן מחירים משופרסל
         </Button>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">סה״כ מוצרים</h3>
+            <p className="text-2xl font-bold text-blue-600">{totalProducts}</p>
+          </div>
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">רשתות</h3>
+            <p className="text-2xl font-bold text-green-600">{totalStoreChains}</p>
+          </div>
+          <div className="p-4 bg-purple-50 rounded-lg">
+            <h3 className="text-lg font-semibold mb-2">שמות הרשתות</h3>
+            <p className="text-sm text-purple-600">{storeChains.join(', ')}</p>
+          </div>
+        </div>
+
+        <div className="relative mb-6">
+          <Input
+            type="text"
+            placeholder="חפש לפי שם מוצר או קטגוריה..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+          <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+        </div>
       </div>
 
       <XmlUpload />
