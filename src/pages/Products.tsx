@@ -11,16 +11,23 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Store } from 'lucide-react';
+import { Loader2, Search, Store, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import XmlUpload from '@/components/upload/XmlUpload';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
+interface ProductPrices {
+  [key: string]: {
+    expanded: boolean;
+  }
+}
+
 const Products = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedProducts, setExpandedProducts] = useState<ProductPrices>({});
   
   const { data: products, isLoading, error, refetch } = useQuery({
     queryKey: ['products'],
@@ -47,6 +54,15 @@ const Products = () => {
     (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Group products by product code
+  const groupedProducts = filteredProducts?.reduce((acc, product) => {
+    if (!acc[product.product_code]) {
+      acc[product.product_code] = [];
+    }
+    acc[product.product_code].push(product);
+    return acc;
+  }, {} as Record<string, typeof products>);
+
   const handleUpdatePrices = async () => {
     setIsUpdating(true);
     try {
@@ -69,6 +85,13 @@ const Products = () => {
     }
   };
 
+  const toggleProductExpansion = (productCode: string) => {
+    setExpandedProducts(prev => ({
+      ...prev,
+      [productCode]: { expanded: !prev[productCode]?.expanded }
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -86,14 +109,14 @@ const Products = () => {
   }
 
   // Group products by category
-  const productsByCategory = filteredProducts?.reduce((acc, product) => {
-    const category = product.category || 'אחר';
+  const productsByCategory = groupedProducts ? Object.entries(groupedProducts).reduce((acc, [productCode, products]) => {
+    const category = products[0].category || 'אחר';
     if (!acc[category]) {
       acc[category] = [];
     }
-    acc[category].push(product);
+    acc[category].push({ productCode, products });
     return acc;
-  }, {} as Record<string, typeof products>);
+  }, {} as Record<string, Array<{ productCode: string, products: typeof products }>>) : {};
 
   return (
     <div className="container mx-auto py-8">
@@ -146,39 +169,81 @@ const Products = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead></TableHead>
                   <TableHead>קוד מוצר</TableHead>
                   <TableHead>שם מוצר</TableHead>
                   <TableHead>יצרן</TableHead>
-                  <TableHead>רשת וסניף</TableHead>
-                  <TableHead>מחיר</TableHead>
+                  <TableHead>מחיר הכי זול</TableHead>
                   <TableHead>עודכן</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categoryProducts.map((product) => (
-                  <TableRow key={`${product.product_code}-${product.store_chain}`}>
-                    <TableCell className="font-medium">{product.product_code}</TableCell>
-                    <TableCell>{product.product_name}</TableCell>
-                    <TableCell>{product.manufacturer}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 items-center">
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <Store className="h-3 w-3" />
-                          {product.store_chain}
-                        </Badge>
-                        {product.store_id && (
-                          <Badge variant="outline">
-                            סניף {product.store_id}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>₪{product.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      {product.price_update_date && format(new Date(product.price_update_date), 'dd/MM/yyyy HH:mm', { locale: he })}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {categoryProducts.map(({ productCode, products }) => {
+                  const baseProduct = products[0];
+                  const isExpanded = expandedProducts[productCode]?.expanded;
+                  const lowestPrice = Math.min(...products.map(p => p.price));
+
+                  return (
+                    <>
+                      <TableRow 
+                        key={productCode}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => toggleProductExpansion(productCode)}
+                      >
+                        <TableCell>
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{baseProduct.product_code}</TableCell>
+                        <TableCell>{baseProduct.product_name}</TableCell>
+                        <TableCell>{baseProduct.manufacturer}</TableCell>
+                        <TableCell className="font-bold text-red-600">
+                          ₪{lowestPrice.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          {baseProduct.price_update_date && 
+                            format(new Date(baseProduct.price_update_date), 'dd/MM/yyyy HH:mm', { locale: he })}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="bg-gray-50 p-4">
+                            <div className="space-y-2">
+                              {products.map((product) => (
+                                <div 
+                                  key={`${product.store_chain}-${product.store_id}`}
+                                  className={`flex justify-between items-center p-2 rounded ${
+                                    product.price === lowestPrice ? 'bg-red-50' : 'bg-white'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="flex items-center gap-1">
+                                      <Store className="h-3 w-3" />
+                                      {product.store_chain}
+                                    </Badge>
+                                    {product.store_id && (
+                                      <Badge variant="outline">
+                                        סניף {product.store_id}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <span className={`font-semibold ${
+                                    product.price === lowestPrice ? 'text-red-600' : ''
+                                  }`}>
+                                    ₪{product.price.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
