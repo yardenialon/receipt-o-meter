@@ -41,7 +41,7 @@ serve(async (req) => {
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      console.log('XML structure:', JSON.stringify(parsedXml, null, 2));
+      console.log('XML parsed successfully');
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
@@ -51,27 +51,50 @@ serve(async (req) => {
       throw new Error('XML parsing resulted in null');
     }
 
+    // Log the structure to help debug
+    console.log('XML structure keys:', Object.keys(parsedXml));
+    
     // Try different possible paths to find items
     let items = [];
     
-    // Check common XML structures and ensure we always have an array
+    // Function to safely get items array
+    const getItemsArray = (obj: any): any[] => {
+      if (!obj) return [];
+      if (Array.isArray(obj)) return obj;
+      return [obj];
+    };
+
+    // Check common XML structures
     if (parsedXml.root?.Items?.Item) {
-      items = Array.isArray(parsedXml.root.Items.Item) 
-        ? parsedXml.root.Items.Item 
-        : [parsedXml.root.Items.Item].filter(Boolean);
+      items = getItemsArray(parsedXml.root.Items.Item);
     } else if (parsedXml.Items?.Item) {
-      items = Array.isArray(parsedXml.Items.Item) 
-        ? parsedXml.Items.Item 
-        : [parsedXml.Items.Item].filter(Boolean);
+      items = getItemsArray(parsedXml.Items.Item);
     } else if (parsedXml.PriceFull?.Items?.Item) {
-      items = Array.isArray(parsedXml.PriceFull.Items.Item) 
-        ? parsedXml.PriceFull.Items.Item 
-        : [parsedXml.PriceFull.Items.Item].filter(Boolean);
+      items = getItemsArray(parsedXml.PriceFull.Items.Item);
+    } else {
+      // Try to find any property that might contain items
+      const findItems = (obj: any): any[] => {
+        if (!obj || typeof obj !== 'object') return [];
+        
+        for (const key in obj) {
+          if (key === 'Item' || key === 'Items') {
+            return getItemsArray(obj[key]);
+          }
+          if (typeof obj[key] === 'object') {
+            const found = findItems(obj[key]);
+            if (found.length > 0) return found;
+          }
+        }
+        return [];
+      };
+      
+      items = findItems(parsedXml);
     }
 
     console.log('Items found:', items.length);
     
     if (!items || items.length === 0) {
+      console.error('No items found in XML structure:', parsedXml);
       throw new Error('לא נמצאו פריטים ב-XML');
     }
 
@@ -91,27 +114,33 @@ serve(async (req) => {
         .filter(item => item !== null && typeof item === 'object')
         .map(item => {
           try {
+            // Safely get value with fallbacks
+            const getValue = (item: any, keys: string[]): string => {
+              for (const key of keys) {
+                if (item[key] !== undefined && item[key] !== null) {
+                  return String(item[key]).trim();
+                }
+              }
+              return '';
+            };
+
             const product = {
               store_chain: networkName,
               store_id: branchName,
-              product_code: String(item.ItemCode || item.PriceCode || item.Code || '').trim(),
-              product_name: String(item.ItemName || item.PriceName || item.Name || '').trim(),
-              manufacturer: String(item.ManufacturerName || item.Manufacturer || '').trim(),
-              price: parseFloat(String(item.ItemPrice || item.Price || '0').replace(/[^\d.-]/g, '')) || 0,
-              unit_quantity: String(item.Quantity || item.UnitQty || '').trim(),
-              unit_of_measure: String(item.UnitOfMeasure || item.Unit || '').trim(),
+              product_code: getValue(item, ['ItemCode', 'PriceCode', 'Code', 'id']),
+              product_name: getValue(item, ['ItemName', 'PriceName', 'Name', 'description']),
+              manufacturer: getValue(item, ['ManufacturerName', 'Manufacturer', 'manufacturer']),
+              price: parseFloat(getValue(item, ['ItemPrice', 'Price', 'price']).replace(/[^\d.-]/g, '')) || 0,
+              unit_quantity: getValue(item, ['Quantity', 'UnitQty', 'quantity']),
+              unit_of_measure: getValue(item, ['UnitOfMeasure', 'Unit', 'unit']),
               price_update_date: new Date().toISOString(),
-              category: String(item.ItemSection || item.Category || '').trim() || null
+              category: getValue(item, ['ItemSection', 'Category', 'category']) || null
             };
 
             // Validate required fields
             if (!product.product_code || !product.product_name) {
-              console.warn('Skipping invalid product:', product);
+              console.warn('Invalid product:', product);
               return null;
-            }
-
-            if (i === 0) {
-              console.log('Sample product data:', product);
             }
 
             return product;
@@ -139,10 +168,9 @@ serve(async (req) => {
         if (error) {
           console.error('Error inserting batch:', error);
           throw error;
-        } else {
-          successCount += batch.length;
         }
-
+        
+        successCount += batch.length;
         processed += batch.length;
         console.log(`Processed ${processed}/${items.length} items`);
       } catch (error) {
@@ -172,7 +200,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'שגיאה בעיבוד ה-XML'
+        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
