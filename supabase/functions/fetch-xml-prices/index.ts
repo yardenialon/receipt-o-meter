@@ -21,7 +21,6 @@ serve(async (req) => {
     }
 
     console.log('Received XML content length:', xmlContent.length);
-    console.log('First 200 characters:', xmlContent.substring(0, 200));
     
     // Clean up the XML content
     let cleanXmlContent = xmlContent
@@ -38,7 +37,7 @@ serve(async (req) => {
     try {
       data = xmlParse(cleanXmlContent);
       console.log('XML parsed successfully');
-      console.log('Root structure:', JSON.stringify(data, null, 2));
+      console.log('Items count:', data.root?.Items?.['@Count']);
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
@@ -46,12 +45,10 @@ serve(async (req) => {
 
     // Extract items from the XML structure
     const items = data?.root?.Items?.Item;
-    console.log('Items found:', items?.length);
-    if (items?.[0]) {
-      console.log('First item example:', JSON.stringify(items[0], null, 2));
-    }
-
-    if (!items || items.length === 0) {
+    console.log('Items array found:', Array.isArray(items));
+    console.log('Items length:', items?.length);
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
     }
 
@@ -74,12 +71,12 @@ serve(async (req) => {
         const product = {
           store_chain: storeChain,
           store_id: storeId,
-          product_code: item.ItemCode || '',
-          product_name: item.ItemName || '',
-          manufacturer: item.ManufacturerName || null,
-          price: parseFloat(item.ItemPrice || '0'),
-          unit_quantity: item.Quantity || null,
-          unit_of_measure: item.UnitOfMeasure || null,
+          product_code: item.ItemCode,
+          product_name: item.ItemName,
+          manufacturer: item.ManufacturerName,
+          price: parseFloat(item.ItemPrice),
+          unit_quantity: item.Quantity,
+          unit_of_measure: item.UnitOfMeasure,
           price_update_date: item.PriceUpdateDate 
             ? new Date(item.PriceUpdateDate).toISOString()
             : new Date().toISOString(),
