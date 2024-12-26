@@ -2,19 +2,28 @@ export const parseXmlItems = (parsedXml: any) => {
   console.log('Starting XML parsing...');
   
   if (!parsedXml) {
-    console.error('Parsed XML is null');
-    throw new Error('Invalid XML structure');
+    console.error('Parsed XML is null or undefined');
+    throw new Error('Invalid XML structure: XML content is empty');
   }
 
-  // Log the entire XML structure for debugging
-  console.log('Full XML structure:', JSON.stringify(parsedXml, null, 2));
+  // Log the XML structure for debugging
+  console.log('XML structure type:', typeof parsedXml);
+  console.log('XML structure:', JSON.stringify(parsedXml, null, 2));
 
   // Helper function to safely get nested value
   const safeGet = (obj: any, path: string[]): any => {
+    if (!obj) {
+      console.log(`Object is null or undefined when trying to access path: ${path.join('.')}`);
+      return null;
+    }
+
     try {
       let current = obj;
       for (const key of path) {
-        if (current === null || current === undefined) return null;
+        if (current === null || current === undefined) {
+          console.log(`Null/undefined encountered at path: ${path.join('.')} at key: ${key}`);
+          return null;
+        }
         current = current[key];
       }
       return current;
@@ -26,6 +35,11 @@ export const parseXmlItems = (parsedXml: any) => {
 
   // Helper function to find items array in XML structure
   const findItems = (obj: any): any[] => {
+    if (!obj) {
+      console.error('Object is null in findItems');
+      return [];
+    }
+
     // Common paths where items might be found
     const commonPaths = [
       ['root', 'Items', 'Item'],
@@ -70,20 +84,36 @@ export const parseXmlItems = (parsedXml: any) => {
         }
       }
       
-      console.log('Found single item in root');
-      return [obj];
+      // If we found a single object, return it as an array
+      if (Object.keys(obj).length > 0) {
+        console.log('Found single item in root');
+        return [obj];
+      }
     }
 
     console.error('No items found in XML structure');
-    throw new Error('לא נמצאו פריטים ב-XML');
+    return [];
   };
 
   const items = findItems(parsedXml);
-  console.log(`Found ${items.length} potential items`);
-  console.log('First item structure:', JSON.stringify(items[0], null, 2));
+  
+  if (items.length === 0) {
+    console.error('No items found in XML');
+    throw new Error('לא נמצאו פריטים ב-XML');
+  }
 
-  return items
+  console.log(`Found ${items.length} potential items`);
+  if (items[0]) {
+    console.log('First item structure:', JSON.stringify(items[0], null, 2));
+  }
+
+  const validProducts = items
     .map((item, index) => {
+      if (!item) {
+        console.log(`Skipping null item at index ${index}`);
+        return null;
+      }
+
       try {
         console.log(`Processing item ${index + 1}:`, JSON.stringify(item));
 
@@ -113,7 +143,7 @@ export const parseXmlItems = (parsedXml: any) => {
         };
 
         // Log the extracted product
-        console.log('Extracted product:', product);
+        console.log(`Extracted product ${index + 1}:`, product);
 
         // Validate required fields
         if (!product.product_code) {
@@ -144,4 +174,11 @@ export const parseXmlItems = (parsedXml: any) => {
       }
       return true;
     });
+
+  if (validProducts.length === 0) {
+    throw new Error('לא נמצאו מוצרים תקינים ב-XML');
+  }
+
+  console.log(`Found ${validProducts.length} valid products`);
+  return validProducts;
 };
