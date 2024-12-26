@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, Link as LinkIcon } from 'lucide-react';
+import { Upload, File, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 import { XmlDropZone } from './XmlDropZone';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -67,6 +68,13 @@ const XmlUpload = () => {
 
   return (
     <div className="space-y-8">
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          חשוב: בעת העלאת קובץ מ-Google Drive, יש לוודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link)
+        </AlertDescription>
+      </Alert>
+
       <XmlDropZone
         getRootProps={getRootProps}
         getInputProps={getInputProps}

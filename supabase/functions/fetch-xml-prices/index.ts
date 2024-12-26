@@ -18,29 +18,46 @@ serve(async (req) => {
     // Extract file ID from Google Drive URL
     const fileId = driveUrl.match(/\/d\/([^/]+)/)?.[1]
     if (!fileId) {
-      throw new Error('Invalid Drive URL format')
+      throw new Error('כתובת ה-URL אינה תקינה. אנא ודא שזו כתובת שיתוף תקינה של Google Drive')
     }
     console.log('Extracted file ID:', fileId)
 
     // Fetch file from Google Drive
     const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
+    console.log('Attempting to fetch from URL:', directUrl)
+    
     const response = await fetch(directUrl)
     if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.status}`)
+      console.error('Failed to fetch file:', response.status, response.statusText)
+      throw new Error(`שגיאה בהורדת הקובץ (${response.status}). אנא ודא שהקובץ נגיש`)
     }
 
     const xmlText = await response.text()
-    console.log('Received XML content length:', xmlText.length)
+    console.log('Received content length:', xmlText.length)
+    console.log('First 100 characters:', xmlText.substring(0, 100))
 
     if (xmlText.includes('<!DOCTYPE html>')) {
-      throw new Error('Received HTML instead of XML. Make sure the file is shared publicly')
+      console.error('Received HTML instead of XML content')
+      throw new Error('הקובץ אינו נגיש. אנא ודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link)')
     }
 
     // Parse XML
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(xmlText, 'text/xml')
+    
+    // Check for parsing errors
+    const parserError = xmlDoc.querySelector('parsererror')
+    if (parserError) {
+      console.error('XML parsing error:', parserError.textContent)
+      throw new Error('קובץ ה-XML אינו תקין. אנא ודא שהקובץ תקין ונסה שוב')
+    }
+    
     const items = xmlDoc.getElementsByTagName('Item')
     console.log(`Found ${items.length} items in XML`)
+
+    if (items.length === 0) {
+      throw new Error('לא נמצאו פריטים בקובץ ה-XML')
+    }
 
     // Convert items to products
     const products = Array.from(items).map(item => ({
@@ -67,6 +84,8 @@ serve(async (req) => {
     
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize)
+      console.log(`Processing batch ${i / batchSize + 1} of ${Math.ceil(products.length / batchSize)}`)
+      
       const { error } = await supabase
         .from('store_products')
         .upsert(batch, {
@@ -80,7 +99,7 @@ serve(async (req) => {
       }
 
       successCount += batch.length
-      console.log(`Uploaded ${successCount}/${products.length} products`)
+      console.log(`Successfully uploaded ${successCount}/${products.length} products`)
     }
 
     return new Response(
@@ -89,10 +108,16 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error.message)
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'שגיאה לא ידועה בעיבוד הקובץ'
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 400 
+      }
     )
   }
 })
