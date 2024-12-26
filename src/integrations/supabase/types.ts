@@ -136,6 +136,7 @@ export type Database = {
       }
       store_products: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           manufacturer: string | null
@@ -149,6 +150,7 @@ export type Database = {
           unit_quantity: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           manufacturer?: string | null
@@ -162,6 +164,7 @@ export type Database = {
           unit_quantity?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           manufacturer?: string | null
