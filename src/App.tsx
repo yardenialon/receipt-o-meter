@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Analytics from './pages/Analytics';
+import Products from './pages/Products';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/products" element={<Products />} />
             </Routes>
           </main>
         </div>

@@ -134,6 +134,48 @@ export type Database = {
         }
         Relationships: []
       }
+      store_products: {
+        Row: {
+          created_at: string
+          id: string
+          manufacturer: string | null
+          price: number
+          price_update_date: string | null
+          product_code: string
+          product_name: string
+          store_chain: string
+          store_id: string | null
+          unit_of_measure: string | null
+          unit_quantity: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manufacturer?: string | null
+          price: number
+          price_update_date?: string | null
+          product_code: string
+          product_name: string
+          store_chain: string
+          store_id?: string | null
+          unit_of_measure?: string | null
+          unit_quantity?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manufacturer?: string | null
+          price?: number
+          price_update_date?: string | null
+          product_code?: string
+          product_name?: string
+          store_chain?: string
+          store_id?: string | null
+          unit_of_measure?: string | null
+          unit_quantity?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
