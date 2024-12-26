@@ -11,11 +11,12 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import XmlUpload from '@/components/upload/XmlUpload';
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const Products = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -148,6 +149,7 @@ const Products = () => {
                   <TableHead>קוד מוצר</TableHead>
                   <TableHead>שם מוצר</TableHead>
                   <TableHead>יצרן</TableHead>
+                  <TableHead>רשת וסניף</TableHead>
                   <TableHead>מחיר</TableHead>
                   <TableHead>עודכן</TableHead>
                 </TableRow>
@@ -158,6 +160,19 @@ const Products = () => {
                     <TableCell className="font-medium">{product.product_code}</TableCell>
                     <TableCell>{product.product_name}</TableCell>
                     <TableCell>{product.manufacturer}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 items-center">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Store className="h-3 w-3" />
+                          {product.store_chain}
+                        </Badge>
+                        {product.store_id && (
+                          <Badge variant="outline">
+                            סניף {product.store_id}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>₪{product.price.toFixed(2)}</TableCell>
                     <TableCell>
                       {product.price_update_date && format(new Date(product.price_update_date), 'dd/MM/yyyy HH:mm', { locale: he })}
