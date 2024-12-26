@@ -7,6 +7,11 @@ const supabase = createClient(
 );
 
 export const insertProducts = async (products: XmlProduct[]): Promise<number> => {
+  if (!products || products.length === 0) {
+    console.error('No products provided for insertion');
+    return 0;
+  }
+
   console.log(`Attempting to insert ${products.length} products`);
   
   const batchSize = 100;
@@ -15,6 +20,7 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
     console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(products.length/batchSize)}`);
+    console.log('First product in batch:', batch[0]);
     
     try {
       const { data, error } = await supabase
@@ -35,9 +41,9 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
     } catch (error) {
       console.error(`Error processing batch ${i/batchSize + 1}:`, error);
       console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
       });
     }
   }

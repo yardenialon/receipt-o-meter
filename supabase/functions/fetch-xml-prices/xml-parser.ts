@@ -3,6 +3,11 @@ import { XmlProduct } from './types.ts';
 const safeGetText = (element: any, path: string[]): string => {
   console.log(`Attempting to get text for path: ${path.join('.')}`);
   try {
+    if (!element) {
+      console.log(`Element is null or undefined for path: ${path.join('.')}`);
+      return '';
+    }
+
     let current = element;
     for (const key of path) {
       if (!current?.[key]) {
@@ -11,7 +16,13 @@ const safeGetText = (element: any, path: string[]): string => {
       }
       current = current[key];
     }
-    const result = String(current || '').trim();
+    
+    if (current === null || current === undefined) {
+      console.log(`Value is null or undefined for path: ${path.join('.')}`);
+      return '';
+    }
+
+    const result = String(current).trim();
     console.log(`Found value: ${result}`);
     return result;
   } catch (error) {
@@ -22,18 +33,25 @@ const safeGetText = (element: any, path: string[]): string => {
 
 const safeParseNumber = (value: string): number => {
   try {
+    if (!value) return 0;
     const cleaned = value.replace(/[^\d.-]/g, '');
     const parsed = parseFloat(cleaned);
     return isNaN(parsed) ? 0 : parsed;
-  } catch {
+  } catch (error) {
+    console.error('Error parsing number:', error);
     return 0;
   }
 };
 
 const findItemsInXml = (obj: any, depth = 0, maxDepth = 5): any[] => {
+  if (!obj) {
+    console.log('Object is null or undefined');
+    return [];
+  }
+
   console.log(`Searching for items at depth ${depth}`);
   
-  if (depth >= maxDepth || !obj || typeof obj !== 'object') {
+  if (depth >= maxDepth || typeof obj !== 'object') {
     return [];
   }
 
@@ -41,29 +59,37 @@ const findItemsInXml = (obj: any, depth = 0, maxDepth = 5): any[] => {
   const itemPaths = ['Items.Item', 'root.Items.Item', 'PriceFull.Items.Item'];
   
   for (const path of itemPaths) {
-    const parts = path.split('.');
-    let current = obj;
-    for (const part of parts) {
-      current = current?.[part];
-      if (!current) break;
-    }
-    if (current) {
-      const items = Array.isArray(current) ? current : [current];
-      console.log(`Found ${items.length} items in path ${path}`);
-      return items;
+    try {
+      const parts = path.split('.');
+      let current = obj;
+      for (const part of parts) {
+        current = current?.[part];
+        if (!current) break;
+      }
+      if (current) {
+        const items = Array.isArray(current) ? current : [current];
+        console.log(`Found ${items.length} items in path ${path}`);
+        return items;
+      }
+    } catch (error) {
+      console.error(`Error checking path ${path}:`, error);
     }
   }
 
   // Recursive search if not found in common paths
   for (const [key, value] of Object.entries(obj)) {
-    if (key === 'Item' || key === 'Items') {
-      const items = Array.isArray(value) ? value : [value];
-      console.log(`Found ${items.length} items in key ${key}`);
-      return items;
-    }
-    if (typeof value === 'object') {
-      const found = findItemsInXml(value, depth + 1, maxDepth);
-      if (found.length > 0) return found;
+    try {
+      if (key === 'Item' || key === 'Items') {
+        const items = Array.isArray(value) ? value : [value];
+        console.log(`Found ${items.length} items in key ${key}`);
+        return items;
+      }
+      if (typeof value === 'object' && value !== null) {
+        const found = findItemsInXml(value, depth + 1, maxDepth);
+        if (found.length > 0) return found;
+      }
+    } catch (error) {
+      console.error(`Error processing key ${key}:`, error);
     }
   }
 
@@ -92,7 +118,7 @@ export const parseXmlItems = (parsedXml: any): XmlProduct[] => {
         console.log('Skipping null item');
         return false;
       }
-      console.log('Processing item:', item);
+      console.log('Processing item:', JSON.stringify(item).substring(0, 200));
       return true;
     })
     .map((item, index) => {
