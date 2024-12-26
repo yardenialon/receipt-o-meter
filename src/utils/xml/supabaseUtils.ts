@@ -1,10 +1,14 @@
 import { supabase } from '@/lib/supabase';
 
-export const uploadProductsToSupabase = async (xmlContent: string) => {
+export const uploadProductsToSupabase = async (xmlContent: string, networkName: string, branchName: string) => {
   console.log('Processing XML content directly...');
   
   const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-    body: { xmlContent }
+    body: { 
+      xmlContent,
+      networkName,
+      branchName
+    }
   });
 
   if (error) {

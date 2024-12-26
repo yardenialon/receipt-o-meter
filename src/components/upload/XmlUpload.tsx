@@ -8,25 +8,39 @@ import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 import { XmlDropZone } from './XmlDropZone';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [xmlContent, setXmlContent] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
+  const [networkName, setNetworkName] = useState('');
+  const [branchName, setBranchName] = useState('');
+  const [pendingXmlContent, setPendingXmlContent] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-  const onDrop = async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) {
-      toast.error('לא נבחר קובץ');
+  const handleUpload = async (content: string) => {
+    if (!networkName || !branchName) {
+      toast.error('אנא הזן שם רשת ושם סניף');
       return;
     }
 
     setIsUploading(true);
     try {
-      const file = acceptedFiles[0];
-      console.log('Reading file:', file.name);
-      const text = await file.text();
-      const count = await uploadProductsToSupabase(text);
+      const count = await uploadProductsToSupabase(content, networkName, branchName);
       toast.success(`הועלו ${count} מוצרים בהצלחה`);
-      setXmlContent(''); // Clear the textarea after successful upload
+      setXmlContent('');
+      setShowDialog(false);
+      setPendingXmlContent(null);
+      setPendingFile(null);
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
@@ -35,23 +49,27 @@ const XmlUpload = () => {
     }
   };
 
-  const handleXmlContentUpload = async () => {
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) {
+      toast.error('לא נבחר קובץ');
+      return;
+    }
+
+    const file = acceptedFiles[0];
+    console.log('Reading file:', file.name);
+    const text = await file.text();
+    setPendingFile(file);
+    setPendingXmlContent(text);
+    setShowDialog(true);
+  };
+
+  const handleXmlContentUpload = () => {
     if (!xmlContent.trim()) {
       toast.error('אנא הכנס תוכן XML');
       return;
     }
-
-    setIsUploading(true);
-    try {
-      const count = await uploadProductsToSupabase(xmlContent);
-      toast.success(`הועלו ${count} מוצרים בהצלחה`);
-      setXmlContent(''); // Clear the textarea after successful upload
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('שגיאה בהעלאת התוכן: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
-    } finally {
-      setIsUploading(false);
-    }
+    setPendingXmlContent(xmlContent);
+    setShowDialog(true);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -63,6 +81,12 @@ const XmlUpload = () => {
     maxFiles: 1,
     disabled: isUploading
   });
+
+  const handleConfirm = () => {
+    if (pendingXmlContent) {
+      handleUpload(pendingXmlContent);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -110,6 +134,45 @@ const XmlUpload = () => {
           העלה תוכן XML
         </Button>
       </div>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>פרטי הרשת והסניף</DialogTitle>
+            <DialogDescription>
+              אנא הזן את שם הרשת ושם הסניף עבור הקובץ
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="networkName">שם הרשת</Label>
+              <Input
+                id="networkName"
+                value={networkName}
+                onChange={(e) => setNetworkName(e.target.value)}
+                placeholder="לדוגמה: שופרסל"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="branchName">שם הסניף</Label>
+              <Input
+                id="branchName"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+                placeholder="לדוגמה: סניף רמת אביב"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleConfirm}
+              disabled={!networkName || !branchName || isUploading}
+            >
+              {isUploading ? 'מעלה...' : 'אישור'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

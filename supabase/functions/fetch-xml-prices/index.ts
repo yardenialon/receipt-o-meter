@@ -8,19 +8,24 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { xmlContent } = await req.json();
+    const { xmlContent, networkName, branchName } = await req.json();
     
     if (!xmlContent) {
       throw new Error('לא התקבל תוכן XML');
     }
 
+    if (!networkName || !branchName) {
+      throw new Error('חסרים פרטי רשת או סניף');
+    }
+
     console.log('Received XML content length:', xmlContent.length);
+    console.log('Network:', networkName);
+    console.log('Branch:', branchName);
     
     // Clean up the XML content
     let cleanXmlContent = xmlContent
@@ -63,8 +68,8 @@ serve(async (req) => {
     let processed = 0;
     let successCount = 0;
 
-    const storeChain = 'שופרסל';
-    const storeId = data.root?.StoreId || '001';
+    const storeChain = networkName;
+    const storeId = branchName;
 
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize).map(item => {
