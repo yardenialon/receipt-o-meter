@@ -38,14 +38,14 @@ serve(async (req) => {
     try {
       data = xmlParse(cleanXmlContent);
       console.log('XML parsed successfully');
-      console.log('Root structure:', JSON.stringify(data.root, null, 2));
+      console.log('Root structure:', JSON.stringify(data, null, 2));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    // Extract items directly from the Items array
-    const items = data.root?.Items?.[0]?.Item;
+    // Extract items from the XML structure
+    const items = data?.root?.Items?.Item;
     console.log('Items found:', items?.length);
     if (items?.[0]) {
       console.log('First item example:', JSON.stringify(items[0], null, 2));
@@ -67,21 +67,21 @@ serve(async (req) => {
     let successCount = 0;
 
     const storeChain = 'שופרסל';
-    const storeId = data.root?.StoreId?.[0] || '001';
+    const storeId = data.root?.StoreId || '001';
 
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize).map(item => {
         const product = {
           store_chain: storeChain,
           store_id: storeId,
-          product_code: item.ItemCode?.[0] || '',
-          product_name: item.ItemName?.[0] || '',
-          manufacturer: item.ManufacturerName?.[0] || null,
-          price: parseFloat(item.ItemPrice?.[0] || '0'),
-          unit_quantity: item.Quantity?.[0] || null,
-          unit_of_measure: item.UnitOfMeasure?.[0] || null,
-          price_update_date: item.PriceUpdateDate?.[0] 
-            ? new Date(item.PriceUpdateDate[0]).toISOString()
+          product_code: item.ItemCode || '',
+          product_name: item.ItemName || '',
+          manufacturer: item.ManufacturerName || null,
+          price: parseFloat(item.ItemPrice || '0'),
+          unit_quantity: item.Quantity || null,
+          unit_of_measure: item.UnitOfMeasure || null,
+          price_update_date: item.PriceUpdateDate 
+            ? new Date(item.PriceUpdateDate).toISOString()
             : new Date().toISOString(),
           category: null
         };
