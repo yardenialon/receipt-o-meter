@@ -17,25 +17,45 @@ serve(async (req) => {
   try {
     console.log('Starting Shufersal price fetch...');
     
-    // Fetch the price files list
-    const response = await fetch('https://prices.shufersal.co.il/');
+    // Fetch the price files list with proper headers
+    const response = await fetch('https://prices.shufersal.co.il/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      }
+    });
+
     if (!response.ok) {
-      throw new Error('Failed to fetch price files list');
+      console.error('Failed to fetch price files list:', response.status, response.statusText);
+      throw new Error(`Failed to fetch price files list: ${response.status} ${response.statusText}`);
     }
 
     const html = await response.text();
-    // Find the most recent .gz file URL
-    const gzMatch = html.match(/href="(.*?\.gz)"/);
-    if (!gzMatch) {
-      throw new Error('No price files found');
+    console.log('Received HTML response:', html.substring(0, 500)); // Log first 500 chars for debugging
+
+    // Look for .gz files in the HTML response
+    const gzFiles = html.match(/href="([^"]*\.gz)"/g);
+    console.log('Found .gz files:', gzFiles);
+
+    if (!gzFiles || gzFiles.length === 0) {
+      throw new Error('No price files found in the HTML response');
     }
 
-    const fileUrl = `https://prices.shufersal.co.il/${gzMatch[1]}`;
+    // Get the most recent file (usually the last one in the list)
+    const mostRecentFile = gzFiles[gzFiles.length - 1].match(/href="([^"]*\.gz)"/)[1];
+    const fileUrl = `https://prices.shufersal.co.il/${mostRecentFile}`;
     console.log('Fetching file:', fileUrl);
 
-    // Download the .gz file
-    const gzResponse = await fetch(fileUrl);
+    // Download the .gz file with proper headers
+    const gzResponse = await fetch(fileUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+      }
+    });
+
     if (!gzResponse.ok) {
+      console.error('Failed to fetch .gz file:', gzResponse.status, gzResponse.statusText);
       throw new Error('Failed to fetch .gz file');
     }
 
@@ -47,6 +67,12 @@ serve(async (req) => {
     // Parse XML
     const data = xmlParse(xmlText);
     const items = data.Items?.Item || [];
+
+    if (!items.length) {
+      throw new Error('No items found in the XML file');
+    }
+
+    console.log(`Found ${items.length} items in the XML file`);
 
     // Initialize Supabase client
     const supabase = createClient(
