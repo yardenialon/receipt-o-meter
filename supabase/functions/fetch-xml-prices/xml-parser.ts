@@ -8,7 +8,7 @@ export const parseXmlItems = (parsedXml: any) => {
 
   // Log the XML structure for debugging
   console.log('XML structure type:', typeof parsedXml);
-  console.log('XML structure:', JSON.stringify(parsedXml, null, 2));
+  console.log('XML root keys:', Object.keys(parsedXml));
 
   // Helper function to safely get nested value
   const safeGet = (obj: any, path: string[]): any => {
@@ -57,12 +57,12 @@ export const parseXmlItems = (parsedXml: any) => {
       console.log(`Trying path: ${path.join('.')}`);
       const items = safeGet(obj, path);
       
-      if (Array.isArray(items)) {
+      if (Array.isArray(items) && items.length > 0) {
         console.log(`Found items array at path: ${path.join('.')} with ${items.length} items`);
-        return items;
+        return items.filter(item => item !== null && item !== undefined);
       }
       
-      if (items && typeof items === 'object') {
+      if (items && typeof items === 'object' && !Array.isArray(items)) {
         console.log(`Found single item at path: ${path.join('.')}`);
         return [items];
       }
@@ -70,23 +70,29 @@ export const parseXmlItems = (parsedXml: any) => {
 
     // If not found in common paths, try to find in root
     if (Array.isArray(obj)) {
-      console.log(`Found items array in root with ${obj.length} items`);
-      return obj;
+      const filteredItems = obj.filter(item => item !== null && item !== undefined);
+      if (filteredItems.length > 0) {
+        console.log(`Found items array in root with ${filteredItems.length} items`);
+        return filteredItems;
+      }
     }
     
     if (obj && typeof obj === 'object') {
       // Try to find any array in the object that might contain items
       for (const key of Object.keys(obj)) {
         const value = obj[key];
-        if (Array.isArray(value)) {
-          console.log(`Found potential items array in key: ${key} with ${value.length} items`);
-          return value;
+        if (Array.isArray(value) && value.length > 0) {
+          const filteredItems = value.filter(item => item !== null && item !== undefined);
+          if (filteredItems.length > 0) {
+            console.log(`Found potential items array in key: ${key} with ${filteredItems.length} items`);
+            return filteredItems;
+          }
         }
       }
       
-      // If we found a single object, return it as an array
-      if (Object.keys(obj).length > 0) {
-        console.log('Found single item in root');
+      // If we found a single object that looks like an item, return it as an array
+      if (Object.keys(obj).length > 0 && (obj.ItemCode || obj.PriceCode || obj.Code || obj.ProductCode)) {
+        console.log('Found single item in root object');
         return [obj];
       }
     }
@@ -122,7 +128,6 @@ export const parseXmlItems = (parsedXml: any) => {
           for (const key of keys) {
             const value = safeGet(item, [key]);
             if (value) {
-              console.log(`Found value for ${keys[0]} using key: ${key}`);
               return String(value).trim();
             }
           }

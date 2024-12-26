@@ -29,19 +29,16 @@ serve(async (req) => {
     });
 
     if (!requestData) {
-      console.error('Request data is null or undefined');
       throw new Error('בקשה לא תקינה - חסרים נתונים');
     }
     
     const { xmlContent, networkName, branchName } = requestData;
     
     if (!xmlContent) {
-      console.error('XML content is missing');
       throw new Error('לא התקבל תוכן XML');
     }
 
     if (!networkName || !branchName) {
-      console.error('Network or branch name is missing');
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
@@ -59,7 +56,6 @@ serve(async (req) => {
       .trim();
 
     if (!cleanXmlContent) {
-      console.error('Cleaned XML content is empty');
       throw new Error('תוכן ה-XML ריק לאחר ניקוי');
     }
 
@@ -79,7 +75,6 @@ serve(async (req) => {
     }
 
     if (!parsedXml) {
-      console.error('XML parsing resulted in null');
       throw new Error('פרסור ה-XML נכשל');
     }
 
@@ -91,13 +86,11 @@ serve(async (req) => {
       store_id: branchName
     }));
 
-    console.log(`Found ${products.length} products to process`);
-    if (products.length === 0) {
-      console.error('No valid products found in XML');
+    if (!Array.isArray(products) || products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים ב-XML');
     }
 
-    // Log sample of products
+    console.log(`Found ${products.length} products to process`);
     console.log('Sample of first 3 products:', products.slice(0, 3));
 
     // Insert products into database
