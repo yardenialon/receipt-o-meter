@@ -4,30 +4,12 @@ import { Upload, File, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { parseXmlContent, parseXmlItems } from '@/utils/xml/xmlParser';
-import { fetchGoogleDriveFile } from '@/utils/xml/googleDriveUtils';
 import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 import { XmlDropZone } from './XmlDropZone';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [driveUrl, setDriveUrl] = useState('');
-
-  const processXmlContent = async (xmlText: string) => {
-    try {
-      console.log('Processing XML content...');
-      const items = await parseXmlContent(xmlText);
-      console.log('Parsed XML items:', items.length);
-      const products = parseXmlItems(items);
-      console.log('Parsed products:', products.length);
-      const count = await uploadProductsToSupabase(products);
-      toast.success(`הועלו ${count} מוצרים בהצלחה`);
-    } catch (error) {
-      console.error('Error processing XML:', error);
-      toast.error('שגיאה בעיבוד הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
-      throw error;
-    }
-  };
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
@@ -40,7 +22,8 @@ const XmlUpload = () => {
       const file = acceptedFiles[0];
       console.log('Reading file:', file.name);
       const text = await file.text();
-      await processXmlContent(text);
+      const count = await uploadProductsToSupabase(text);
+      toast.success(`הועלו ${count} מוצרים בהצלחה`);
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
@@ -60,10 +43,9 @@ const XmlUpload = () => {
     toast.loading('מוריד את הקובץ מ-Google Drive...');
 
     try {
-      console.log('Fetching from Drive URL:', driveUrl);
-      const text = await fetchGoogleDriveFile(driveUrl);
-      console.log('Successfully fetched file from Drive');
-      await processXmlContent(text);
+      console.log('Starting upload from Drive URL:', driveUrl);
+      const count = await uploadProductsToSupabase(driveUrl);
+      toast.success(`הועלו ${count} מוצרים בהצלחה`);
     } catch (error) {
       console.error('Drive upload error:', error);
       toast.error('שגיאה בהורדת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));

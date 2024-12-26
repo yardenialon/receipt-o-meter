@@ -1,24 +1,17 @@
 import { supabase } from '@/lib/supabase';
 
-export const uploadProductsToSupabase = async (products: any[]) => {
-  console.log('Starting batch upload of products...');
+export const uploadProductsToSupabase = async (xmlUrl: string) => {
+  console.log('Calling Edge Function with URL:', xmlUrl);
   
-  for (let i = 0; i < products.length; i += 100) {
-    const batch = products.slice(i, i + 100);
-    const { error } = await supabase
-      .from('store_products')
-      .upsert(batch, { 
-        onConflict: 'product_code,store_chain',
-        ignoreDuplicates: false 
-      });
+  const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
+    body: { driveUrl: xmlUrl }
+  });
 
-    if (error) {
-      console.error('Error uploading batch:', error);
-      throw new Error(`שגיאה בהעלאת קבוצת מוצרים ${i/100 + 1}: ${error.message}`);
-    }
-    
-    console.log(`Uploaded batch ${i/100 + 1} of ${Math.ceil(products.length/100)}`);
+  if (error) {
+    console.error('Edge Function error:', error);
+    throw error;
   }
 
-  return products.length;
+  console.log('Edge Function response:', data);
+  return data.count;
 };
