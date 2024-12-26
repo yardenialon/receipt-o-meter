@@ -47,25 +47,29 @@ serve(async (req) => {
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
+    if (!parsedXml) {
+      throw new Error('XML parsing resulted in null');
+    }
+
     // Try different possible paths to find items
-    let items = null;
+    let items = [];
     
-    // Check common XML structures
+    // Check common XML structures and ensure we always have an array
     if (parsedXml.root?.Items?.Item) {
       items = Array.isArray(parsedXml.root.Items.Item) 
         ? parsedXml.root.Items.Item 
-        : [parsedXml.root.Items.Item];
+        : [parsedXml.root.Items.Item].filter(Boolean);
     } else if (parsedXml.Items?.Item) {
       items = Array.isArray(parsedXml.Items.Item) 
         ? parsedXml.Items.Item 
-        : [parsedXml.Items.Item];
+        : [parsedXml.Items.Item].filter(Boolean);
     } else if (parsedXml.PriceFull?.Items?.Item) {
       items = Array.isArray(parsedXml.PriceFull.Items.Item) 
         ? parsedXml.PriceFull.Items.Item 
-        : [parsedXml.PriceFull.Items.Item];
+        : [parsedXml.PriceFull.Items.Item].filter(Boolean);
     }
 
-    console.log('Items found:', items ? items.length : 0);
+    console.log('Items found:', items.length);
     
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
@@ -83,45 +87,72 @@ serve(async (req) => {
     let successCount = 0;
 
     for (let i = 0; i < items.length; i += batchSize) {
-      const batch = items.slice(i, i + batchSize).map(item => {
-        const product = {
-          store_chain: networkName,
-          store_id: branchName,
-          product_code: item.ItemCode || item.PriceCode || item.Code,
-          product_name: item.ItemName || item.PriceName || item.Name,
-          manufacturer: item.ManufacturerName || item.Manufacturer || '',
-          price: parseFloat(item.ItemPrice || item.Price || '0'),
-          unit_quantity: item.Quantity || item.UnitQty || '',
-          unit_of_measure: item.UnitOfMeasure || item.Unit || '',
-          price_update_date: new Date().toISOString(),
-          category: item.ItemSection || item.Category || null
-        };
+      const batch = items.slice(i, i + batchSize)
+        .filter(item => item !== null && typeof item === 'object')
+        .map(item => {
+          try {
+            const product = {
+              store_chain: networkName,
+              store_id: branchName,
+              product_code: String(item.ItemCode || item.PriceCode || item.Code || '').trim(),
+              product_name: String(item.ItemName || item.PriceName || item.Name || '').trim(),
+              manufacturer: String(item.ManufacturerName || item.Manufacturer || '').trim(),
+              price: parseFloat(String(item.ItemPrice || item.Price || '0').replace(/[^\d.-]/g, '')) || 0,
+              unit_quantity: String(item.Quantity || item.UnitQty || '').trim(),
+              unit_of_measure: String(item.UnitOfMeasure || item.Unit || '').trim(),
+              price_update_date: new Date().toISOString(),
+              category: String(item.ItemSection || item.Category || '').trim() || null
+            };
 
-        if (i === 0) {
-          console.log('Sample product data:', product);
-        }
+            // Validate required fields
+            if (!product.product_code || !product.product_name) {
+              console.warn('Skipping invalid product:', product);
+              return null;
+            }
 
-        return product;
-      });
+            if (i === 0) {
+              console.log('Sample product data:', product);
+            }
+
+            return product;
+          } catch (error) {
+            console.error('Error processing item:', error);
+            return null;
+          }
+        })
+        .filter(Boolean); // Remove null entries
+
+      if (batch.length === 0) {
+        continue;
+      }
 
       console.log(`Processing batch ${i/batchSize + 1}, items ${i} to ${i + batch.length}`);
 
-      const { error } = await supabase
-        .from('store_products')
-        .upsert(batch, {
-          onConflict: 'product_code,store_chain',
-          ignoreDuplicates: false
-        });
+      try {
+        const { error } = await supabase
+          .from('store_products')
+          .upsert(batch, {
+            onConflict: 'product_code,store_chain',
+            ignoreDuplicates: false
+          });
 
-      if (error) {
-        console.error('Error inserting batch:', error);
-        throw error;
-      } else {
-        successCount += batch.length;
+        if (error) {
+          console.error('Error inserting batch:', error);
+          throw error;
+        } else {
+          successCount += batch.length;
+        }
+
+        processed += batch.length;
+        console.log(`Processed ${processed}/${items.length} items`);
+      } catch (error) {
+        console.error(`Error processing batch ${i/batchSize + 1}:`, error);
+        // Continue with next batch instead of failing completely
       }
+    }
 
-      processed += batch.length;
-      console.log(`Processed ${processed}/${items.length} items`);
+    if (successCount === 0) {
+      throw new Error('לא הצלחנו לעבד אף מוצר מה-XML');
     }
 
     return new Response(
