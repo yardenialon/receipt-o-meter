@@ -5,13 +5,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useSidebarContext } from './ui/sidebar';
+import { useSidebar } from './ui/sidebar';
 import { BillBeLogo } from './BillBeLogo';
 
 export function AppSidebar() {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { isOpen, setIsOpen } = useSidebarContext();
+  const { state, openMobile, setOpenMobile } = useSidebar();
 
   const links = [
     { href: '/', label: 'קבלות' },
@@ -49,7 +49,7 @@ export function AppSidebar() {
 
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetTrigger asChild>
           <Button
             variant="ghost"
