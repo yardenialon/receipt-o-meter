@@ -21,7 +21,7 @@ serve(async (req) => {
       throw new Error('לא התקבל תוכן XML');
     }
 
-    console.log('Received content length:', xmlContent.length);
+    console.log('Received XML content length:', xmlContent.length);
     console.log('First 200 characters:', xmlContent.substring(0, 200));
     
     // Clean up the XML content
@@ -33,26 +33,35 @@ serve(async (req) => {
       .replace(/&#39;/g, "'")
       .trim();
 
-    // Add XML declaration if missing
-    if (!cleanXmlContent.includes('<?xml')) {
-      cleanXmlContent = '<?xml version="1.0" encoding="UTF-8"?>\n' + cleanXmlContent;
-    }
-
     // Parse XML
     console.log('Parsing XML content...');
     let data;
     try {
       data = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully. Root structure:', JSON.stringify(Object.keys(data), null, 2));
-      console.log('Items structure:', JSON.stringify(data.root?.Items, null, 2));
+      console.log('XML parsed successfully');
+      console.log('Root keys:', Object.keys(data));
+      if (data.root) {
+        console.log('Root children keys:', Object.keys(data.root));
+      }
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    // Extract items from the specific XML structure
-    const items = data.root?.Items?.[0]?.Item || [];
-    console.log(`Found ${items?.length || 0} items in the XML content`);
+    // Try different possible paths to find items
+    let items = [];
+    if (data.root?.Items?.[0]?.Item) {
+      items = data.root.Items[0].Item;
+    } else if (data.root?.Item) {
+      items = Array.isArray(data.root.Item) ? data.root.Item : [data.root.Item];
+    } else if (data.Items?.[0]?.Item) {
+      items = data.Items[0].Item;
+    }
+
+    console.log('Items found:', items.length);
+    if (items.length > 0) {
+      console.log('First item structure:', JSON.stringify(items[0], null, 2));
+    }
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
@@ -83,10 +92,8 @@ serve(async (req) => {
           price: parseFloat(item.ItemPrice?.[0] || '0'),
           unit_quantity: item.UnitQty?.[0] || null,
           unit_of_measure: item.UnitOfMeasure?.[0] || null,
-          price_update_date: item.PriceUpdateDate?.[0] 
-            ? new Date(item.PriceUpdateDate[0]).toISOString()
-            : new Date().toISOString(),
-          category: null
+          price_update_date: new Date().toISOString(),
+          category: item.ItemSection?.[0] || null
         };
 
         if (i === 0) {
