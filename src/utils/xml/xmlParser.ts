@@ -1,6 +1,5 @@
 export const parseXmlContent = async (xmlText: string) => {
   console.log('Starting XML parsing with content length:', xmlText.length);
-  console.log('First 200 characters of XML:', xmlText.substring(0, 200));
   
   // Clean up XML content
   const cleanXml = xmlText
@@ -11,8 +10,6 @@ export const parseXmlContent = async (xmlText: string) => {
     .replace(/&#39;/g, "'")
     .trim();
 
-  console.log('Cleaned XML content length:', cleanXml.length);
-  
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(cleanXml, 'text/xml');
   
@@ -23,26 +20,16 @@ export const parseXmlContent = async (xmlText: string) => {
     throw new Error('קובץ ה-XML אינו תקין. שגיאת פרסור: ' + parserError.textContent);
   }
 
-  // Try different possible item tag names
-  const possibleItemTags = ['Item', 'Items/Item', 'PriceFull/Items/Item', 'Product', 'Products/Product'];
-  let items: Element[] = [];
+  // Get items from Rami Levy's XML structure
+  const items = xmlDoc.querySelectorAll('Items > Item');
   
-  for (const tag of possibleItemTags) {
-    const foundItems = xmlDoc.getElementsByTagName(tag);
-    if (foundItems.length > 0) {
-      console.log(`Found ${foundItems.length} items using tag: ${tag}`);
-      items = Array.from(foundItems);
-      break;
-    }
+  if (!items || items.length === 0) {
+    console.error('No items found in XML');
+    throw new Error('לא נמצאו פריטים בקובץ ה-XML');
   }
 
-  if (items.length === 0) {
-    console.error('No items found in XML. Document structure:', xmlDoc.documentElement.outerHTML);
-    throw new Error('לא נמצאו פריטים בקובץ ה-XML. נסה להשתמש בתבנית תקנית');
-  }
-
-  console.log(`Successfully found ${items.length} items in XML`);
-  return items;
+  console.log(`Found ${items.length} items in XML`);
+  return Array.from(items);
 };
 
 export const parseXmlItems = (items: Element[]) => {
@@ -50,32 +37,25 @@ export const parseXmlItems = (items: Element[]) => {
   
   return items.map((item, index) => {
     try {
-      // Log the current item's XML structure
-      console.log(`Parsing item ${index + 1}:`, item.outerHTML);
-
       // Helper function to safely get text content
-      const getElementText = (parent: Element, tags: string[]): string => {
-        for (const tag of tags) {
-          const element = parent.getElementsByTagName(tag)[0];
-          if (element?.textContent) {
-            return element.textContent.trim();
-          }
-        }
-        return '';
+      const getElementText = (parent: Element, tagName: string): string => {
+        const element = parent.querySelector(tagName);
+        return element?.textContent?.trim() || '';
       };
 
-      // Try multiple possible tag names for each field
+      const priceUpdateDate = new Date(getElementText(item, 'PriceUpdateDate'));
+      
       const product = {
-        store_chain: 'שופרסל', // Default value
-        store_id: '001',
-        product_code: getElementText(item, ['ItemCode', 'PriceCode', 'Code', 'id', 'ProductCode']),
-        product_name: getElementText(item, ['ItemName', 'PriceName', 'Name', 'ProductName', 'description']),
-        manufacturer: getElementText(item, ['ManufacturerName', 'Manufacturer', 'manufacturer', 'Producer']),
-        price: parseFloat(getElementText(item, ['ItemPrice', 'Price', 'price', 'UnitPrice'])) || 0,
-        unit_quantity: getElementText(item, ['Quantity', 'UnitQty', 'quantity', 'Amount']),
-        unit_of_measure: getElementText(item, ['UnitOfMeasure', 'Unit', 'unit', 'MeasureUnit']),
-        category: getElementText(item, ['ItemSection', 'Category', 'category', 'Department']) || 'אחר',
-        price_update_date: new Date().toISOString()
+        store_chain: 'רמי לוי',
+        store_id: getElementText(item, 'StoreId') || '001',
+        product_code: getElementText(item, 'ItemCode'),
+        product_name: getElementText(item, 'ItemName'),
+        manufacturer: getElementText(item, 'ManufacturerName'),
+        price: parseFloat(getElementText(item, 'ItemPrice')) || 0,
+        unit_quantity: getElementText(item, 'UnitQty'),
+        unit_of_measure: getElementText(item, 'UnitOfMeasure'),
+        category: 'כללי', // Default category since Rami Levy XML doesn't include categories
+        price_update_date: priceUpdateDate.toISOString()
       };
 
       // Validate required fields
@@ -94,7 +74,6 @@ export const parseXmlItems = (items: Element[]) => {
         throw new Error(`מחיר לא תקין בפריט ${index + 1}`);
       }
 
-      console.log(`Successfully parsed product ${index + 1}:`, product);
       return product;
     } catch (error) {
       console.error(`Error parsing item ${index + 1}:`, error);
