@@ -15,30 +15,66 @@ serve(async (req) => {
     const { driveUrl } = await req.json()
     console.log('Processing Drive URL:', driveUrl)
 
+    // Validate URL format
+    if (!driveUrl.includes('drive.google.com')) {
+      throw new Error('הקישור חייב להיות מ-Google Drive')
+    }
+
     // Extract file ID from Google Drive URL
-    const fileId = driveUrl.match(/\/d\/([^/]+)/)?.[1]
+    const fileId = driveUrl.match(/\/d\/([^/]+)/)?.[1] || driveUrl.match(/id=([^&]+)/)?.[1]
     if (!fileId) {
+      console.error('Invalid Drive URL format:', driveUrl)
       throw new Error('כתובת ה-URL אינה תקינה. אנא ודא שזו כתובת שיתוף תקינה של Google Drive')
     }
     console.log('Extracted file ID:', fileId)
 
-    // Fetch file from Google Drive
-    const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
-    console.log('Attempting to fetch from URL:', directUrl)
-    
-    const response = await fetch(directUrl)
-    if (!response.ok) {
-      console.error('Failed to fetch file:', response.status, response.statusText)
-      throw new Error(`שגיאה בהורדת הקובץ (${response.status}). אנא ודא שהקובץ נגיש`)
+    // Try different Google Drive URL formats
+    const urls = [
+      `https://drive.google.com/uc?export=download&id=${fileId}`,
+      `https://drive.google.com/uc?id=${fileId}`,
+      `https://docs.google.com/uc?export=download&id=${fileId}`
+    ]
+
+    let xmlText = null
+    let error = null
+
+    // Try each URL format until we get a valid XML response
+    for (const url of urls) {
+      try {
+        console.log('Attempting to fetch from URL:', url)
+        const response = await fetch(url)
+        
+        if (!response.ok) {
+          console.error('Failed to fetch from', url, ':', response.status, response.statusText)
+          continue
+        }
+
+        const content = await response.text()
+        console.log('Response content type:', response.headers.get('content-type'))
+        console.log('First 100 characters:', content.substring(0, 100))
+
+        // Check if we got HTML instead of XML
+        if (content.includes('<!DOCTYPE html>') || content.includes('<html')) {
+          console.error('Received HTML instead of XML from:', url)
+          continue
+        }
+
+        // Basic XML validation
+        if (!content.includes('<?xml') && !content.includes('<Item>')) {
+          console.error('Content does not appear to be XML from:', url)
+          continue
+        }
+
+        xmlText = content
+        break
+      } catch (e) {
+        error = e
+        console.error('Error fetching from', url, ':', e)
+      }
     }
 
-    const xmlText = await response.text()
-    console.log('Received content length:', xmlText.length)
-    console.log('First 100 characters:', xmlText.substring(0, 100))
-
-    if (xmlText.includes('<!DOCTYPE html>')) {
-      console.error('Received HTML instead of XML content')
-      throw new Error('הקובץ אינו נגיש. אנא ודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link)')
+    if (!xmlText) {
+      throw new Error('הקובץ אינו נגיש. אנא ודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link) ושהוא קובץ XML תקין')
     }
 
     // Parse XML
@@ -56,7 +92,7 @@ serve(async (req) => {
     console.log(`Found ${items.length} items in XML`)
 
     if (items.length === 0) {
-      throw new Error('לא נמצאו פריטים בקובץ ה-XML')
+      throw new Error('לא נמצאו פריטים בקובץ ה-XML. אנא ודא שהקובץ מכיל תגיות <Item>')
     }
 
     // Convert items to products
