@@ -8,6 +8,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -20,17 +21,35 @@ serve(async (req) => {
     }
 
     console.log('Received XML content length:', xmlContent.length)
-    console.log('First 100 characters:', xmlContent.substring(0, 100))
-
+    
     // Basic XML validation
-    if (!xmlContent.includes('<?xml') && !xmlContent.includes('<Item>')) {
+    if (!xmlContent.includes('<?xml')) {
       console.error('Content does not appear to be XML')
-      throw new Error('התוכן אינו בפורמט XML תקין')
+      throw new Error('התוכן אינו מתחיל בהצהרת XML תקינה')
     }
 
-    // Parse XML
+    // Check for common XML issues
+    const missingClosingTags = (xmlContent.match(/<[^/][^>]*>/g) || []).length !==
+      (xmlContent.match(/<\/[^>]*>/g) || []).length
+    
+    if (missingClosingTags) {
+      console.error('XML has mismatched tags')
+      throw new Error('קובץ ה-XML אינו תקין - יש תגיות שלא נסגרו כראוי')
+    }
+
+    // Parse XML with better error handling
     console.log('Parsing XML content...')
-    const data = xmlParse(xmlContent)
+    let data
+    try {
+      data = xmlParse(xmlContent.trim())
+    } catch (parseError) {
+      console.error('XML Parse Error:', parseError)
+      throw new Error('שגיאה בפרסור ה-XML: ' + 
+        (parseError.message === 'UnexpectedEof' 
+          ? 'הקובץ אינו שלם או חסרות תגיות סגירה' 
+          : parseError.message))
+    }
+
     const items = data.Items?.Item || []
 
     if (!items.length) {
