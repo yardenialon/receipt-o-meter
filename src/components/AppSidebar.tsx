@@ -15,9 +15,8 @@ export function AppSidebar() {
   const { state, openMobile, setOpenMobile } = useSidebar();
   const { user } = useAuth();
 
-  // Check if user is admin (first user or yardenialon5@gmail.com)
-  const isAdmin = user?.id === 'e8f53b8e-499b-4c5c-9fb9-e49d38f93e0f' || 
-                 user?.email === 'yardenialon5@gmail.com';
+  // Check if user is admin (first user)
+  const isAdmin = user?.id === 'e8f53b8e-499b-4c5c-9fb9-e49d38f93e0f';
 
   const links = [
     { href: '/', label: 'קבלות' },

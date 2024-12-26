@@ -11,8 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 // Admin route wrapper component
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const isAdmin = user?.id === 'e8f53b8e-499b-4c5c-9fb9-e49d38f93e0f' || 
-                 user?.email === 'yardenialon5@gmail.com';
+  const isAdmin = user?.id === 'e8f53b8e-499b-4c5c-9fb9-e49d38f93e0f';
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
