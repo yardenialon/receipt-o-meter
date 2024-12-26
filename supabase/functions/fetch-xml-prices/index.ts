@@ -28,53 +28,53 @@ serve(async (req) => {
     }
     console.log('Extracted file ID:', fileId)
 
-    // Try different Google Drive URL formats
-    const urls = [
-      `https://drive.google.com/uc?export=download&id=${fileId}`,
-      `https://drive.google.com/uc?id=${fileId}`,
-      `https://docs.google.com/uc?export=download&id=${fileId}`
-    ]
-
-    let xmlText = null
-    let error = null
-
-    // Try each URL format until we get a valid XML response
-    for (const url of urls) {
-      try {
-        console.log('Attempting to fetch from URL:', url)
-        const response = await fetch(url)
-        
-        if (!response.ok) {
-          console.error('Failed to fetch from', url, ':', response.status, response.statusText)
-          continue
-        }
-
-        const content = await response.text()
-        console.log('Response content type:', response.headers.get('content-type'))
-        console.log('First 100 characters:', content.substring(0, 100))
-
-        // Check if we got HTML instead of XML
-        if (content.includes('<!DOCTYPE html>') || content.includes('<html')) {
-          console.error('Received HTML instead of XML from:', url)
-          continue
-        }
-
-        // Basic XML validation
-        if (!content.includes('<?xml') && !content.includes('<Item>')) {
-          console.error('Content does not appear to be XML from:', url)
-          continue
-        }
-
-        xmlText = content
-        break
-      } catch (e) {
-        error = e
-        console.error('Error fetching from', url, ':', e)
-      }
+    // Use Google Drive API to download the file
+    const apiKey = Deno.env.get('GOOGLE_CLOUD_API_KEY')
+    if (!apiKey) {
+      throw new Error('Google API key is not configured')
     }
 
-    if (!xmlText) {
-      throw new Error('הקובץ אינו נגיש. אנא ודא שהקובץ משותף לכל מי שיש לו את הקישור (Anyone with the link) ושהוא קובץ XML תקין')
+    console.log('Fetching file metadata from Google Drive API')
+    const metadataResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?key=${apiKey}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        }
+      }
+    )
+
+    if (!metadataResponse.ok) {
+      console.error('Failed to fetch file metadata:', await metadataResponse.text())
+      throw new Error('שגיאה בגישה לקובץ. אנא ודא שהקובץ קיים ונגיש')
+    }
+
+    const metadata = await metadataResponse.json()
+    console.log('File metadata:', metadata)
+
+    console.log('Downloading file content from Google Drive API')
+    const contentResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${apiKey}`,
+      {
+        headers: {
+          'Accept': 'text/xml',
+        }
+      }
+    )
+
+    if (!contentResponse.ok) {
+      console.error('Failed to download file:', await contentResponse.text())
+      throw new Error('שגיאה בהורדת הקובץ. אנא ודא שהקובץ נגיש')
+    }
+
+    const xmlText = await contentResponse.text()
+    console.log('Received content length:', xmlText.length)
+    console.log('First 100 characters:', xmlText.substring(0, 100))
+
+    // Basic XML validation
+    if (!xmlText.includes('<?xml') && !xmlText.includes('<Item>')) {
+      console.error('Content does not appear to be XML')
+      throw new Error('הקובץ אינו בפורמט XML תקין')
     }
 
     // Parse XML
