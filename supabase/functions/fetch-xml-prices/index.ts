@@ -20,28 +20,49 @@ serve(async (req) => {
       throw new Error('לא התקבל תוכן XML')
     }
 
-    console.log('Received XML content length:', xmlContent.length)
+    console.log('Received content length:', xmlContent.length)
     
-    // Basic XML validation
-    if (!xmlContent.includes('<?xml')) {
-      console.error('Content does not appear to be XML')
-      throw new Error('התוכן אינו מתחיל בהצהרת XML תקינה')
+    // Try to extract XML content if it's wrapped in HTML
+    let cleanXmlContent = xmlContent
+    if (xmlContent.includes('<!DOCTYPE html>') || xmlContent.includes('<html')) {
+      console.log('Content appears to be HTML, attempting to extract XML...')
+      // Look for XML content between pre tags
+      const preMatch = xmlContent.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i)
+      if (preMatch && preMatch[1]) {
+        cleanXmlContent = preMatch[1]
+        console.log('Found XML content inside <pre> tags')
+      } else {
+        // Try to find content between xml tags
+        const xmlMatch = xmlContent.match(/<\?xml[\s\S]*?<\/[^>]*>/)
+        if (xmlMatch) {
+          cleanXmlContent = xmlMatch[0]
+          console.log('Found XML content using regex')
+        }
+      }
     }
 
-    // Check for common XML issues
-    const missingClosingTags = (xmlContent.match(/<[^/][^>]*>/g) || []).length !==
-      (xmlContent.match(/<\/[^>]*>/g) || []).length
-    
-    if (missingClosingTags) {
-      console.error('XML has mismatched tags')
-      throw new Error('קובץ ה-XML אינו תקין - יש תגיות שלא נסגרו כראוי')
+    // Decode HTML entities if present
+    cleanXmlContent = cleanXmlContent
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim()
+
+    // Basic XML validation
+    if (!cleanXmlContent.includes('<?xml')) {
+      console.error('Content does not appear to be XML')
+      throw new Error('לא נמצא תוכן XML תקין בקובץ. אנא העתק את תוכן ה-XML עצמו')
     }
 
     // Parse XML with better error handling
     console.log('Parsing XML content...')
+    console.log('First 100 characters:', cleanXmlContent.substring(0, 100))
+    
     let data
     try {
-      data = xmlParse(xmlContent.trim())
+      data = xmlParse(cleanXmlContent)
     } catch (parseError) {
       console.error('XML Parse Error:', parseError)
       throw new Error('שגיאה בפרסור ה-XML: ' + 
