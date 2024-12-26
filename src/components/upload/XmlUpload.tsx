@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File } from 'lucide-react';
+import { Upload, File, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [driveUrl, setDriveUrl] = useState('');
 
   const parseXmlAndUpload = async (xmlText: string) => {
     try {
@@ -92,6 +96,34 @@ const XmlUpload = () => {
     }
   };
 
+  const fetchAndProcessGoogleDriveFile = async (url: string) => {
+    try {
+      // Convert Google Drive view URL to direct download URL
+      const fileId = url.match(/\/d\/([^/]+)/)?.[1];
+      if (!fileId) {
+        throw new Error('כתובת ה-URL אינה תקינה. אנא ודא שזו כתובת שיתוף תקינה של Google Drive');
+      }
+      
+      const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      
+      console.log('Fetching file from Google Drive:', directUrl);
+      const response = await fetch(directUrl);
+      if (!response.ok) {
+        throw new Error('שגיאה בהורדת הקובץ מ-Google Drive');
+      }
+      
+      const text = await response.text();
+      console.log('File content length:', text.length);
+      console.log('First 500 characters of file:', text.substring(0, 500));
+      
+      const count = await parseXmlAndUpload(text);
+      toast.success(`הועלו ${count} מוצרים בהצלחה`);
+    } catch (error) {
+      console.error('Error processing Google Drive file:', error);
+      toast.error('שגיאה בעיבוד הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
+    }
+  };
+
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
       toast.error('לא נבחר קובץ');
@@ -117,48 +149,96 @@ const XmlUpload = () => {
     }
   };
 
+  const handleDriveUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!driveUrl) {
+      toast.error('אנא הזן כתובת URL');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await fetchAndProcessGoogleDriveFile(driveUrl);
+    } finally {
+      setIsUploading(false);
+      setDriveUrl('');
+    }
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'text/xml': ['.xml'],
       'application/xml': ['.xml']
     },
-    maxFiles: 1
+    maxFiles: 1,
+    disabled: isUploading
   });
 
   return (
-    <div
-      {...getRootProps()}
-      className={`
-        w-full max-w-xl mx-auto mt-8 p-8 border-2 border-dashed rounded-xl
-        transition-colors duration-200 ease-in-out cursor-pointer
-        ${isDragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300'}
-        ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
-      `}
-    >
-      <input {...getInputProps()} />
-      <div className="flex flex-col items-center justify-center space-y-4">
-        {isUploading ? (
-          <div className="animate-pulse">
-            <File className="w-12 h-12 text-primary-500" />
+    <div className="space-y-8">
+      <div
+        {...getRootProps()}
+        className={`
+          w-full max-w-xl mx-auto p-8 border-2 border-dashed rounded-xl
+          transition-colors duration-200 ease-in-out cursor-pointer
+          ${isDragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300'}
+          ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center justify-center space-y-4">
+          {isUploading ? (
+            <div className="animate-pulse">
+              <File className="w-12 h-12 text-primary-500" />
+            </div>
+          ) : (
+            <Upload className="w-12 h-12 text-gray-400" />
+          )}
+          <div className="text-center">
+            <p className="text-lg font-medium text-gray-700">
+              {isDragActive
+                ? "שחרר את קובץ ה-XML כאן"
+                : "גרור וזרוק את קובץ ה-XML כאן"}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              או לחץ לבחירת קובץ
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              קבצי XML בלבד
+            </p>
           </div>
-        ) : (
-          <Upload className="w-12 h-12 text-gray-400" />
-        )}
-        <div className="text-center">
-          <p className="text-lg font-medium text-gray-700">
-            {isDragActive
-              ? "שחרר את קובץ ה-XML כאן"
-              : "גרור וזרוק את קובץ ה-XML כאן"}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            או לחץ לבחירת קובץ
-          </p>
-          <p className="text-xs text-gray-400 mt-2">
-            קבצי XML בלבד
-          </p>
         </div>
       </div>
+
+      <div className="flex items-center gap-4">
+        <div className="flex-grow border-t border-gray-200" />
+        <span className="text-sm text-gray-500">או</span>
+        <div className="flex-grow border-t border-gray-200" />
+      </div>
+
+      <form onSubmit={handleDriveUpload} className="w-full max-w-xl mx-auto space-y-4">
+        <div className="flex gap-2">
+          <div className="flex-grow">
+            <Input
+              type="url"
+              placeholder="הדבק כתובת URL של קובץ XML מ-Google Drive"
+              value={driveUrl}
+              onChange={(e) => setDriveUrl(e.target.value)}
+              className="w-full"
+              dir="ltr"
+            />
+          </div>
+          <Button 
+            type="submit" 
+            disabled={isUploading || !driveUrl}
+            className="flex items-center gap-2"
+          >
+            <LinkIcon className="w-4 h-4" />
+            העלה מ-Drive
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };
