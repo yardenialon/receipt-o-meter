@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import UploadZone from '@/components/UploadZone';
 import ReceiptList from '@/components/ReceiptList';
 import { BillBeLogo } from '@/components/BillBeLogo';
+import { AppSidebar } from '@/components/AppSidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ReceiptStats } from '@/components/stats/ReceiptStats';
 
@@ -31,6 +32,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+      <AppSidebar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center mb-8">
           <div className="text-center">
