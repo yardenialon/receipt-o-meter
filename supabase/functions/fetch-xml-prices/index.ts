@@ -16,10 +16,6 @@ serve(async (req) => {
   }
 
   try {
-    // Log request details
-    console.log('Request method:', req.method);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-
     const requestData = await req.json();
     console.log('Request data received:', {
       hasXmlContent: !!requestData?.xmlContent,
@@ -28,26 +24,16 @@ serve(async (req) => {
       branchName: requestData?.branchName
     });
 
-    if (!requestData) {
-      throw new Error('בקשה לא תקינה - חסרים נתונים');
-    }
-    
-    const { xmlContent, networkName, branchName } = requestData;
-    
-    if (!xmlContent) {
+    if (!requestData?.xmlContent) {
       throw new Error('לא התקבל תוכן XML');
     }
 
-    if (!networkName || !branchName) {
+    if (!requestData?.networkName || !requestData?.branchName) {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    console.log('Processing XML content...');
-    console.log('Network:', networkName);
-    console.log('Branch:', branchName);
-    
     // Clean up XML content
-    const cleanXmlContent = xmlContent
+    const cleanXmlContent = requestData.xmlContent
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&')
@@ -55,46 +41,63 @@ serve(async (req) => {
       .replace(/&#39;/g, "'")
       .trim();
 
-    if (!cleanXmlContent) {
-      throw new Error('תוכן ה-XML ריק לאחר ניקוי');
-    }
-
-    console.log('XML content length:', cleanXmlContent.length);
-    console.log('First 200 characters of XML:', cleanXmlContent.substring(0, 200));
+    console.log('XML content length after cleanup:', cleanXmlContent.length);
 
     // Parse XML with error handling
-    console.log('Attempting to parse XML content...');
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully');
-      console.log('XML structure:', JSON.stringify(parsedXml).substring(0, 500) + '...');
+      console.log('XML parsed successfully. Root element:', parsedXml?.Root?.Items?.['@Count']);
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    if (!parsedXml) {
-      throw new Error('פרסור ה-XML נכשל');
+    if (!parsedXml?.Root?.Items?.Item) {
+      console.error('Invalid XML structure:', parsedXml);
+      throw new Error('מבנה ה-XML אינו תקין - לא נמצאו פריטים');
     }
 
-    // Parse items from XML
-    console.log('Starting to parse XML items...');
-    const products = parseXmlItems(parsedXml).map(product => ({
-      ...product,
-      store_chain: networkName,
-      store_id: branchName
-    }));
+    // Ensure Item is always an array
+    const items = Array.isArray(parsedXml.Root.Items.Item) 
+      ? parsedXml.Root.Items.Item 
+      : [parsedXml.Root.Items.Item];
 
-    if (!Array.isArray(products) || products.length === 0) {
+    console.log(`Found ${items.length} items in XML`);
+
+    // Map items to our product structure
+    const products = items.map((item, index) => {
+      try {
+        if (!item.ItemCode || !item.ItemName || !item.ItemPrice) {
+          console.warn(`Skipping invalid item at index ${index}:`, item);
+          return null;
+        }
+
+        return {
+          store_chain: requestData.networkName,
+          store_id: item.StoreId || requestData.branchName,
+          product_code: item.ItemCode,
+          product_name: item.ItemName,
+          manufacturer: item.ManufacturerName || null,
+          price: parseFloat(item.ItemPrice) || 0,
+          unit_quantity: item.UnitQty || null,
+          unit_of_measure: item.UnitOfMeasure || null,
+          category: item.Category || 'כללי',
+          price_update_date: item.PriceUpdateDate ? new Date(item.PriceUpdateDate).toISOString() : new Date().toISOString()
+        };
+      } catch (error) {
+        console.error(`Error processing item ${index}:`, error);
+        return null;
+      }
+    }).filter(Boolean);
+
+    if (products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים ב-XML');
     }
 
-    console.log(`Found ${products.length} products to process`);
-    console.log('Sample of first 3 products:', products.slice(0, 3));
-
+    console.log(`Processing ${products.length} valid products`);
+    
     // Insert products into database
-    console.log('Attempting to insert products into database...');
     const successCount = await insertProducts(products);
     console.log(`Successfully inserted ${successCount} products`);
 
