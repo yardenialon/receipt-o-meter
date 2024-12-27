@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { insertProducts } from "../fetch-xml-prices/db-operations.ts";
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+import { parse } from "https://deno.land/x/xml@2.1.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,18 +31,10 @@ serve(async (req) => {
     const xmlContent = await response.text();
     console.log('XML content length:', xmlContent.length);
 
-    // Parse XML content
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+    // Parse XML content using the xml module
+    const xmlDoc = parse(xmlContent);
+    const items = xmlDoc.root?.children?.filter(node => node.name === 'Item') || [];
     
-    // Check for parsing errors
-    const parserError = xmlDoc.querySelector('parsererror');
-    if (parserError) {
-      throw new Error('קובץ ה-XML אינו תקין');
-    }
-
-    // Get items from XML structure
-    const items = Array.from(xmlDoc.querySelectorAll('Item'));
     console.log(`Found ${items.length} items in XML`);
 
     if (!items || items.length === 0) {
@@ -65,10 +57,10 @@ serve(async (req) => {
       const batchItems = batches[batchIndex];
       console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
 
-      const products = batchItems.map((item: Element) => {
+      const products = batchItems.map((item) => {
         const getElementText = (tagName: string): string => {
-          const element = item.querySelector(tagName);
-          return element?.textContent?.trim() || '';
+          const element = item.children?.find(child => child.name === tagName);
+          return element?.text?.trim() || '';
         };
 
         const priceUpdateDate = new Date().toISOString();
