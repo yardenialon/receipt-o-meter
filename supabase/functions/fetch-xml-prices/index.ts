@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    // File size limit check (100MB)
+    // File size limit check
     if (contentLength > 100 * 1024 * 1024) {
       throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 100MB');
     }
@@ -52,9 +52,6 @@ serve(async (req) => {
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      if (!parsedXml) {
-        throw new Error('Failed to parse XML content');
-      }
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
@@ -62,21 +59,17 @@ serve(async (req) => {
 
     // Handle different XML root structures
     const items = [];
-    if (parsedXml?.Root?.Items?.Item) {
+    if (parsedXml.Root?.Items?.Item) {
       // Rami Levy format
       const xmlItems = parsedXml.Root.Items.Item;
       items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
-    } else if (parsedXml?.root?.Items?.Item) {
+    } else if (parsedXml.root?.Items?.Item) {
       // Alternative format
       const xmlItems = parsedXml.root.Items.Item;
       items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
     } else {
       console.error('Invalid XML structure:', parsedXml);
       throw new Error('מבנה ה-XML אינו תקין - לא נמצאו פריטים');
-    }
-
-    if (!items || items.length === 0) {
-      throw new Error('לא נמצאו פריטים ב-XML');
     }
 
     console.log(`Found ${items.length} items in XML`);
@@ -87,36 +80,34 @@ serve(async (req) => {
     }
 
     // Map items to our product structure with validation
-    const products = items
-      .map((item, index) => {
-        try {
-          if (!item || !item.ItemCode || !item.ItemName || !item.ItemPrice) {
-            console.warn(`Invalid item at index ${index}, skipping:`, item);
-            return null;
-          }
-
-          const priceUpdateDate = item.PriceUpdateDate 
-            ? new Date(item.PriceUpdateDate.replace(' ', 'T')).toISOString()
-            : new Date().toISOString();
-
-          return {
-            store_chain: requestData.networkName,
-            store_id: item.StoreId || requestData.branchName,
-            product_code: String(item.ItemCode).trim(),
-            product_name: String(item.ItemName).trim(),
-            manufacturer: item.ManufacturerName ? String(item.ManufacturerName).trim() : null,
-            price: parseFloat(item.ItemPrice) || 0,
-            unit_quantity: item.UnitQty ? String(item.UnitQty).trim() : null,
-            unit_of_measure: item.UnitOfMeasure ? String(item.UnitOfMeasure).trim() : null,
-            category: item.Category ? String(item.Category).trim() : 'כללי',
-            price_update_date: priceUpdateDate
-          };
-        } catch (error) {
-          console.error(`Error processing item ${index}:`, error);
+    const products = items.map((item, index) => {
+      try {
+        if (!item.ItemCode || !item.ItemName || !item.ItemPrice) {
+          console.warn(`Invalid item at index ${index}, skipping:`, item);
           return null;
         }
-      })
-      .filter((product): product is NonNullable<typeof product> => product !== null);
+
+        const priceUpdateDate = item.PriceUpdateDate 
+          ? new Date(item.PriceUpdateDate.replace(' ', 'T')).toISOString()
+          : new Date().toISOString();
+
+        return {
+          store_chain: requestData.networkName,
+          store_id: item.StoreId || requestData.branchName,
+          product_code: String(item.ItemCode).trim(),
+          product_name: String(item.ItemName).trim(),
+          manufacturer: item.ManufacturerName ? String(item.ManufacturerName).trim() : null,
+          price: parseFloat(item.ItemPrice) || 0,
+          unit_quantity: item.UnitQty ? String(item.UnitQty).trim() : null,
+          unit_of_measure: item.UnitOfMeasure ? String(item.UnitOfMeasure).trim() : null,
+          category: item.Category ? String(item.Category).trim() : 'כללי',
+          price_update_date: priceUpdateDate
+        };
+      } catch (error) {
+        console.error(`Error processing item ${index}:`, error);
+        return null;
+      }
+    }).filter(Boolean);
 
     if (products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים ב-XML');

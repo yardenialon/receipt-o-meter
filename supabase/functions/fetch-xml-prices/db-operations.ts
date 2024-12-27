@@ -14,44 +14,34 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
 
   console.log(`Starting batch insertion of ${products.length} products`);
   
-  const batchSize = 100; // Process in small batches of 100 items
+  const batchSize = 100; // Reduced batch size for better stability
   let successCount = 0;
   let failedCount = 0;
 
   try {
-    // Calculate total number of batches for progress tracking
-    const totalBatches = Math.ceil(products.length / batchSize);
-    console.log(`Will process ${totalBatches} batches of ${batchSize} items each`);
-
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
+      const totalBatches = Math.ceil(products.length / batchSize);
       
       console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
       
-      try {
-        const { error } = await supabase
-          .from('store_products')
-          .upsert(batch, {
-            onConflict: 'product_code,store_chain',
-            ignoreDuplicates: false
-          });
+      const { error } = await supabase
+        .from('store_products')
+        .upsert(batch, {
+          onConflict: 'product_code,store_chain',
+          ignoreDuplicates: false
+        });
 
-        if (error) {
-          console.error(`Error in batch ${batchNumber}:`, error);
-          failedCount += batch.length;
-          // Continue processing other batches even if one fails
-          continue;
-        }
-
-        successCount += batch.length;
-        console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
-      } catch (batchError) {
-        console.error(`Error processing batch ${batchNumber}:`, batchError);
+      if (error) {
+        console.error(`Error in batch ${batchNumber}:`, error);
         failedCount += batch.length;
-        // Continue with next batch
+        // Continue processing other batches even if one fails
         continue;
       }
+
+      successCount += batch.length;
+      console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
       
       // Add a small delay between batches to prevent overwhelming the database
       if (i + batchSize < products.length) {
