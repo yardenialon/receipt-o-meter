@@ -31,84 +31,101 @@ serve(async (req) => {
     const xmlContent = await response.text();
     console.log('XML content length:', xmlContent.length);
 
-    // Parse XML content using the xml module
-    const xmlDoc = parse(xmlContent);
-    const items = xmlDoc.root?.children?.filter(node => node.name === 'Item') || [];
-    
-    console.log(`Found ${items.length} items in XML`);
+    try {
+      // Parse XML content using the xml module
+      const xmlDoc = parse(xmlContent);
+      
+      if (!xmlDoc || !xmlDoc.root) {
+        throw new Error('קובץ ה-XML ריק או לא תקין');
+      }
 
-    if (!items || items.length === 0) {
-      throw new Error('לא נמצאו פריטים בקובץ ה-XML');
-    }
+      const items = xmlDoc.root.children?.filter(node => 
+        node.type === 'element' && 
+        node.name === 'Item'
+      ) || [];
+      
+      console.log(`Found ${items.length} items in XML`);
 
-    let totalProcessed = 0;
-    const batches = [];
+      if (!items || items.length === 0) {
+        throw new Error('לא נמצאו פריטים בקובץ ה-XML');
+      }
 
-    // Split items into batches
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      const batchItems = items.slice(i, i + BATCH_SIZE);
-      batches.push(batchItems);
-    }
+      let totalProcessed = 0;
+      const batches = [];
 
-    console.log(`Split into ${batches.length} batches of ${BATCH_SIZE} items each`);
+      // Split items into batches
+      for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const batchItems = items.slice(i, i + BATCH_SIZE);
+        batches.push(batchItems);
+      }
 
-    // Process each batch
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batchItems = batches[batchIndex];
-      console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
+      console.log(`Split into ${batches.length} batches of ${BATCH_SIZE} items each`);
 
-      const products = batchItems.map((item) => {
-        const getElementText = (tagName: string): string => {
-          const element = item.children?.find(child => child.name === tagName);
-          return element?.text?.trim() || '';
-        };
+      // Process each batch
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batchItems = batches[batchIndex];
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length}`);
 
-        const priceUpdateDate = new Date().toISOString();
+        const products = batchItems.map((item) => {
+          const getElementText = (tagName: string): string => {
+            const element = item.children?.find(child => 
+              child.type === 'element' && 
+              child.name === tagName
+            );
+            return element?.text?.trim() || '';
+          };
 
-        return {
-          store_chain: networkName,
-          store_id: branchName,
-          product_code: getElementText('ItemCode'),
-          product_name: getElementText('ItemName'),
-          manufacturer: getElementText('ManufacturerName'),
-          price: parseFloat(getElementText('ItemPrice')) || 0,
-          unit_quantity: getElementText('UnitQty'),
-          unit_of_measure: getElementText('UnitOfMeasure'),
-          category: getElementText('ItemSection') || 'כללי',
-          price_update_date: priceUpdateDate
-        };
-      }).filter(product => 
-        product.product_code && 
-        product.product_name && 
-        !isNaN(product.price) && 
-        product.price >= 0
+          const priceUpdateDate = new Date().toISOString();
+
+          return {
+            store_chain: networkName,
+            store_id: branchName,
+            product_code: getElementText('ItemCode'),
+            product_name: getElementText('ItemName'),
+            manufacturer: getElementText('ManufacturerName'),
+            price: parseFloat(getElementText('ItemPrice')) || 0,
+            unit_quantity: getElementText('UnitQty'),
+            unit_of_measure: getElementText('UnitOfMeasure'),
+            category: getElementText('ItemSection') || 'כללי',
+            price_update_date: priceUpdateDate
+          };
+        }).filter(product => 
+          product.product_code && 
+          product.product_name && 
+          !isNaN(product.price) && 
+          product.price >= 0
+        );
+
+        if (products.length > 0) {
+          const successCount = await insertProducts(products);
+          totalProcessed += successCount;
+          console.log(`Batch ${batchIndex + 1}: Successfully processed ${successCount} products`);
+        }
+
+        // Add a small delay between batches to prevent overwhelming the database
+        if (batchIndex < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      console.log(`Total processed: ${totalProcessed} products`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Successfully processed ${totalProcessed} items`,
+          count: totalProcessed
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
       );
 
-      if (products.length > 0) {
-        const successCount = await insertProducts(products);
-        totalProcessed += successCount;
-        console.log(`Batch ${batchIndex + 1}: Successfully processed ${successCount} products`);
-      }
-
-      // Add a small delay between batches to prevent overwhelming the database
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    } catch (parseError) {
+      console.error('XML parsing error:', parseError);
+      throw new Error(`שגיאה בפרסור ה-XML: ${parseError.message}`);
     }
-
-    console.log(`Total processed: ${totalProcessed} products`);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Successfully processed ${totalProcessed} items`,
-        count: totalProcessed
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    );
 
   } catch (error) {
     console.error('Error processing request:', error);
