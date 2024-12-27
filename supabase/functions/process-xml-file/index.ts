@@ -14,10 +14,10 @@ serve(async (req) => {
 
   try {
     const { filePath, networkName, branchName } = await req.json();
-    console.log('Processing XML file:', { filePath, networkName, branchName });
+    console.log('Starting XML file processing:', { filePath, networkName, branchName });
 
     if (!filePath || !networkName || !branchName) {
-      throw new Error('חסרים פרטים נדרשים');
+      throw new Error('חסרים פרטים נדרשים: נתיב קובץ, שם רשת או שם סניף');
     }
 
     const supabase = createClient(
@@ -26,55 +26,78 @@ serve(async (req) => {
     );
 
     // Download the file from storage
+    console.log('Downloading file from storage:', filePath);
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('receipts')
       .download(filePath);
 
     if (downloadError) {
       console.error('Error downloading file:', downloadError);
-      throw new Error('שגיאה בהורדת הקובץ');
+      throw new Error(`שגיאה בהורדת הקובץ: ${downloadError.message}`);
+    }
+
+    if (!fileData) {
+      throw new Error('לא נמצא תוכן בקובץ');
     }
 
     // Convert the file to text
     const xmlContent = await fileData.text();
     console.log('XML content length:', xmlContent.length);
 
-    // Parse XML
-    const parsedXml = xmlParse(xmlContent);
-    if (!parsedXml) {
-      throw new Error('שגיאה בפרסור ה-XML');
+    if (!xmlContent || xmlContent.length === 0) {
+      throw new Error('קובץ ריק');
     }
 
-    // Handle different XML root structures
-    const items = [];
+    // Parse XML with detailed error handling
+    let parsedXml;
+    try {
+      console.log('Attempting to parse XML content');
+      parsedXml = xmlParse(xmlContent);
+    } catch (parseError) {
+      console.error('XML Parse Error:', parseError);
+      throw new Error(`שגיאה בפרסור ה-XML: ${parseError.message}`);
+    }
+
+    if (!parsedXml) {
+      throw new Error('פרסור ה-XML נכשל - לא התקבל תוכן תקין');
+    }
+
+    // Extract items with better error handling
+    let items = [];
+    console.log('XML structure:', Object.keys(parsedXml));
+
     if (parsedXml?.Root?.Items?.Item) {
       const xmlItems = parsedXml.Root.Items.Item;
-      items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
+      items = Array.isArray(xmlItems) ? xmlItems : [xmlItems];
     } else if (parsedXml?.root?.Items?.Item) {
       const xmlItems = parsedXml.root.Items.Item;
-      items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
+      items = Array.isArray(xmlItems) ? xmlItems : [xmlItems];
     } else {
-      console.error('Invalid XML structure:', parsedXml);
+      console.error('Invalid XML structure:', JSON.stringify(parsedXml, null, 2));
       throw new Error('מבנה ה-XML אינו תקין - לא נמצאו פריטים');
     }
+
+    console.log(`Found ${items.length} items in XML`);
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים ב-XML');
     }
 
-    console.log(`Found ${items.length} items in XML`);
-
-    // Check if number of items is within limit
     if (items.length > 12000) {
       throw new Error(`מספר הפריטים (${items.length}) חורג מהמגבלה של 12,000 פריטים`);
     }
 
-    // Map items to our product structure
+    // Map and validate items
     const products = items
       .map((item: any, index: number) => {
         try {
-          if (!item || !item.ItemCode || !item.ItemName || !item.ItemPrice) {
-            console.warn(`Invalid item at index ${index}, skipping:`, item);
+          if (!item) {
+            console.warn(`Skipping null item at index ${index}`);
+            return null;
+          }
+
+          if (!item.ItemCode || !item.ItemName || !item.ItemPrice) {
+            console.warn(`Invalid item at index ${index}, missing required fields:`, item);
             return null;
           }
 
@@ -107,15 +130,15 @@ serve(async (req) => {
 
     console.log(`Processing ${products.length} valid products`);
     
-    // Process products in batches
-    const batchSize = 100;
+    // Process in smaller batches
+    const batchSize = 50; // Reduced batch size
     let successCount = 0;
     let failedCount = 0;
+    const totalBatches = Math.ceil(products.length / batchSize);
 
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
-      const totalBatches = Math.ceil(products.length / batchSize);
       
       console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
       
@@ -130,6 +153,7 @@ serve(async (req) => {
         if (error) {
           console.error(`Error in batch ${batchNumber}:`, error);
           failedCount += batch.length;
+          // Continue with next batch despite error
           continue;
         }
 
@@ -138,22 +162,25 @@ serve(async (req) => {
       } catch (batchError) {
         console.error(`Error processing batch ${batchNumber}:`, batchError);
         failedCount += batch.length;
+        // Continue with next batch
         continue;
       }
       
-      // Add a delay between batches
+      // Add a small delay between batches
       if (i + batchSize < products.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
 
-    // Delete the file after processing
+    // Clean up: Delete the processed file
+    console.log('Cleaning up: Deleting processed file');
     const { error: deleteError } = await supabase.storage
       .from('receipts')
       .remove([filePath]);
 
     if (deleteError) {
       console.error('Error deleting file:', deleteError);
+      // Don't throw here, just log the error
     }
 
     return new Response(
