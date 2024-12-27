@@ -14,15 +14,18 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
 
   console.log(`Starting batch insertion of ${products.length} products`);
   
-  const batchSize = 100; // Reduced batch size for better stability
+  const batchSize = 100; // Process in small batches of 100 items
   let successCount = 0;
   let failedCount = 0;
 
   try {
+    // Calculate total number of batches for progress tracking
+    const totalBatches = Math.ceil(products.length / batchSize);
+    console.log(`Will process ${totalBatches} batches of ${batchSize} items each`);
+
     for (let i = 0; i < products.length; i += batchSize) {
       const batch = products.slice(i, i + batchSize);
       const batchNumber = Math.floor(i / batchSize) + 1;
-      const totalBatches = Math.ceil(products.length / batchSize);
       
       console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
       
