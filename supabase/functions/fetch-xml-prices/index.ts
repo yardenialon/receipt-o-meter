@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    // Increased file size limit to accommodate larger files (100MB)
+    // File size limit check
     if (contentLength > 100 * 1024 * 1024) {
       throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 100MB');
     }
