@@ -7,6 +7,7 @@ import { XmlDropZone } from './XmlDropZone';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { XmlUploadDialog } from './XmlUploadDialog';
 import { XmlContentInput } from './XmlContentInput';
+import { supabase } from '@/lib/supabase';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -46,6 +47,58 @@ const XmlUpload = () => {
     }
   };
 
+  const uploadXmlFile = async (file: File) => {
+    try {
+      const fileExt = 'xml';
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `xml/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(filePath);
+
+      console.log('XML file uploaded to:', publicUrl);
+
+      // Process the file using Edge Function
+      const { data, error } = await supabase.functions.invoke('process-xml-file', {
+        body: { 
+          filePath,
+          networkName,
+          branchName
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.count > 0) {
+        toast.success(`הועלו ${data.count} מוצרים בהצלחה`);
+        setShowDialog(false);
+        setPendingFile(null);
+      } else {
+        toast.error('לא הועלו מוצרים. אנא בדוק את תוכן ה-XML');
+      }
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   const onDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) {
       toast.error('לא נבחר קובץ');
@@ -58,9 +111,7 @@ const XmlUpload = () => {
       return;
     }
 
-    const text = await file.text();
     setPendingFile(file);
-    setPendingXmlContent(text);
     setShowDialog(true);
   };
 
@@ -84,7 +135,9 @@ const XmlUpload = () => {
   });
 
   const handleConfirm = () => {
-    if (pendingXmlContent) {
+    if (pendingFile) {
+      uploadXmlFile(pendingFile);
+    } else if (pendingXmlContent) {
       handleUpload(pendingXmlContent);
     }
   };
