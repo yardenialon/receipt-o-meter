@@ -1,23 +1,12 @@
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 import { XmlDropZone } from './XmlDropZone';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
+import { XmlUploadDialog } from './XmlUploadDialog';
+import { XmlContentInput } from './XmlContentInput';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -64,12 +53,11 @@ const XmlUpload = () => {
     }
 
     const file = acceptedFiles[0];
-    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+    if (file.size > 50 * 1024 * 1024) {
       toast.error('הקובץ גדול מדי. הגודל המקסימלי הוא 50MB');
       return;
     }
 
-    console.log('Reading file:', file.name);
     const text = await file.text();
     setPendingFile(file);
     setPendingXmlContent(text);
@@ -124,82 +112,25 @@ const XmlUpload = () => {
         <div className="flex-grow border-t border-gray-200" />
       </div>
 
-      <div className="w-full max-w-xl mx-auto space-y-4">
-        <Textarea
-          placeholder="הדבק כאן את תוכן ה-XML"
-          value={xmlContent}
-          onChange={(e) => setXmlContent(e.target.value)}
-          className="min-h-[200px] font-mono text-sm"
-          dir="ltr"
-          disabled={isUploading}
-        />
-        <Button 
-          onClick={handleXmlContentUpload}
-          disabled={isUploading || !xmlContent.trim()}
-          className="w-full flex items-center justify-center gap-2"
-        >
-          {isUploading ? (
-            <div className="animate-spin">
-              <File className="w-4 h-4" />
-            </div>
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
-          העלה תוכן XML
-        </Button>
-      </div>
+      <XmlContentInput
+        xmlContent={xmlContent}
+        setXmlContent={setXmlContent}
+        isUploading={isUploading}
+        onUpload={handleXmlContentUpload}
+      />
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>פרטי הרשת והסניף</DialogTitle>
-            <DialogDescription>
-              אנא הזן את שם הרשת ושם הסניף עבור הקובץ
-              {pendingFile && (
-                <div className="mt-2 text-sm text-gray-500">
-                  שם הקובץ: {pendingFile.name}
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="networkName">שם הרשת</Label>
-              <Input
-                id="networkName"
-                value={networkName}
-                onChange={(e) => setNetworkName(e.target.value)}
-                placeholder="לדוגמה: שופרסל"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="branchName">שם הסניף</Label>
-              <Input
-                id="branchName"
-                value={branchName}
-                onChange={(e) => setBranchName(e.target.value)}
-                placeholder="לדוגמה: סניף רמת אביב"
-              />
-            </div>
-            {isUploading && (
-              <div className="space-y-2">
-                <Progress value={uploadProgress} className="w-full" />
-                <p className="text-sm text-gray-500 text-center">
-                  מעלה מוצרים... {uploadProgress}%
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              onClick={handleConfirm}
-              disabled={!networkName || !branchName || isUploading}
-            >
-              {isUploading ? 'מעלה...' : 'אישור'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <XmlUploadDialog
+        showDialog={showDialog}
+        setShowDialog={setShowDialog}
+        networkName={networkName}
+        setNetworkName={setNetworkName}
+        branchName={branchName}
+        setBranchName={setBranchName}
+        pendingFile={pendingFile}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 };

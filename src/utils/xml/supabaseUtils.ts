@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export const uploadProductsToSupabase = async (xmlContent: string, networkName: string, branchName: string) => {
-  console.log('Processing XML content directly...');
+  console.log('Processing XML content...');
   
   const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
     body: { 
@@ -13,7 +13,11 @@ export const uploadProductsToSupabase = async (xmlContent: string, networkName: 
 
   if (error) {
     console.error('Edge Function error:', error);
-    throw error;
+    throw new Error(error.message || 'שגיאה בעיבוד הקובץ');
+  }
+
+  if (!data) {
+    throw new Error('לא התקבלו נתונים מהשרת');
   }
 
   console.log('Edge Function response:', data);
