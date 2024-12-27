@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { parse as xmlParse } from "https://deno.land/x/xml@2.1.1/mod.ts";
-import { parseXmlItems } from "./xml-parser.ts";
 import { insertProducts } from "./db-operations.ts";
 
 const corsHeaders = {
@@ -47,21 +46,26 @@ serve(async (req) => {
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully. Root element:', parsedXml?.Root?.Items?.['@Count']);
+      console.log('XML parsed successfully. Structure:', JSON.stringify(parsedXml));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
     }
 
-    if (!parsedXml?.Root?.Items?.Item) {
+    // Handle different XML root structures
+    const items = [];
+    if (parsedXml.Root?.Items?.Item) {
+      // Rami Levy format
+      const xmlItems = parsedXml.Root.Items.Item;
+      items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
+    } else if (parsedXml.root?.Items?.Item) {
+      // Alternative format
+      const xmlItems = parsedXml.root.Items.Item;
+      items.push(...(Array.isArray(xmlItems) ? xmlItems : [xmlItems]));
+    } else {
       console.error('Invalid XML structure:', parsedXml);
       throw new Error('מבנה ה-XML אינו תקין - לא נמצאו פריטים');
     }
-
-    // Ensure Item is always an array
-    const items = Array.isArray(parsedXml.Root.Items.Item) 
-      ? parsedXml.Root.Items.Item 
-      : [parsedXml.Root.Items.Item];
 
     console.log(`Found ${items.length} items in XML`);
 
@@ -73,17 +77,21 @@ serve(async (req) => {
           return null;
         }
 
+        const priceUpdateDate = item.PriceUpdateDate 
+          ? new Date(item.PriceUpdateDate.replace(' ', 'T')).toISOString()
+          : new Date().toISOString();
+
         return {
           store_chain: requestData.networkName,
           store_id: item.StoreId || requestData.branchName,
-          product_code: item.ItemCode,
-          product_name: item.ItemName,
+          product_code: String(item.ItemCode),
+          product_name: String(item.ItemName),
           manufacturer: item.ManufacturerName || null,
           price: parseFloat(item.ItemPrice) || 0,
           unit_quantity: item.UnitQty || null,
           unit_of_measure: item.UnitOfMeasure || null,
           category: item.Category || 'כללי',
-          price_update_date: item.PriceUpdateDate ? new Date(item.PriceUpdateDate).toISOString() : new Date().toISOString()
+          price_update_date: priceUpdateDate
         };
       } catch (error) {
         console.error(`Error processing item ${index}:`, error);
