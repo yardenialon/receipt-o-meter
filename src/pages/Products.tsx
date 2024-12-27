@@ -11,12 +11,13 @@ import {
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Store, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import XmlUpload from '@/components/upload/XmlUpload';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PriceComparison } from '@/components/products/PriceComparison';
 
 interface ProductPrices {
   [key: string]: {
@@ -211,33 +212,7 @@ const Products = () => {
                       {isExpanded && (
                         <TableRow>
                           <TableCell colSpan={6} className="bg-gray-50 p-4">
-                            <div className="space-y-2">
-                              {products.map((product) => (
-                                <div 
-                                  key={`${product.store_chain}-${product.store_id}`}
-                                  className={`flex justify-between items-center p-2 rounded ${
-                                    product.price === lowestPrice ? 'bg-red-50' : 'bg-white'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="secondary" className="flex items-center gap-1">
-                                      <Store className="h-3 w-3" />
-                                      {product.store_chain}
-                                    </Badge>
-                                    {product.store_id && (
-                                      <Badge variant="outline">
-                                        סניף {product.store_id}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <span className={`font-semibold ${
-                                    product.price === lowestPrice ? 'text-red-600' : ''
-                                  }`}>
-                                    ₪{product.price.toFixed(2)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                            <PriceComparison prices={products} />
                           </TableCell>
                         </TableRow>
                       )}
