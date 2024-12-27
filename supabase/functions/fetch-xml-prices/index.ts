@@ -16,9 +16,10 @@ serve(async (req) => {
 
   try {
     const requestData = await req.json();
+    const contentLength = requestData?.xmlContent?.length || 0;
     console.log('Request data received:', {
       hasXmlContent: !!requestData?.xmlContent,
-      contentLength: requestData?.xmlContent?.length,
+      contentLength,
       networkName: requestData?.networkName,
       branchName: requestData?.branchName
     });
@@ -31,6 +32,10 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
+    if (contentLength > 50 * 1024 * 1024) { // 50MB limit
+      throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 50MB');
+    }
+
     // Clean up XML content
     const cleanXmlContent = requestData.xmlContent
       .replace(/&lt;/g, '<')
@@ -40,13 +45,12 @@ serve(async (req) => {
       .replace(/&#39;/g, "'")
       .trim();
 
-    console.log('XML content length after cleanup:', cleanXmlContent.length);
+    console.log('Starting XML parsing...');
 
     // Parse XML with error handling
     let parsedXml;
     try {
       parsedXml = xmlParse(cleanXmlContent);
-      console.log('XML parsed successfully. Structure:', JSON.stringify(parsedXml));
     } catch (parseError) {
       console.error('XML Parse Error:', parseError);
       throw new Error('שגיאה בפרסור ה-XML: ' + parseError.message);
@@ -69,11 +73,11 @@ serve(async (req) => {
 
     console.log(`Found ${items.length} items in XML`);
 
-    // Map items to our product structure
+    // Map items to our product structure with validation
     const products = items.map((item, index) => {
       try {
         if (!item.ItemCode || !item.ItemName || !item.ItemPrice) {
-          console.warn(`Skipping invalid item at index ${index}:`, item);
+          console.warn(`Invalid item at index ${index}, skipping:`, item);
           return null;
         }
 
@@ -84,13 +88,13 @@ serve(async (req) => {
         return {
           store_chain: requestData.networkName,
           store_id: item.StoreId || requestData.branchName,
-          product_code: String(item.ItemCode),
-          product_name: String(item.ItemName),
-          manufacturer: item.ManufacturerName || null,
+          product_code: String(item.ItemCode).trim(),
+          product_name: String(item.ItemName).trim(),
+          manufacturer: item.ManufacturerName ? String(item.ManufacturerName).trim() : null,
           price: parseFloat(item.ItemPrice) || 0,
-          unit_quantity: item.UnitQty || null,
-          unit_of_measure: item.UnitOfMeasure || null,
-          category: item.Category || 'כללי',
+          unit_quantity: item.UnitQty ? String(item.UnitQty).trim() : null,
+          unit_of_measure: item.UnitOfMeasure ? String(item.UnitOfMeasure).trim() : null,
+          category: item.Category ? String(item.Category).trim() : 'כללי',
           price_update_date: priceUpdateDate
         };
       } catch (error) {
@@ -105,15 +109,16 @@ serve(async (req) => {
 
     console.log(`Processing ${products.length} valid products`);
     
-    // Insert products into database
+    // Insert products into database in batches
     const successCount = await insertProducts(products);
-    console.log(`Successfully inserted ${successCount} products`);
+    console.log(`Successfully processed ${successCount} products`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: `Successfully processed ${successCount} items`,
-        count: successCount
+        count: successCount,
+        totalItems: products.length
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

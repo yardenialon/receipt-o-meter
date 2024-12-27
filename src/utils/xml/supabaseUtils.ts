@@ -17,5 +17,5 @@ export const uploadProductsToSupabase = async (xmlContent: string, networkName: 
   }
 
   console.log('Edge Function response:', data);
-  return data.count;
+  return data;
 };

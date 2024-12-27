@@ -12,18 +12,22 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
     return 0;
   }
 
-  console.log(`Attempting to insert ${products.length} products`);
+  console.log(`Starting batch insertion of ${products.length} products`);
   
-  const batchSize = 100;
+  // Increased batch size for better performance while still maintaining manageable chunks
+  const batchSize = 500;
   let successCount = 0;
+  let failedCount = 0;
 
   for (let i = 0; i < products.length; i += batchSize) {
     const batch = products.slice(i, i + batchSize);
-    console.log(`Processing batch ${i/batchSize + 1} of ${Math.ceil(products.length/batchSize)}`);
-    console.log('First product in batch:', batch[0]);
+    const batchNumber = Math.floor(i / batchSize) + 1;
+    const totalBatches = Math.ceil(products.length / batchSize);
+    
+    console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('store_products')
         .upsert(batch, {
           onConflict: 'product_code,store_chain',
@@ -31,22 +35,25 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
         });
 
       if (error) {
-        console.error(`Error inserting batch ${i/batchSize + 1}:`, error);
-        console.error('First product in failed batch:', batch[0]);
+        console.error(`Error in batch ${batchNumber}:`, error);
+        failedCount += batch.length;
         continue;
       }
 
       successCount += batch.length;
-      console.log(`Successfully processed batch ${i/batchSize + 1}. Total success: ${successCount}/${products.length}`);
+      console.log(`Batch ${batchNumber}/${totalBatches} completed successfully`);
+      console.log(`Progress: ${Math.round((successCount / products.length) * 100)}%`);
+      
+      // Add a small delay between batches to prevent overwhelming the database
+      if (i + batchSize < products.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     } catch (error) {
-      console.error(`Error processing batch ${i/batchSize + 1}:`, error);
-      console.error('Error details:', {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack
-      });
+      console.error(`Failed to process batch ${batchNumber}:`, error);
+      failedCount += batch.length;
     }
   }
 
+  console.log(`Upload completed. Success: ${successCount}, Failed: ${failedCount}`);
   return successCount;
 };

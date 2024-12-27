@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 
 const XmlUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -26,6 +27,7 @@ const XmlUpload = () => {
   const [branchName, setBranchName] = useState('');
   const [pendingXmlContent, setPendingXmlContent] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleUpload = async (content: string) => {
     if (!networkName || !branchName) {
@@ -34,18 +36,24 @@ const XmlUpload = () => {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     try {
-      const count = await uploadProductsToSupabase(content, networkName, branchName);
-      toast.success(`הועלו ${count} מוצרים בהצלחה`);
-      setXmlContent('');
-      setShowDialog(false);
-      setPendingXmlContent(null);
-      setPendingFile(null);
+      const result = await uploadProductsToSupabase(content, networkName, branchName);
+      if (result.count > 0) {
+        toast.success(`הועלו ${result.count} מוצרים בהצלחה`);
+        setXmlContent('');
+        setShowDialog(false);
+        setPendingXmlContent(null);
+        setPendingFile(null);
+      } else {
+        toast.error('לא הועלו מוצרים. אנא בדוק את תוכן ה-XML');
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -56,6 +64,11 @@ const XmlUpload = () => {
     }
 
     const file = acceptedFiles[0];
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      toast.error('הקובץ גדול מדי. הגודל המקסימלי הוא 50MB');
+      return;
+    }
+
     console.log('Reading file:', file.name);
     const text = await file.text();
     setPendingFile(file);
@@ -93,7 +106,8 @@ const XmlUpload = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          ניתן להעלות קובץ XML או להדביק את תוכן ה-XML ישירות בתיבת הטקסט למטה
+          ניתן להעלות קובץ XML או להדביק את תוכן ה-XML ישירות בתיבת הטקסט למטה.
+          גודל מקסימלי לקובץ הוא 50MB.
         </AlertDescription>
       </Alert>
 
@@ -141,6 +155,11 @@ const XmlUpload = () => {
             <DialogTitle>פרטי הרשת והסניף</DialogTitle>
             <DialogDescription>
               אנא הזן את שם הרשת ושם הסניף עבור הקובץ
+              {pendingFile && (
+                <div className="mt-2 text-sm text-gray-500">
+                  שם הקובץ: {pendingFile.name}
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -162,6 +181,14 @@ const XmlUpload = () => {
                 placeholder="לדוגמה: סניף רמת אביב"
               />
             </div>
+            {isUploading && (
+              <div className="space-y-2">
+                <Progress value={uploadProgress} className="w-full" />
+                <p className="text-sm text-gray-500 text-center">
+                  מעלה מוצרים... {uploadProgress}%
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
