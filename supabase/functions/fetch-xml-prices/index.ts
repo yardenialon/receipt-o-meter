@@ -32,8 +32,9 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    if (contentLength > 50 * 1024 * 1024) { // 50MB limit
-      throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 50MB');
+    // Increased file size limit to accommodate larger files (100MB)
+    if (contentLength > 100 * 1024 * 1024) {
+      throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 100MB');
     }
 
     // Clean up XML content
@@ -72,6 +73,11 @@ serve(async (req) => {
     }
 
     console.log(`Found ${items.length} items in XML`);
+
+    // Check if number of items is within limit
+    if (items.length > 12000) {
+      throw new Error(`מספר הפריטים (${items.length}) חורג מהמגבלה של 12,000 פריטים`);
+    }
 
     // Map items to our product structure with validation
     const products = items.map((item, index) => {

@@ -14,8 +14,8 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
 
   console.log(`Starting batch insertion of ${products.length} products`);
   
-  // Increased batch size for better performance
-  const batchSize = 1000;
+  // Increased batch size to handle larger files
+  const batchSize = 2000; // Increased from 1000 to 2000
   let successCount = 0;
   let failedCount = 0;
 
@@ -43,9 +43,9 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
       successCount += batch.length;
       console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
       
-      // Reduced delay between batches
+      // Small delay between batches to prevent overwhelming the database
       if (i + batchSize < products.length) {
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 25)); // Reduced delay to 25ms
       }
     }
   } catch (error) {
