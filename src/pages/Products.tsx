@@ -1,23 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { Button } from '@/components/ui/button';
-import { Loader2, Search, ChevronDown, ChevronUp } from 'lucide-react';
-import { toast } from 'sonner';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import XmlUpload from '@/components/upload/XmlUpload';
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { PriceComparison } from '@/components/products/PriceComparison';
+import { ProductsHeader } from '@/components/products/ProductsHeader';
+import { ProductsStats } from '@/components/products/ProductsStats';
+import { ProductsSearch } from '@/components/products/ProductsSearch';
+import { ProductsTable } from '@/components/products/ProductsTable';
 
 interface ProductPrices {
   [key: string]: {
@@ -49,10 +38,11 @@ const Products = () => {
   const storeChains = [...new Set(products?.map(p => p.store_chain) || [])];
   const totalStoreChains = storeChains.length;
 
-  // Filter products based on search term
+  // Filter products based on search term (now including product code)
   const filteredProducts = products?.filter(product => 
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()))
+    (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    product.product_code.toString().includes(searchTerm)
   );
 
   // Group products by product code
@@ -121,109 +111,29 @@ const Products = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">מוצרים</h1>
-        <Button 
-          onClick={handleUpdatePrices} 
-          disabled={isUpdating}
-          className="flex items-center gap-2"
-        >
-          {isUpdating && <Loader2 className="h-4 w-4 animate-spin" />}
-          עדכן מחירים משופרסל
-        </Button>
-      </div>
+      <ProductsHeader 
+        onUpdatePrices={handleUpdatePrices}
+        isUpdating={isUpdating}
+      />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">סה״כ מוצרים</h3>
-            <p className="text-2xl font-bold text-blue-600">{totalProducts}</p>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">רשתות</h3>
-            <p className="text-2xl font-bold text-green-600">{totalStoreChains}</p>
-          </div>
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">שמות הרשתות</h3>
-            <p className="text-sm text-purple-600">{storeChains.join(', ')}</p>
-          </div>
-        </div>
+      <ProductsStats
+        totalProducts={totalProducts}
+        totalStoreChains={totalStoreChains}
+        storeChains={storeChains}
+      />
 
-        <div className="relative mb-6">
-          <Input
-            type="text"
-            placeholder="חפש לפי שם מוצר או קטגוריה..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-          <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-        </div>
-      </div>
+      <ProductsSearch
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
 
       <XmlUpload />
       
-      <div className="space-y-8 mt-8">
-        {productsByCategory && Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-          <div key={category} className="rounded-md border">
-            <h2 className="text-xl font-semibold p-4 bg-gray-50">{category}</h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead></TableHead>
-                  <TableHead>קוד מוצר</TableHead>
-                  <TableHead>שם מוצר</TableHead>
-                  <TableHead>יצרן</TableHead>
-                  <TableHead>מחיר הכי זול</TableHead>
-                  <TableHead>עודכן</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categoryProducts.map(({ productCode, products }) => {
-                  const baseProduct = products[0];
-                  const isExpanded = expandedProducts[productCode]?.expanded;
-                  const lowestPrice = Math.min(...products.map(p => p.price));
-
-                  return (
-                    <>
-                      <TableRow 
-                        key={productCode}
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => toggleProductExpansion(productCode)}
-                      >
-                        <TableCell>
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">{baseProduct.product_code}</TableCell>
-                        <TableCell>{baseProduct.product_name}</TableCell>
-                        <TableCell>{baseProduct.manufacturer}</TableCell>
-                        <TableCell className="font-bold text-red-600">
-                          ₪{lowestPrice.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          {baseProduct.price_update_date && 
-                            format(new Date(baseProduct.price_update_date), 'dd/MM/yyyy HH:mm', { locale: he })}
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="bg-gray-50 p-4">
-                            <PriceComparison prices={products} />
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        ))}
-      </div>
+      <ProductsTable
+        productsByCategory={productsByCategory}
+        expandedProducts={expandedProducts}
+        onToggleExpand={toggleProductExpansion}
+      />
     </div>
   );
 };
