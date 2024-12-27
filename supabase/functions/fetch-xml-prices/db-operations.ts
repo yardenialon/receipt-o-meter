@@ -29,22 +29,29 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
       
       console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} products)`);
       
-      const { error } = await supabase
-        .from('store_products')
-        .upsert(batch, {
-          onConflict: 'product_code,store_chain',
-          ignoreDuplicates: false
-        });
+      try {
+        const { error } = await supabase
+          .from('store_products')
+          .upsert(batch, {
+            onConflict: 'product_code,store_chain',
+            ignoreDuplicates: false
+          });
 
-      if (error) {
-        console.error(`Error in batch ${batchNumber}:`, error);
+        if (error) {
+          console.error(`Error in batch ${batchNumber}:`, error);
+          failedCount += batch.length;
+          // Continue processing other batches even if one fails
+          continue;
+        }
+
+        successCount += batch.length;
+        console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
+      } catch (batchError) {
+        console.error(`Error processing batch ${batchNumber}:`, batchError);
         failedCount += batch.length;
-        // Continue processing other batches even if one fails
+        // Continue with next batch
         continue;
       }
-
-      successCount += batch.length;
-      console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
       
       // Add a small delay between batches to prevent overwhelming the database
       if (i + batchSize < products.length) {
