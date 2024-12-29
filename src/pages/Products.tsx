@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { ProductsTable } from '@/components/products/ProductsTable';
 import { PriceFileUpload } from '@/components/products/PriceFileUpload';
+import { toast } from 'sonner';
 
 interface ProductPrices {
   [key: string]: {
@@ -16,6 +18,31 @@ interface ProductPrices {
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedProducts, setExpandedProducts] = useState<ProductPrices>({});
+  const navigate = useNavigate();
+  
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('יש להתחבר כדי לצפות בעמוד זה');
+        navigate('/login');
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
   
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['products'],
