@@ -46,26 +46,35 @@ async function processXMLWithRetry(xmlContent: string, networkName: string, bran
 
 serve(async (req) => {
   console.log('Request received:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers));
 
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const requestData = await req.json();
-    console.log('Request data received:', {
-      hasContent: !!requestData?.xmlContent,
+    console.log('Full request data:', requestData);
+    console.log('Request data details:', {
+      hasXmlContent: !!requestData?.xmlContent,
       contentLength: requestData?.xmlContent?.length || 0,
       networkName: requestData?.networkName,
-      branchName: requestData?.branchName
+      branchName: requestData?.branchName,
+      allKeys: Object.keys(requestData || {})
     });
 
     // Validate required parameters
     if (!requestData?.networkName || !requestData?.branchName) {
+      console.error('Missing required fields:', { 
+        networkName: requestData?.networkName,
+        branchName: requestData?.branchName
+      });
       throw new Error('חסרים פרטי רשת וסניף');
     }
 
     if (!requestData?.xmlContent) {
+      console.error('Missing XML content');
       throw new Error('לא התקבל תוכן XML');
     }
 
@@ -165,12 +174,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing request:', error);
+    console.error('Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML',
-        details: error.toString()
+        details: error.toString(),
+        stack: error.stack
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
