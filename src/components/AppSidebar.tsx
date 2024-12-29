@@ -59,7 +59,7 @@ const MobileNav = () => {
       transition={{ type: 'spring', stiffness: 120, damping: 14 }}
     >
       <div className="mx-auto max-w-screen-xl px-4">
-        <div className="mb-4 flex h-16 items-center justify-around rounded-t-3xl bg-white/80 px-6 shadow-lg backdrop-blur-md">
+        <div className="mb-4 flex h-16 items-center justify-around rounded-t-3xl bg-white/80 px-6 pb-5 pt-5 shadow-lg backdrop-blur-md">
           {links.map(({ href, label, icon: Icon }) => {
             const isActive = location.pathname === href;
             return (
