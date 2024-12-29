@@ -21,17 +21,14 @@ export const useFileUpload = () => {
         type: file.type
       });
 
-      // Read file content
-      const fileContent = await file.arrayBuffer();
-      const base64Content = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
-      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('networkName', networkName);
+      formData.append('branchName', branchName);
+
       console.log('Sending file to Edge Function...');
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-        body: {
-          fileContent: base64Content,
-          networkName,
-          branchName,
-        }
+        body: formData
       });
 
       if (error) {
