@@ -27,12 +27,15 @@ serve(async (req) => {
   try {
     console.log('Starting file processing...');
     
-    // Parse the request body once
+    // Parse the request body
     const { fileContent: base64Content, networkName, branchName } = await req.json();
     
     if (!base64Content) {
+      console.error('No file content provided');
       throw new Error('No file content provided');
     }
+
+    console.log('Received request with:', { networkName, branchName });
 
     // Decode base64 content
     const xmlContent = atob(base64Content);

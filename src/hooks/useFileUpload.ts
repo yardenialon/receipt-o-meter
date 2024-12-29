@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-const CHUNK_SIZE = 1024 * 1024 * 2; // 2MB chunks
-const MAX_PARALLEL_UPLOADS = 3; // Maximum number of concurrent chunk uploads
-
 export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -18,17 +15,20 @@ export const useFileUpload = () => {
     setUploadProgress(0);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('User not authenticated');
+      console.log('Starting file upload:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
 
       // Read file content
       const fileContent = await file.arrayBuffer();
-      const fileContentBase64 = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
+      const base64Content = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
       
       console.log('Sending file to Edge Function...');
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
         body: {
-          fileContent: fileContentBase64,
+          fileContent: base64Content,
           networkName,
           branchName,
         }
@@ -47,6 +47,7 @@ export const useFileUpload = () => {
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ: ' + (error instanceof Error ? error.message : 'אנא נסה שוב'));
+      throw error;
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
