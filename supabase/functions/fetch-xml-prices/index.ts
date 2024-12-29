@@ -7,39 +7,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function processXMLWithRetry(xmlContent: string, networkName: string, branchName: string, retryCount = 0) {
+async function validateXMLStructure(xmlContent: string) {
   try {
-    if (!xmlContent) {
-      throw new Error('XML content is empty');
-    }
+    // Log the start of XML content for debugging
+    console.log('XML Content (first 500 chars):', xmlContent.substring(0, 500));
 
-    if (!networkName || !branchName) {
-      throw new Error('חסרים פרטי רשת וסניף');
-    }
-
-    console.log(`Attempt ${retryCount + 1} to process XML content of size: ${xmlContent.length} bytes`);
-    console.log(`Network: ${networkName}, Branch: ${branchName}`);
-    
     const xmlData = parse(xmlContent);
-    console.log('XML parsed successfully');
+    console.log('Parsed XML structure:', {
+      hasItems: !!xmlData?.Items,
+      hasItem: !!xmlData?.Items?.Item,
+      itemType: typeof xmlData?.Items?.Item,
+      keys: Object.keys(xmlData || {})
+    });
 
     if (!xmlData || !xmlData.Items || !xmlData.Items.Item) {
       throw new Error('Invalid XML structure: missing Items or Item elements');
     }
 
+    // Check if Items.Item is an array or single item
     const items = Array.isArray(xmlData.Items.Item) ? xmlData.Items.Item : [xmlData.Items.Item];
     console.log(`Found ${items.length} items in XML`);
 
     return items;
   } catch (error) {
-    console.error(`Error processing XML (attempt ${retryCount + 1}):`, error);
-
-    if (retryCount < 3) {
-      console.log(`Retrying in 1000ms...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return processXMLWithRetry(xmlContent, networkName, branchName, retryCount + 1);
-    }
-
+    console.error('XML Validation Error:', error);
     throw error;
   }
 }
@@ -79,11 +70,7 @@ serve(async (req) => {
     }
 
     console.log('Processing XML content...');
-    const items = await processXMLWithRetry(
-      requestData.xmlContent, 
-      requestData.networkName, 
-      requestData.branchName
-    );
+    const items = await validateXMLStructure(requestData.xmlContent);
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
