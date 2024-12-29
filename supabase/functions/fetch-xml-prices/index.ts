@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
 
 const corsHeaders = {
@@ -7,11 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
 async function processXMLWithRetry(xmlContent: string, retryCount = 0) {
   try {
+    if (!xmlContent) {
+      throw new Error('XML content is empty');
+    }
+
     console.log(`Attempt ${retryCount + 1} to process XML content of size: ${xmlContent.length} bytes`);
     
     // Parse XML content
@@ -29,9 +30,9 @@ async function processXMLWithRetry(xmlContent: string, retryCount = 0) {
   } catch (error) {
     console.error(`Error processing XML (attempt ${retryCount + 1}):`, error);
 
-    if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying in ${RETRY_DELAY}ms...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    if (retryCount < 3) {
+      console.log(`Retrying in 1000ms...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       return processXMLWithRetry(xmlContent, retryCount + 1);
     }
 
@@ -59,6 +60,10 @@ serve(async (req) => {
       throw new Error('לא התקבל תוכן XML');
     }
 
+    if (!requestData?.networkName || !requestData?.branchName) {
+      throw new Error('חסרים פרטי רשת וסניף');
+    }
+
     console.log('Processing XML content...');
     const items = await processXMLWithRetry(requestData.xmlContent);
 
@@ -72,29 +77,48 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const products = items.map((item: any) => ({
-      store_chain: requestData.networkName || 'unknown',
-      store_id: requestData.branchName || 'unknown',
-      product_code: item.ItemCode?._text || '',
-      product_name: item.ItemName?._text || '',
-      manufacturer: item.ManufacturerName?._text || '',
-      price: parseFloat(item.ItemPrice?._text) || 0,
-      unit_quantity: item.UnitQty?._text || '',
-      unit_of_measure: item.UnitOfMeasure?._text || '',
-      category: item.ItemSection?._text || 'כללי',
-      price_update_date: new Date().toISOString()
-    })).filter(product => 
-      product.product_code && 
-      product.product_name && 
-      !isNaN(product.price) && 
-      product.price >= 0
-    );
+    const products = items
+      .filter(item => {
+        if (!item || typeof item !== 'object') {
+          console.warn('Invalid item:', item);
+          return false;
+        }
+        return true;
+      })
+      .map((item: any) => {
+        try {
+          const product = {
+            store_chain: requestData.networkName,
+            store_id: requestData.branchName,
+            product_code: item.ItemCode?._text || '',
+            product_name: item.ItemName?._text || '',
+            manufacturer: item.ManufacturerName?._text || '',
+            price: parseFloat(item.ItemPrice?._text) || 0,
+            unit_quantity: item.UnitQty?._text || '',
+            unit_of_measure: item.UnitOfMeasure?._text || '',
+            category: item.ItemSection?._text || 'כללי',
+            price_update_date: new Date().toISOString()
+          };
 
-    console.log(`Processing ${products.length} valid products`);
+          // Validate required fields
+          if (!product.product_code || !product.product_name || isNaN(product.price) || product.price < 0) {
+            console.warn('Invalid product:', product);
+            return null;
+          }
+
+          return product;
+        } catch (error) {
+          console.error('Error mapping item:', error);
+          return null;
+        }
+      })
+      .filter((product): product is NonNullable<typeof product> => product !== null);
 
     if (products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים בקובץ');
     }
+
+    console.log(`Processing ${products.length} valid products`);
 
     // Process products in batches of 1000
     const BATCH_SIZE = 1000;
@@ -138,7 +162,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML'
+        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML',
+        details: error.toString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
