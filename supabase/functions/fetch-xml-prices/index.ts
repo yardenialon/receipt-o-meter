@@ -3,13 +3,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-network-name, x-branch-name, x-file-name',
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -21,6 +21,8 @@ serve(async (req) => {
     const networkName = req.headers.get('x-network-name');
     const branchName = req.headers.get('x-branch-name');
     const fileName = req.headers.get('x-file-name');
+
+    console.log('Received metadata:', { networkName, branchName, fileName });
 
     if (!networkName || !branchName || !fileName) {
       throw new Error('Missing required metadata in headers');
