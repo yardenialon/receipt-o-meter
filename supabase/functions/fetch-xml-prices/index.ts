@@ -7,13 +7,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function processXMLWithRetry(xmlContent: string, retryCount = 0) {
+async function processXMLWithRetry(xmlContent: string, networkName: string, branchName: string, retryCount = 0) {
   try {
     if (!xmlContent) {
       throw new Error('XML content is empty');
     }
 
+    if (!networkName || !branchName) {
+      throw new Error('חסרים פרטי רשת וסניף');
+    }
+
     console.log(`Attempt ${retryCount + 1} to process XML content of size: ${xmlContent.length} bytes`);
+    console.log(`Network: ${networkName}, Branch: ${branchName}`);
     
     // Parse XML content
     const xmlData = parse(xmlContent);
@@ -33,7 +38,7 @@ async function processXMLWithRetry(xmlContent: string, retryCount = 0) {
     if (retryCount < 3) {
       console.log(`Retrying in 1000ms...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return processXMLWithRetry(xmlContent, retryCount + 1);
+      return processXMLWithRetry(xmlContent, networkName, branchName, retryCount + 1);
     }
 
     throw error;
@@ -65,7 +70,7 @@ serve(async (req) => {
     }
 
     console.log('Processing XML content...');
-    const items = await processXMLWithRetry(requestData.xmlContent);
+    const items = await processXMLWithRetry(requestData.xmlContent, requestData.networkName, requestData.branchName);
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
