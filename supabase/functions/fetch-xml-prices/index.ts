@@ -27,11 +27,16 @@ serve(async (req) => {
   try {
     console.log('Starting file processing...');
     
-    // Read data directly as ArrayBuffer
-    const data = await req.arrayBuffer();
-    const decoder = new TextDecoder();
-    const xmlContent = decoder.decode(data);
+    // Parse the request body once
+    const { fileContent: base64Content, networkName, branchName } = await req.json();
+    
+    if (!base64Content) {
+      throw new Error('No file content provided');
+    }
 
+    // Decode base64 content
+    const xmlContent = atob(base64Content);
+    
     // Split content into smaller chunks
     const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
     const chunks = Array.from(chunkString(xmlContent, CHUNK_SIZE));
@@ -43,9 +48,6 @@ serve(async (req) => {
     const firstChunk = chunks[0];
     console.log('First chunk preview:', firstChunk.substring(0, 200));
 
-    // Get request parameters from headers or query
-    const { networkName, branchName } = await req.json();
-    
     if (!networkName || !branchName) {
       throw new Error('Network name and branch name are required');
     }
