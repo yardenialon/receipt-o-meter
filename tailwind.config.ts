@@ -96,6 +96,14 @@ export default {
             transform: "translateX(100%)",
           },
         },
+        "pulse": {
+          "0%, 100%": {
+            opacity: "1",
+          },
+          "50%": {
+            opacity: "0.5",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -104,10 +112,14 @@ export default {
         "slide-up": "slide-up 0.5s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
         "shimmer": "shimmer 2s infinite",
+        "pulse": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
       backdropBlur: {
         xs: '2px',
-      }
+      },
+      backgroundImage: {
+        'noise': "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyBAMAAADsEZWCAAAAElBMVEUAAAD8/vz08vT09PT8+vz///+Tb6RWAAAABXRSTlMS7X0pB6QZN0kAAABCSURBVDjLY2AYBaNg2AJGRkYGDECMJKMYA4LFyMjAhEWMiRVTjJERU4yFBVOMjQ1TjJ0dU4yDA1OMkxNTbBQMHwAAWsMK5WMfafcAAAAASUVORK5CYII=')",
+      },
     },
   },
   plugins: [
