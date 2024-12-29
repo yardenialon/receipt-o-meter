@@ -20,6 +20,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Noto Sans Hebrew", "sans-serif"],
+        assistant: ["Assistant", "sans-serif"],
+        inter: ["Inter", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -41,6 +43,8 @@ export default {
           800: '#065f46',
           900: '#064e3b',
         },
+        'bill-green': '#34D399',
+        'bill-blue': '#1E40AF',
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
