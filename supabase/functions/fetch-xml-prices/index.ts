@@ -14,18 +14,21 @@ async function validateXMLStructure(xmlContent: string) {
 
     const xmlData = parse(xmlContent);
     console.log('Parsed XML structure:', {
-      hasItems: !!xmlData?.Items,
-      hasItem: !!xmlData?.Items?.Item,
-      itemType: typeof xmlData?.Items?.Item,
-      keys: Object.keys(xmlData || {})
+      hasItems: !!xmlData?.root?.PriceFullList,
+      hasItem: !!xmlData?.root?.PriceFullList?.Item,
+      itemType: typeof xmlData?.root?.PriceFullList?.Item,
+      keys: Object.keys(xmlData?.root || {})
     });
 
-    if (!xmlData || !xmlData.Items || !xmlData.Items.Item) {
-      throw new Error('Invalid XML structure: missing Items or Item elements');
+    if (!xmlData?.root?.PriceFullList) {
+      throw new Error('Invalid XML structure: missing PriceFullList element');
     }
 
     // Check if Items.Item is an array or single item
-    const items = Array.isArray(xmlData.Items.Item) ? xmlData.Items.Item : [xmlData.Items.Item];
+    const items = Array.isArray(xmlData.root.PriceFullList.Item) 
+      ? xmlData.root.PriceFullList.Item 
+      : [xmlData.root.PriceFullList.Item];
+    
     console.log(`Found ${items.length} items in XML`);
 
     return items;
@@ -50,7 +53,6 @@ serve(async (req) => {
 
   try {
     const requestData = await req.json();
-    console.log('Full request data:', requestData);
     console.log('Request data details:', {
       hasXmlContent: !!requestData?.xmlContent,
       contentLength: requestData?.xmlContent?.length || 0,
