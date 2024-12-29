@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 
 const CHUNK_SIZE = 1024 * 1024 * 2; // 2MB chunks
 const MAX_PARALLEL_UPLOADS = 3; // Maximum number of concurrent chunk uploads
@@ -25,43 +26,20 @@ export const useFileUpload = () => {
         if (processedChunks.has(chunk.index)) return;
 
         try {
-          await supabase
-            .from('price_upload_chunks')
-            .update({ status: 'processing', started_at: new Date().toISOString() })
-            .eq('upload_id', uploadId)
-            .eq('chunk_index', chunk.index);
-
           const reader = new FileReader();
-          await new Promise((resolve, reject) => {
-            reader.onload = resolve;
+          const text = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
             reader.onerror = reject;
             reader.readAsText(chunk.data);
           });
 
-          await supabase
-            .from('price_upload_chunks')
-            .update({
-              status: 'completed',
-              completed_at: new Date().toISOString()
-            })
-            .eq('upload_id', uploadId)
-            .eq('chunk_index', chunk.index);
+          // For now, we'll use hardcoded values for testing
+          await uploadProductsToSupabase(text, 'test-network', 'test-branch');
 
           processedChunks.add(chunk.index);
           updateProgress();
         } catch (error) {
           console.error(`Error processing chunk ${chunk.index}:`, error);
-          
-          await supabase
-            .from('price_upload_chunks')
-            .update({
-              status: 'error',
-              error_message: error instanceof Error ? error.message : 'Unknown error',
-              completed_at: new Date().toISOString()
-            })
-            .eq('upload_id', uploadId)
-            .eq('chunk_index', chunk.index);
-
           throw error;
         }
       });
