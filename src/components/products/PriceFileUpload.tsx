@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { UploadProgress } from './upload/UploadProgress';
 import { UploadZone } from './upload/UploadZone';
+import { validateXMLFile } from '@/utils/xml/xmlValidation';
 
 export const PriceFileUpload = () => {
   const { isUploading, uploadProgress, processFile } = useFileUpload();
@@ -15,12 +16,14 @@ export const PriceFileUpload = () => {
       return;
     }
 
-    if (file.size > 3 * 1024 * 1024 * 1024) { // 3GB limit
-      toast.error('הקובץ גדול מדי. הגודל המקסימלי הוא 3GB');
-      return;
+    try {
+      // Validate file before processing
+      await validateXMLFile(file);
+      await processFile(file, 'unknown', 'unknown');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בהעלאת הקובץ');
     }
-
-    await processFile(file, 'unknown', 'unknown');
   };
 
   return (
@@ -28,7 +31,7 @@ export const PriceFileUpload = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          ניתן להעלות קובץ XML בגודל של עד 3GB. המערכת תחלק את הקובץ לחלקים קטנים ותעבד אותם במקביל.
+          ניתן להעלות קובץ XML בגודל של עד 100MB. המערכת תעבד את הקובץ ותשמור את המוצרים במסד הנתונים.
         </AlertDescription>
       </Alert>
 
