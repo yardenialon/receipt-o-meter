@@ -18,34 +18,25 @@ export const useFileUpload = () => {
       console.log('Starting file upload:', {
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        networkName,
+        branchName
       });
 
-      // Read file content as text
-      const xmlContent = await file.text();
-      console.log('File content read:', {
-        length: xmlContent.length,
-        preview: xmlContent.substring(0, 100)
-      });
-      
-      if (!xmlContent) {
-        throw new Error('Could not read file content');
-      }
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('networkName', networkName);
+      formData.append('branchName', branchName);
 
       console.log('Sending file to Edge Function...', {
         networkName,
         branchName,
-        contentLength: xmlContent.length
+        fileName: file.name
       });
 
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-        body: xmlContent,
-        headers: {
-          'Content-Type': 'text/xml',
-          'x-network-name': networkName,
-          'x-branch-name': branchName,
-          'x-file-name': file.name
-        }
+        body: formData
       });
 
       if (error) {

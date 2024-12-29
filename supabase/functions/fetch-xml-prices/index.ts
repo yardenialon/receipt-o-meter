@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-network-name, x-branch-name, x-file-name',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
@@ -17,30 +17,31 @@ serve(async (req) => {
     console.log('Method:', req.method);
     console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
-    // Get metadata from headers
-    const networkName = req.headers.get('x-network-name');
-    const branchName = req.headers.get('x-branch-name');
-    const fileName = req.headers.get('x-file-name');
+    // Get form data
+    const formData = await req.formData();
+    const file = formData.get('file');
+    const networkName = formData.get('networkName');
+    const branchName = formData.get('branchName');
 
-    console.log('Received metadata:', { networkName, branchName, fileName });
-
-    if (!networkName || !branchName || !fileName) {
-      throw new Error('Missing required metadata in headers');
-    }
-
-    // Read raw XML content
-    const xmlContent = await req.text();
-    console.log('Raw data received:', {
-      length: xmlContent.length,
-      preview: xmlContent.substring(0, 200),
+    console.log('Received data:', {
+      hasFile: !!file,
       networkName,
       branchName,
-      fileName
+      fileName: file?.name,
+      fileSize: file?.size
     });
 
-    if (!xmlContent || xmlContent.trim().length === 0) {
-      throw new Error('No XML content provided');
+    if (!networkName || !branchName) {
+      throw new Error('חסרים פרטי רשת וסניף');
     }
+
+    if (!file) {
+      throw new Error('לא נבחר קובץ');
+    }
+
+    // Read file content
+    const xmlContent = await file.text();
+    console.log('File content length:', xmlContent.length);
 
     // Create Supabase client
     const supabase = createClient(
@@ -52,7 +53,7 @@ serve(async (req) => {
     const { data: uploadRecord, error: uploadError } = await supabase
       .from('price_file_uploads')
       .insert({
-        filename: fileName,
+        filename: file.name,
         store_chain: networkName,
         status: 'processing',
         total_chunks: 1
