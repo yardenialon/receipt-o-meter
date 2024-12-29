@@ -44,10 +44,12 @@ const Products = () => {
         <PriceFileUpload />
       </div>
 
-      <ProductsSearch
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
+      <div className="mt-8">
+        <ProductsSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
+      </div>
     </div>
   );
 };
