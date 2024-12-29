@@ -13,25 +13,35 @@ async function validateXMLStructure(xmlContent: string) {
     console.log('XML Content (first 500 chars):', xmlContent.substring(0, 500));
 
     const xmlData = parse(xmlContent);
+    
+    // Log the full structure for debugging
+    console.log('Full XML structure:', JSON.stringify(xmlData, null, 2).substring(0, 1000));
+    
     console.log('Parsed XML structure:', {
-      hasItems: !!xmlData?.root?.PriceFullList,
-      hasItem: !!xmlData?.root?.PriceFullList?.Item,
-      itemType: typeof xmlData?.root?.PriceFullList?.Item,
-      keys: Object.keys(xmlData?.root || {})
+      hasRoot: !!xmlData?.root,
+      rootKeys: Object.keys(xmlData?.root || {}),
+      firstLevelKeys: Object.keys(xmlData || {}),
     });
 
-    if (!xmlData?.root?.PriceFullList) {
-      throw new Error('Invalid XML structure: missing PriceFullList element');
+    // Try different possible structures
+    const items = xmlData?.root?.Prices?.Item || 
+                 xmlData?.root?.PriceFullList?.Item ||
+                 xmlData?.Prices?.Item ||
+                 xmlData?.PriceFullList?.Item ||
+                 xmlData?.root?.Items?.Item;
+
+    if (!items) {
+      throw new Error('Could not find Item elements in any expected location. XML structure: ' + 
+        JSON.stringify(Object.keys(xmlData?.root || xmlData || {})));
     }
 
-    // Check if Items.Item is an array or single item
-    const items = Array.isArray(xmlData.root.PriceFullList.Item) 
-      ? xmlData.root.PriceFullList.Item 
-      : [xmlData.root.PriceFullList.Item];
+    // Convert to array if single item
+    const itemsArray = Array.isArray(items) ? items : [items];
     
-    console.log(`Found ${items.length} items in XML`);
+    console.log(`Found ${itemsArray.length} items in XML`);
+    console.log('Sample item structure:', JSON.stringify(itemsArray[0], null, 2));
 
-    return items;
+    return itemsArray;
   } catch (error) {
     console.error('XML Validation Error:', error);
     throw error;
@@ -124,6 +134,7 @@ serve(async (req) => {
     }
 
     console.log(`Successfully processed ${products.length} valid products`);
+    console.log('Sample processed product:', products[0]);
 
     return new Response(
       JSON.stringify({ 
