@@ -23,14 +23,12 @@ export const useFileUpload = () => {
 
       // Read file content
       const fileContent = await file.arrayBuffer();
+      const fileContentBase64 = btoa(String.fromCharCode(...new Uint8Array(fileContent)));
       
       console.log('Sending file to Edge Function...');
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-        body: fileContent,
-        headers: {
-          'Content-Type': 'application/octet-stream'
-        },
         body: {
+          fileContent: fileContentBase64,
           networkName,
           branchName,
         }
