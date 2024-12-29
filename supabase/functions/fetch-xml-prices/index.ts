@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,21 +30,20 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    console.log('Creating DOM parser...');
-    const parser = new DOMParser();
     console.log('Parsing XML content...');
-    const xmlDoc = parser.parseFromString(requestData.xmlContent, 'text/xml');
+    const xmlData = parse(requestData.xmlContent);
     
-    if (!xmlDoc) {
+    if (!xmlData) {
       console.error('Failed to parse XML document');
       throw new Error('קובץ ה-XML אינו תקין');
     }
 
-    // Get items from XML structure
-    const items = xmlDoc.querySelectorAll('Items > Item');
-    console.log(`Found ${items?.length || 0} items in XML`);
+    // Navigate through the XML structure to find items
+    const items = xmlData.Items?.Item || [];
+    const itemsArray = Array.isArray(items) ? items : [items];
+    console.log(`Found ${itemsArray.length} items in XML`);
     
-    if (!items || items.length === 0) {
+    if (itemsArray.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
     }
 
@@ -53,22 +52,23 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const products = Array.from(items).map((item) => {
-      const getElementText = (tagName: string): string => {
-        const element = item.querySelector(tagName);
-        return element?.textContent?.trim() || '';
+    const products = itemsArray.map((item) => {
+      // Helper function to safely get text content
+      const getValue = (key: string): string => {
+        const value = item[key];
+        return value ? String(value).trim() : '';
       };
 
       return {
         store_chain: requestData.networkName,
         store_id: requestData.branchName,
-        product_code: getElementText('ItemCode'),
-        product_name: getElementText('ItemName'),
-        manufacturer: getElementText('ManufacturerName'),
-        price: parseFloat(getElementText('ItemPrice')) || 0,
-        unit_quantity: getElementText('UnitQty'),
-        unit_of_measure: getElementText('UnitOfMeasure'),
-        category: getElementText('ItemSection') || 'כללי',
+        product_code: getValue('ItemCode'),
+        product_name: getValue('ItemName'),
+        manufacturer: getValue('ManufacturerName'),
+        price: parseFloat(getValue('ItemPrice')) || 0,
+        unit_quantity: getValue('UnitQty'),
+        unit_of_measure: getValue('UnitOfMeasure'),
+        category: getValue('ItemSection') || 'כללי',
         price_update_date: new Date().toISOString()
       };
     }).filter(product => 
