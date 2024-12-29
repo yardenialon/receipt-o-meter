@@ -40,12 +40,23 @@ serve(async (req) => {
       throw new Error('קובץ ה-XML אינו תקין: ' + parseError.message);
     }
 
-    if (!xmlData?.Items?.Item) {
-      console.error('Invalid XML structure:', xmlData);
-      throw new Error('מבנה ה-XML אינו תקין: לא נמצאו פריטים');
+    if (!xmlData) {
+      console.error('Failed to parse XML document');
+      throw new Error('קובץ ה-XML אינו תקין');
     }
 
-    const items = Array.isArray(xmlData.Items.Item) ? xmlData.Items.Item : [xmlData.Items.Item];
+    if (!xmlData.Items) {
+      console.error('No Items found in XML structure:', xmlData);
+      throw new Error('מבנה ה-XML אינו תקין: חסר תג Items');
+    }
+
+    const rawItems = xmlData.Items.Item;
+    if (!rawItems) {
+      console.error('No Item elements found in Items');
+      throw new Error('לא נמצאו פריטים בקובץ ה-XML');
+    }
+
+    const items = Array.isArray(rawItems) ? rawItems : [rawItems];
     console.log(`Found ${items.length} items in XML`);
 
     if (items.length === 0) {
@@ -58,7 +69,7 @@ serve(async (req) => {
       store_id: requestData.branchName
     }));
 
-    if (products.length === 0) {
+    if (!products || products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים בקובץ');
     }
 

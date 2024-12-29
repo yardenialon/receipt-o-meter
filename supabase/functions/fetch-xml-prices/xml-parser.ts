@@ -1,47 +1,89 @@
 import { XmlProduct } from "./types.ts";
 
+const safeGetValue = (item: any, key: string): string => {
+  if (!item || typeof item !== 'object') {
+    console.warn(`Invalid item for key ${key}`);
+    return '';
+  }
+  
+  const value = item[key];
+  if (value === null || value === undefined) {
+    console.warn(`Null or undefined value for key ${key}`);
+    return '';
+  }
+  
+  return String(value).trim();
+};
+
+const safeParseFloat = (value: string): number => {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export const parseXmlItems = (items: any[]): XmlProduct[] => {
   console.log('Starting to parse XML items...');
   
+  if (!Array.isArray(items)) {
+    console.error('Items is not an array');
+    return [];
+  }
+
   return items
     .map((item, index) => {
       try {
-        if (!item.ItemCode || !item.ItemName || !item.ItemPrice) {
-          console.warn(`Invalid item at index ${index}, missing required fields`);
+        if (!item || typeof item !== 'object') {
+          console.warn(`Invalid item at index ${index}`);
+          return null;
+        }
+
+        const productCode = safeGetValue(item, 'ItemCode');
+        const productName = safeGetValue(item, 'ItemName');
+        const priceStr = safeGetValue(item, 'ItemPrice');
+        const price = safeParseFloat(priceStr);
+
+        // Validate required fields
+        if (!productCode) {
+          console.warn(`Missing product code for item ${index}`);
+          return null;
+        }
+
+        if (!productName) {
+          console.warn(`Missing product name for item ${index}`);
+          return null;
+        }
+
+        if (price <= 0) {
+          console.warn(`Invalid price for item ${index}: ${price}`);
           return null;
         }
 
         const product: XmlProduct = {
           store_chain: '',  // Will be set by the caller
           store_id: '',     // Will be set by the caller
-          product_code: String(item.ItemCode).trim(),
-          product_name: String(item.ItemName).trim(),
-          manufacturer: item.ManufacturerName ? String(item.ManufacturerName).trim() : null,
-          price: parseFloat(item.ItemPrice) || 0,
-          unit_quantity: item.UnitQty ? String(item.UnitQty).trim() : null,
-          unit_of_measure: item.UnitOfMeasure ? String(item.UnitOfMeasure).trim() : null,
-          category: item.Category ? String(item.Category).trim() : 'כללי',
-          price_update_date: item.PriceUpdateDate ? new Date(item.PriceUpdateDate).toISOString() : new Date().toISOString()
+          product_code: productCode,
+          product_name: productName,
+          manufacturer: safeGetValue(item, 'ManufacturerName'),
+          price: price,
+          unit_quantity: safeGetValue(item, 'UnitQty'),
+          unit_of_measure: safeGetValue(item, 'UnitOfMeasure'),
+          category: safeGetValue(item, 'ItemSection') || 'כללי',
+          price_update_date: new Date().toISOString()
         };
-
-        // Validate required fields
-        if (!product.product_code) {
-          throw new Error(`Missing product code for item ${index + 1}`);
-        }
-
-        if (!product.product_name) {
-          throw new Error(`Missing product name for item ${index + 1}`);
-        }
-
-        if (isNaN(product.price) || product.price < 0) {
-          throw new Error(`Invalid price for item ${index + 1}: ${product.price}`);
-        }
 
         return product;
       } catch (error) {
-        console.error(`Error parsing item ${index + 1}:`, error);
+        console.error(`Error parsing item ${index}:`, error);
         return null;
       }
     })
-    .filter((product): product is XmlProduct => product !== null);
+    .filter((product): product is XmlProduct => 
+      product !== null && 
+      typeof product === 'object' &&
+      typeof product.product_code === 'string' &&
+      product.product_code !== '' &&
+      typeof product.product_name === 'string' &&
+      product.product_name !== '' &&
+      typeof product.price === 'number' &&
+      product.price > 0
+    );
 };
