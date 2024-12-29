@@ -1,13 +1,15 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Home, BarChart2, Package2 } from 'lucide-react';
+import { Menu, Home, BarChart2, Package2, LogOut } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebar } from './ui/sidebar';
 import { BillBeLogo } from './BillBeLogo';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: any }) => {
   const location = useLocation();
@@ -50,6 +52,18 @@ const MobileNav = () => {
     { href: '/products', label: 'מוצרים', icon: Package2 },
   ];
   const location = useLocation();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+      toast.success('התנתקת בהצלחה');
+    } catch (error) {
+      toast.error('אירעה שגיאה בהתנתקות');
+    }
+  };
 
   return (
     <motion.nav
@@ -92,6 +106,18 @@ const MobileNav = () => {
               </Link>
             );
           })}
+          <button
+            onClick={handleLogout}
+            className="relative flex flex-col items-center"
+          >
+            <motion.div
+              className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-red-50"
+              whileTap={{ scale: 0.95 }}
+            >
+              <LogOut className="h-5 w-5 text-red-500" />
+            </motion.div>
+            <span className="mt-1 text-xs text-red-500">התנתק</span>
+          </button>
         </div>
       </div>
     </motion.nav>
@@ -101,6 +127,18 @@ const MobileNav = () => {
 export function AppSidebar() {
   const isMobile = useIsMobile();
   const { openMobile, setOpenMobile } = useSidebar();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+      toast.success('התנתקת בהצלחה');
+    } catch (error) {
+      toast.error('אירעה שגיאה בהתנתקות');
+    }
+  };
 
   const links = [
     { href: '/', label: 'קבלות', icon: Home },
@@ -121,6 +159,14 @@ export function AppSidebar() {
           {links.map((link) => (
             <NavLink key={link.href} {...link} />
           ))}
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-red-500 hover:bg-red-50 hover:text-red-500"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+            <span>התנתק</span>
+          </Button>
         </div>
       </div>
     </div>
