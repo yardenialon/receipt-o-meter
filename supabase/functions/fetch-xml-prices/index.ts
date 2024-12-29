@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { parseXmlItems } from './xml-parser.ts';
+import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,19 +30,19 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
+    console.log('Creating DOM parser...');
     const parser = new DOMParser();
+    console.log('Parsing XML content...');
     const xmlDoc = parser.parseFromString(requestData.xmlContent, 'text/xml');
     
-    // Check for parsing errors
-    const parserError = xmlDoc.querySelector('parsererror');
-    if (parserError) {
-      console.error('XML parsing error:', parserError.textContent);
+    if (!xmlDoc) {
+      console.error('Failed to parse XML document');
       throw new Error('קובץ ה-XML אינו תקין');
     }
 
     // Get items from XML structure
     const items = xmlDoc.querySelectorAll('Items > Item');
-    console.log(`Found ${items.length} items in XML`);
+    console.log(`Found ${items?.length || 0} items in XML`);
     
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
