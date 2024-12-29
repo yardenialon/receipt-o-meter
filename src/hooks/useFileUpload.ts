@@ -23,13 +23,21 @@ export const useFileUpload = () => {
 
       // Read file content as text
       const fileContent = await file.text();
-      console.log('File content length:', fileContent.length);
+      console.log('File content read:', {
+        length: fileContent.length,
+        preview: fileContent.substring(0, 100)
+      });
       
       if (!fileContent) {
         throw new Error('Could not read file content');
       }
 
-      console.log('Sending file to Edge Function...');
+      console.log('Sending file to Edge Function...', {
+        networkName,
+        branchName,
+        contentLength: fileContent.length
+      });
+
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
         body: {
           fileContent,

@@ -18,9 +18,18 @@ serve(async (req) => {
     console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
     const body = await req.json();
-    console.log('Request body received');
+    console.log('Request body keys:', Object.keys(body));
     
     const { fileContent, fileName, networkName, branchName } = body;
+
+    console.log('Received data:', {
+      hasFileContent: !!fileContent,
+      fileContentType: typeof fileContent,
+      fileContentLength: fileContent?.length,
+      fileName,
+      networkName,
+      branchName
+    });
 
     if (!fileContent || typeof fileContent !== 'string' || fileContent.trim().length === 0) {
       console.error('Invalid file content:', { 
@@ -84,7 +93,8 @@ serve(async (req) => {
     console.error('Processing error:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      type: error.constructor.name
     });
     
     return new Response(
