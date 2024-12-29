@@ -22,7 +22,11 @@ serve(async (req) => {
     
     const { fileContent, fileName, networkName, branchName } = body;
 
-    if (!fileContent) {
+    if (!fileContent || typeof fileContent !== 'string' || fileContent.trim().length === 0) {
+      console.error('Invalid file content:', { 
+        received: fileContent ? typeof fileContent : 'null',
+        length: fileContent ? fileContent.length : 0 
+      });
       throw new Error('No file content provided');
     }
 
@@ -77,7 +81,11 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Processing error:', error);
+    console.error('Processing error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     
     return new Response(
       JSON.stringify({
