@@ -47,64 +47,79 @@ export const TopStores = () => {
       <CardHeader>
         <CardTitle className="text-lg sm:text-xl">חנויות מובילות</CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px] sm:h-[400px] w-full">
+      <CardContent className="min-h-[400px] sm:h-[400px] w-full px-4 sm:px-6">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={storeData} 
             layout="vertical"
             margin={{ 
-              top: 5, 
-              right: isMobile ? 60 : 80, 
-              left: isMobile ? 100 : 120, 
-              bottom: 5 
+              top: 10, 
+              right: isMobile ? 70 : 90, 
+              left: isMobile ? 120 : 140, 
+              bottom: 10 
             }}
+            barSize={40}
+            barGap={16}
           >
             <defs>
               <linearGradient id="storeBarGradient" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#38BDF8" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.4}/>
+                <stop offset="0%" stopColor="#34D399" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#38BDF8" stopOpacity={0.6}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="#E5E7EB" 
+              horizontal={!isMobile}
+              vertical={isMobile}
+            />
             <XAxis 
               type="number"
               tickFormatter={(value) => `₪${value}`}
               tick={{ 
                 fill: '#374151',
-                fontSize: isMobile ? 12 : 14
+                fontSize: isMobile ? 14 : 16,
               }}
               tickMargin={8}
               domain={[0, 'dataMax']}
               padding={{ left: 0, right: 20 }}
+              aria-label="סכום בשקלים"
             />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={isMobile ? 90 : 110}
+              width={isMobile ? 110 : 130}
               tick={{ 
                 fill: '#374151',
-                fontSize: isMobile ? 12 : 14
+                fontSize: isMobile ? 14 : 16,
+                textAnchor: 'end',
               }}
+              tickFormatter={(value) => 
+                value.length > 20 ? `${value.substring(0, 17)}...` : value
+              }
               tickMargin={8}
+              aria-label="שמות חנויות"
             />
             <Tooltip 
               formatter={(value) => `₪${value}`}
               contentStyle={{ 
                 direction: 'rtl',
-                background: 'rgba(255, 255, 255, 0.8)',
+                background: 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 fontSize: isMobile ? '14px' : '16px',
-                padding: '8px 12px',
+                padding: '12px 16px',
               }}
               wrapperStyle={{ 
                 zIndex: 1000,
                 width: isMobile ? '100%' : 'auto',
-                maxWidth: isMobile ? 'calc(100vw - 32px)' : '300px'
+                maxWidth: isMobile ? 'calc(100vw - 32px)' : '300px',
+                touchAction: 'none',
               }}
               position={{ x: 0, y: 0 }}
+              cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
             />
             <Bar 
               dataKey="total" 
@@ -112,14 +127,17 @@ export const TopStores = () => {
               isAnimationActive={true}
               animationDuration={400}
               animationEasing="ease-in-out"
-              radius={[0, 4, 4, 0]}
+              radius={[0, 6, 6, 0]}
+              minPointSize={30}
               label={{ 
                 position: 'right',
                 formatter: (value) => `₪${value}`,
                 fill: '#374151',
-                fontSize: isMobile ? 12 : 14,
-                dx: 5,
+                fontSize: isMobile ? 14 : 16,
+                dx: 8,
               }}
+              role="graphics-symbol"
+              aria-label="סכום קניות בחנות"
             />
           </BarChart>
         </ResponsiveContainer>
