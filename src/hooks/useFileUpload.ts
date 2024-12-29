@@ -9,7 +9,12 @@ export const useFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const processChunksInParallel = async (chunks: { index: number; data: Blob }[], uploadId: string) => {
+  const processChunksInParallel = async (
+    chunks: { index: number; data: Blob }[], 
+    uploadId: string,
+    networkName: string,
+    branchName: string
+  ) => {
     const processedChunks = new Set<number>();
     let completedChunks = 0;
     
@@ -118,7 +123,7 @@ export const useFileUpload = () => {
 
       if (chunksError) throw chunksError;
 
-      await processChunksInParallel(chunks, uploadRecord.id);
+      await processChunksInParallel(chunks, uploadRecord.id, networkName, branchName);
 
       toast.success('הקובץ הועלה ועובד בהצלחה');
     } catch (error) {
