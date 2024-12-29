@@ -9,13 +9,9 @@ const corsHeaders = {
 
 async function validateXMLStructure(xmlContent: string) {
   try {
-    // Log the start of XML content for debugging
     console.log('XML Content (first 500 chars):', xmlContent.substring(0, 500));
 
     const xmlData = parse(xmlContent);
-    
-    // Log the full structure for debugging
-    console.log('Full XML structure:', JSON.stringify(xmlData, null, 2).substring(0, 1000));
     
     console.log('Parsed XML structure:', {
       hasRoot: !!xmlData?.root,
@@ -23,21 +19,26 @@ async function validateXMLStructure(xmlContent: string) {
       firstLevelKeys: Object.keys(xmlData || {}),
     });
 
-    // Try different possible structures
+    // Handle Shufersal's XML structure
+    if (xmlData?.root?.Items?.Item) {
+      const items = xmlData.root.Items.Item;
+      const itemsArray = Array.isArray(items) ? items : [items];
+      console.log(`Found ${itemsArray.length} items in Shufersal XML format`);
+      return itemsArray;
+    }
+
+    // Try other possible structures (Rami Levy, etc)
     const items = xmlData?.root?.Prices?.Item || 
                  xmlData?.root?.PriceFullList?.Item ||
                  xmlData?.Prices?.Item ||
-                 xmlData?.PriceFullList?.Item ||
-                 xmlData?.root?.Items?.Item;
+                 xmlData?.PriceFullList?.Item;
 
     if (!items) {
       throw new Error('Could not find Item elements in any expected location. XML structure: ' + 
         JSON.stringify(Object.keys(xmlData?.root || xmlData || {})));
     }
 
-    // Convert to array if single item
     const itemsArray = Array.isArray(items) ? items : [items];
-    
     console.log(`Found ${itemsArray.length} items in XML`);
     console.log('Sample item structure:', JSON.stringify(itemsArray[0], null, 2));
 
@@ -49,11 +50,9 @@ async function validateXMLStructure(xmlContent: string) {
 }
 
 serve(async (req) => {
-  // Log request details
   console.log('Request method:', req.method);
   console.log('Request headers:', Object.fromEntries(req.headers));
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: corsHeaders,
@@ -71,7 +70,6 @@ serve(async (req) => {
       allKeys: Object.keys(requestData || {})
     });
 
-    // Validate required parameters
     if (!requestData?.networkName || !requestData?.branchName) {
       console.error('Missing required fields:', { 
         networkName: requestData?.networkName,
@@ -110,10 +108,10 @@ serve(async (req) => {
             product_name: item.ItemName?._text || '',
             manufacturer: item.ManufacturerName?._text || '',
             price: parseFloat(item.ItemPrice?._text) || 0,
-            unit_quantity: item.UnitQty?._text || '',
+            unit_quantity: item.Quantity?._text || '',
             unit_of_measure: item.UnitOfMeasure?._text || '',
             category: item.ItemSection?._text || 'כללי',
-            price_update_date: new Date().toISOString()
+            price_update_date: new Date(item.PriceUpdateDate?._text || new Date()).toISOString()
           };
 
           if (!product.product_code || !product.product_name || isNaN(product.price) || product.price < 0) {
