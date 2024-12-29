@@ -1,89 +1,35 @@
-import { XmlProduct } from "./types.ts";
+import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
 
-const safeGetValue = (item: any, key: string): string => {
-  if (!item || typeof item !== 'object') {
-    console.warn(`Invalid item for key ${key}`);
-    return '';
-  }
-  
-  const value = item[key];
-  if (value === null || value === undefined) {
-    console.warn(`Null or undefined value for key ${key}`);
-    return '';
-  }
-  
-  return String(value).trim();
-};
-
-const safeParseFloat = (value: string): number => {
-  const parsed = parseFloat(value);
-  return isNaN(parsed) ? 0 : parsed;
-};
-
-export const parseXmlItems = (items: any[]): XmlProduct[] => {
-  console.log('Starting to parse XML items...');
-  
-  if (!Array.isArray(items)) {
-    console.error('Items is not an array');
-    return [];
+export async function parseXMLContent(xmlContent: string) {
+  if (!xmlContent) {
+    throw new Error('XML content is empty');
   }
 
-  return items
-    .map((item, index) => {
-      try {
-        if (!item || typeof item !== 'object') {
-          console.warn(`Invalid item at index ${index}`);
-          return null;
-        }
+  try {
+    console.log('Starting XML parsing...');
+    const xmlData = parse(xmlContent);
+    
+    if (!xmlData) {
+      throw new Error('Failed to parse XML data');
+    }
 
-        const productCode = safeGetValue(item, 'ItemCode');
-        const productName = safeGetValue(item, 'ItemName');
-        const priceStr = safeGetValue(item, 'ItemPrice');
-        const price = safeParseFloat(priceStr);
+    // Handle Shufersal's XML structure with null checks
+    let items;
+    if (xmlData?.root?.Items?.Item) {
+      items = xmlData.root.Items.Item;
+    } else if (xmlData?.Items?.Item) {
+      items = xmlData.Items.Item;
+    } else {
+      console.error('XML Structure:', JSON.stringify(xmlData, null, 2));
+      throw new Error('Could not find Item elements in expected locations');
+    }
 
-        // Validate required fields
-        if (!productCode) {
-          console.warn(`Missing product code for item ${index}`);
-          return null;
-        }
-
-        if (!productName) {
-          console.warn(`Missing product name for item ${index}`);
-          return null;
-        }
-
-        if (price <= 0) {
-          console.warn(`Invalid price for item ${index}: ${price}`);
-          return null;
-        }
-
-        const product: XmlProduct = {
-          store_chain: '',  // Will be set by the caller
-          store_id: '',     // Will be set by the caller
-          product_code: productCode,
-          product_name: productName,
-          manufacturer: safeGetValue(item, 'ManufacturerName'),
-          price: price,
-          unit_quantity: safeGetValue(item, 'UnitQty'),
-          unit_of_measure: safeGetValue(item, 'UnitOfMeasure'),
-          category: safeGetValue(item, 'ItemSection') || 'כללי',
-          price_update_date: new Date().toISOString()
-        };
-
-        return product;
-      } catch (error) {
-        console.error(`Error parsing item ${index}:`, error);
-        return null;
-      }
-    })
-    .filter((product): product is XmlProduct => 
-      product !== null && 
-      typeof product === 'object' &&
-      typeof product.product_code === 'string' &&
-      product.product_code !== '' &&
-      typeof product.product_name === 'string' &&
-      product.product_name !== '' &&
-      typeof product.price === 'number' &&
-      product.price > 0
-    );
-};
+    // Convert to array if single item
+    const itemsArray = Array.isArray(items) ? items : [items].filter(Boolean);
+    console.log(`Found ${itemsArray.length} items in XML`);
+    return itemsArray;
+  } catch (error) {
+    console.error('XML Parsing Error:', error);
+    throw error;
+  }
+}

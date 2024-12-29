@@ -1,20 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { XmlProduct } from './types.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-export const insertProducts = async (products: XmlProduct[]): Promise<number> => {
+export async function insertProducts(products: any[]) {
   if (!products || products.length === 0) {
-    console.error('No products provided for insertion');
+    console.warn('No products to insert');
     return 0;
   }
 
-  console.log(`Starting batch insertion of ${products.length} products`);
-  
-  const batchSize = 100; // Reduced batch size for better stability
+  console.log(`Starting to insert ${products.length} products`);
+  const batchSize = 500;
   let successCount = 0;
   let failedCount = 0;
 
@@ -36,23 +34,22 @@ export const insertProducts = async (products: XmlProduct[]): Promise<number> =>
       if (error) {
         console.error(`Error in batch ${batchNumber}:`, error);
         failedCount += batch.length;
-        // Continue processing other batches even if one fails
         continue;
       }
 
       successCount += batch.length;
       console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
       
-      // Add a small delay between batches to prevent overwhelming the database
+      // Small delay between batches
       if (i + batchSize < products.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
+
+    console.log(`Upload completed. Success: ${successCount}, Failed: ${failedCount}`);
+    return successCount;
   } catch (error) {
     console.error('Batch processing error:', error);
     throw error;
   }
-
-  console.log(`Upload completed. Success: ${successCount}, Failed: ${failedCount}`);
-  return successCount;
-};
+}
