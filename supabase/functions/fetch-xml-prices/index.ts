@@ -13,42 +13,32 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Request received');
+    console.log('=== Start processing request ===');
     console.log('Method:', req.method);
     console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
-    const body = await req.json();
-    console.log('Request body keys:', Object.keys(body));
-    
-    const { fileContent, fileName, networkName, branchName } = body;
+    // Get metadata from headers
+    const networkName = req.headers.get('x-network-name');
+    const branchName = req.headers.get('x-branch-name');
+    const fileName = req.headers.get('x-file-name');
 
-    console.log('Received data:', {
-      hasFileContent: !!fileContent,
-      fileContentType: typeof fileContent,
-      fileContentLength: fileContent?.length,
-      fileName,
-      networkName,
-      branchName
-    });
-
-    if (!fileContent || typeof fileContent !== 'string' || fileContent.trim().length === 0) {
-      console.error('Invalid file content:', { 
-        received: fileContent ? typeof fileContent : 'null',
-        length: fileContent ? fileContent.length : 0 
-      });
-      throw new Error('No file content provided');
+    if (!networkName || !branchName || !fileName) {
+      throw new Error('Missing required metadata in headers');
     }
 
-    if (!networkName || !branchName) {
-      throw new Error('Network name and branch name are required');
-    }
-
-    console.log('Processing file:', {
-      fileName,
+    // Read raw XML content
+    const xmlContent = await req.text();
+    console.log('Raw data received:', {
+      length: xmlContent.length,
+      preview: xmlContent.substring(0, 200),
       networkName,
       branchName,
-      contentLength: fileContent.length
+      fileName
     });
+
+    if (!xmlContent || xmlContent.trim().length === 0) {
+      throw new Error('No XML content provided');
+    }
 
     // Create Supabase client
     const supabase = createClient(
@@ -92,16 +82,14 @@ serve(async (req) => {
   } catch (error) {
     console.error('Processing error:', {
       message: error.message,
-      stack: error.stack,
-      name: error.name,
-      type: error.constructor.name
+      type: error.constructor.name,
+      stack: error.stack
     });
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        details: error.stack
+        error: error.message
       }),
       {
         status: 400,

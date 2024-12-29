@@ -22,28 +22,29 @@ export const useFileUpload = () => {
       });
 
       // Read file content as text
-      const fileContent = await file.text();
+      const xmlContent = await file.text();
       console.log('File content read:', {
-        length: fileContent.length,
-        preview: fileContent.substring(0, 100)
+        length: xmlContent.length,
+        preview: xmlContent.substring(0, 100)
       });
       
-      if (!fileContent) {
+      if (!xmlContent) {
         throw new Error('Could not read file content');
       }
 
       console.log('Sending file to Edge Function...', {
         networkName,
         branchName,
-        contentLength: fileContent.length
+        contentLength: xmlContent.length
       });
 
       const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-        body: {
-          fileContent,
-          fileName: file.name,
-          networkName,
-          branchName
+        body: xmlContent,
+        headers: {
+          'Content-Type': 'text/xml',
+          'x-network-name': networkName,
+          'x-branch-name': branchName,
+          'x-file-name': file.name
         }
       });
 
