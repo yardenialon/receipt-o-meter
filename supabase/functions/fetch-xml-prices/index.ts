@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 async function validateXMLStructure(xmlContent: string) {
   try {
@@ -36,12 +36,16 @@ async function validateXMLStructure(xmlContent: string) {
 }
 
 serve(async (req) => {
-  console.log('Request received:', req.method);
+  // Log request details
+  console.log('Request method:', req.method);
   console.log('Request headers:', Object.fromEntries(req.headers));
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    });
   }
 
   try {
@@ -76,12 +80,7 @@ serve(async (req) => {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
     }
 
-    // Process items and insert into database
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    // Process items and prepare for database insertion
     const products = items
       .filter(item => {
         if (!item || typeof item !== 'object') {
@@ -116,42 +115,20 @@ serve(async (req) => {
           return null;
         }
       })
-      .filter((product): product is NonNullable<typeof product> => product !== null);
+      .filter(Boolean);
 
     if (products.length === 0) {
       throw new Error('לא נמצאו מוצרים תקינים בקובץ');
     }
 
-    console.log(`Processing ${products.length} valid products`);
-
-    const BATCH_SIZE = 1000;
-    let successCount = 0;
-
-    for (let i = 0; i < products.length; i += BATCH_SIZE) {
-      const batch = products.slice(i, i + BATCH_SIZE);
-      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(products.length / BATCH_SIZE)}`);
-
-      const { error: insertError } = await supabase
-        .from('store_products')
-        .upsert(batch, {
-          onConflict: 'store_chain,product_code',
-          ignoreDuplicates: false
-        });
-
-      if (insertError) {
-        console.error('Error inserting batch:', insertError);
-        throw new Error(`שגיאה בשמירת המוצרים: ${insertError.message}`);
-      }
-
-      successCount += batch.length;
-      console.log(`Successfully processed ${successCount}/${products.length} products`);
-    }
+    console.log(`Successfully processed ${products.length} valid products`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `הועלו ${successCount} מוצרים בהצלחה`,
-        count: successCount
+        message: `נמצאו ${products.length} מוצרים תקינים`,
+        count: products.length,
+        products: products
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
