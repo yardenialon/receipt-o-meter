@@ -17,31 +17,25 @@ serve(async (req) => {
     console.log('Method:', req.method);
     console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
-    const formData = await req.formData();
-    console.log('FormData received');
+    const body = await req.json();
+    console.log('Request body received');
     
-    const file = formData.get('file');
-    const networkName = formData.get('networkName');
-    const branchName = formData.get('branchName');
+    const { fileContent, fileName, networkName, branchName } = body;
 
-    console.log('Form data:', {
-      file: file ? { name: file.name, type: file.type, size: file.size } : null,
-      networkName,
-      branchName
-    });
-
-    if (!file) {
-      throw new Error('No file uploaded');
+    if (!fileContent) {
+      throw new Error('No file content provided');
     }
 
     if (!networkName || !branchName) {
       throw new Error('Network name and branch name are required');
     }
 
-    // Read file content
-    const content = await file.text();
-    console.log('File content length:', content.length);
-    console.log('Content preview:', content.substring(0, 200));
+    console.log('Processing file:', {
+      fileName,
+      networkName,
+      branchName,
+      contentLength: fileContent.length
+    });
 
     // Create Supabase client
     const supabase = createClient(
@@ -53,7 +47,7 @@ serve(async (req) => {
     const { data: uploadRecord, error: uploadError } = await supabase
       .from('price_file_uploads')
       .insert({
-        filename: file.name,
+        filename: fileName,
         store_chain: networkName,
         status: 'processing',
         total_chunks: 1
