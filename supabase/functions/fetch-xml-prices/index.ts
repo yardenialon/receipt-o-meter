@@ -1,11 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 async function validateXMLStructure(xmlContent: string) {
   try {
@@ -33,14 +39,11 @@ async function validateXMLStructure(xmlContent: string) {
                  xmlData?.PriceFullList?.Item;
 
     if (!items) {
-      throw new Error('Could not find Item elements in any expected location. XML structure: ' + 
-        JSON.stringify(Object.keys(xmlData?.root || xmlData || {})));
+      throw new Error('Could not find Item elements in any expected location');
     }
 
     const itemsArray = Array.isArray(items) ? items : [items];
     console.log(`Found ${itemsArray.length} items in XML`);
-    console.log('Sample item structure:', JSON.stringify(itemsArray[0], null, 2));
-
     return itemsArray;
   } catch (error) {
     console.error('XML Validation Error:', error);
@@ -48,9 +51,41 @@ async function validateXMLStructure(xmlContent: string) {
   }
 }
 
+async function insertProducts(products: any[]) {
+  console.log(`Starting to insert ${products.length} products`);
+  const batchSize = 100;
+  let successCount = 0;
+
+  try {
+    for (let i = 0; i < products.length; i += batchSize) {
+      const batch = products.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(products.length / batchSize)}`);
+
+      const { error } = await supabase
+        .from('store_products')
+        .upsert(batch, {
+          onConflict: 'product_code,store_chain',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error('Error inserting batch:', error);
+        throw error;
+      }
+
+      successCount += batch.length;
+      console.log(`Successfully inserted ${successCount}/${products.length} products`);
+    }
+
+    return successCount;
+  } catch (error) {
+    console.error('Error in batch insertion:', error);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   console.log('Request method:', req.method);
-  console.log('Request headers:', Object.fromEntries(req.headers));
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
@@ -65,20 +100,14 @@ serve(async (req) => {
       hasXmlContent: !!requestData?.xmlContent,
       contentLength: requestData?.xmlContent?.length || 0,
       networkName: requestData?.networkName,
-      branchName: requestData?.branchName,
-      allKeys: Object.keys(requestData || {})
+      branchName: requestData?.branchName
     });
 
     if (!requestData?.networkName || !requestData?.branchName) {
-      console.error('Missing required fields:', { 
-        networkName: requestData?.networkName,
-        branchName: requestData?.branchName
-      });
       throw new Error('חסרים פרטי רשת וסניף');
     }
 
     if (!requestData?.xmlContent) {
-      console.error('Missing XML content');
       throw new Error('לא התקבל תוכן XML');
     }
 
@@ -89,7 +118,6 @@ serve(async (req) => {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
     }
 
-    // Process items and prepare for database insertion
     const products = items
       .filter(item => {
         if (!item || typeof item !== 'object') {
@@ -98,9 +126,12 @@ serve(async (req) => {
         }
         return true;
       })
-      .map((item: any) => {
+      .map(item => {
         try {
-          // Handle direct access to properties for Shufersal's format
+          const priceUpdateDate = item.PriceUpdateDate ? 
+            new Date(item.PriceUpdateDate.replace(' ', 'T')) : 
+            new Date();
+
           const product = {
             store_chain: requestData.networkName,
             store_id: requestData.branchName,
@@ -108,12 +139,10 @@ serve(async (req) => {
             product_name: item.ItemName || '',
             manufacturer: item.ManufacturerName || '',
             price: parseFloat(item.ItemPrice) || 0,
-            unit_quantity: item.Quantity || '',
+            unit_quantity: parseFloat(item.Quantity) || item.UnitQty || '',
             unit_of_measure: item.UnitOfMeasure || '',
             category: 'כללי',
-            price_update_date: item.PriceUpdateDate ? 
-              new Date(item.PriceUpdateDate.replace(' ', 'T')).toISOString() : 
-              new Date().toISOString()
+            price_update_date: priceUpdateDate.toISOString()
           };
 
           if (!product.product_code || !product.product_name || isNaN(product.price) || product.price <= 0) {
@@ -133,15 +162,16 @@ serve(async (req) => {
       throw new Error('לא נמצאו מוצרים תקינים בקובץ');
     }
 
-    console.log(`Successfully processed ${products.length} valid products`);
     console.log('Sample processed product:', products[0]);
+    
+    // Insert products into database
+    const insertedCount = await insertProducts(products);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `נמצאו ${products.length} מוצרים תקינים`,
-        count: products.length,
-        products: products
+        message: `נשמרו ${insertedCount} מוצרים בהצלחה`,
+        count: insertedCount
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -151,14 +181,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error processing request:', error);
-    console.error('Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML',
-        details: error.toString(),
-        stack: error.stack
+        details: error.toString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
