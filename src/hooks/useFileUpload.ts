@@ -37,6 +37,8 @@ export const useFileUpload = () => {
             reader.readAsText(chunk.data);
           });
 
+          console.log('Sending request with network:', networkName, 'branch:', branchName);
+          
           const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
             body: { 
               xmlContent: text,
@@ -73,17 +75,16 @@ export const useFileUpload = () => {
   };
 
   const processFile = async (file: File, networkName: string, branchName: string) => {
+    if (!networkName || !branchName) {
+      throw new Error('חסרים פרטי רשת וסניף');
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('User not authenticated');
-
-      // Validate required parameters
-      if (!networkName || !branchName) {
-        throw new Error('חסרים פרטי רשת וסניף');
-      }
 
       const { data: uploadRecord, error: uploadError } = await supabase
         .from('price_file_uploads')
