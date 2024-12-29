@@ -5,7 +5,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 const supabase = createClient(
@@ -14,22 +13,31 @@ const supabase = createClient(
 );
 
 async function validateXMLStructure(xmlContent: string) {
+  if (!xmlContent) {
+    throw new Error('XML content is empty');
+  }
+
   try {
     console.log('Starting XML validation...');
     const xmlData = parse(xmlContent);
     
-    // Handle Shufersal's XML structure
+    if (!xmlData) {
+      throw new Error('Failed to parse XML data');
+    }
+
+    // Handle Shufersal's XML structure with null checks
     let items;
     if (xmlData?.root?.Items?.Item) {
       items = xmlData.root.Items.Item;
     } else if (xmlData?.Items?.Item) {
       items = xmlData.Items.Item;
     } else {
+      console.error('XML Structure:', JSON.stringify(xmlData, null, 2));
       throw new Error('Could not find Item elements in expected locations');
     }
 
     // Convert to array if single item
-    const itemsArray = Array.isArray(items) ? items : [items];
+    const itemsArray = Array.isArray(items) ? items : [items].filter(Boolean);
     console.log(`Found ${itemsArray.length} items in XML`);
     return itemsArray;
   } catch (error) {
@@ -39,8 +47,13 @@ async function validateXMLStructure(xmlContent: string) {
 }
 
 async function insertProducts(products: any[]) {
+  if (!products || products.length === 0) {
+    console.warn('No products to insert');
+    return 0;
+  }
+
   console.log(`Starting to insert ${products.length} products`);
-  const batchSize = 500; // Increased batch size
+  const batchSize = 500;
   let successCount = 0;
   let failedCount = 0;
 
@@ -68,7 +81,7 @@ async function insertProducts(products: any[]) {
       successCount += batch.length;
       console.log(`Batch ${batchNumber}/${totalBatches} completed. Progress: ${Math.round((successCount / products.length) * 100)}%`);
       
-      // Small delay between batches to prevent rate limiting
+      // Small delay between batches
       if (i + batchSize < products.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -103,7 +116,7 @@ serve(async (req) => {
     }
 
     const items = await validateXMLStructure(requestData.xmlContent);
-    console.log('Total items found in XML:', items.length);
+    console.log('Total items found in XML:', items?.length || 0);
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
@@ -119,10 +132,13 @@ serve(async (req) => {
       })
       .map(item => {
         try {
+          if (!item) return null;
+
           // Handle different date formats
           let priceUpdateDate;
           try {
-            priceUpdateDate = new Date(item.PriceUpdateDate?.replace(' ', 'T') || new Date());
+            const dateStr = item.PriceUpdateDate || new Date().toISOString();
+            priceUpdateDate = new Date(dateStr.replace(' ', 'T'));
           } catch {
             priceUpdateDate = new Date();
           }
