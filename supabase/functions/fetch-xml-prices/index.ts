@@ -1,102 +1,117 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { parseXMLContent } from "./xml-parser.ts";
-import { insertProducts } from "./db-operations.ts";
-import { mapProductData } from "./product-mapper.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
+
+// Helper function to split string into chunks
+function* chunkString(str: string, size: number) {
+  for (let i = 0; i < str.length; i += size) {
+    yield str.slice(i, i + size);
+  }
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     console.log('Starting file processing...');
     
-    const contentType = req.headers.get('content-type');
-    console.log('Content-Type:', contentType);
+    // Read data directly as ArrayBuffer
+    const data = await req.arrayBuffer();
+    const decoder = new TextDecoder();
+    const xmlContent = decoder.decode(data);
 
-    let data;
+    // Split content into smaller chunks
+    const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+    const chunks = Array.from(chunkString(xmlContent, CHUNK_SIZE));
+
+    console.log(`File received. Total size: ${xmlContent.length} bytes`);
+    console.log(`Split into ${chunks.length} chunks`);
+
+    // Process first chunk to validate content
+    const firstChunk = chunks[0];
+    console.log('First chunk preview:', firstChunk.substring(0, 200));
+
+    // Get request parameters from headers or query
+    const { networkName, branchName } = await req.json();
     
-    // Handle different content types
-    if (contentType?.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      const file = formData.get('file');
-      
-      if (!file) {
-        throw new Error('No file in form data');
-      }
-      
-      console.log('File info:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-
-      data = await file.text();
-    } else {
-      // If not form-data, try to read directly as text
-      const requestData = await req.json();
-      data = requestData.xmlContent;
+    if (!networkName || !branchName) {
+      throw new Error('Network name and branch name are required');
     }
 
-    // Check if we received data
-    if (!data) {
-      throw new Error('No data received');
+    // Create upload record
+    const { data: uploadRecord, error: uploadError } = await supabase
+      .from('price_file_uploads')
+      .insert({
+        filename: 'xml-upload',
+        store_chain: networkName,
+        total_chunks: chunks.length,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (uploadError) {
+      throw uploadError;
     }
 
-    console.log('Data length:', data.length);
-    console.log('First 200 characters:', data.substring(0, 200));
+    // Create chunk records
+    const chunkRecords = chunks.map((_, index) => ({
+      upload_id: uploadRecord.id,
+      chunk_index: index,
+      status: 'pending'
+    }));
 
-    // Parse XML and get items
-    const items = await parseXMLContent(data);
-    
-    if (!items || items.length === 0) {
-      throw new Error('לא נמצאו פריטים בקובץ ה-XML');
+    const { error: chunksError } = await supabase
+      .from('price_upload_chunks')
+      .insert(chunkRecords);
+
+    if (chunksError) {
+      throw chunksError;
     }
-
-    // Map and validate products
-    const products = items
-      .map(mapProductData)
-      .filter(Boolean);
-
-    console.log('Valid products count:', products.length);
-    
-    if (products.length === 0) {
-      throw new Error('לא נמצאו מוצרים תקינים בקובץ');
-    }
-
-    console.log('Sample processed product:', products[0]);
-    
-    const insertedCount = await insertProducts(products);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `נשמרו ${insertedCount} מוצרים בהצלחה`,
-        count: insertedCount
+      JSON.stringify({
+        success: true,
+        uploadId: uploadRecord.id,
+        fileSize: xmlContent.length,
+        numChunks: chunks.length,
+        firstChunkPreview: firstChunk.substring(0, 100)
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
     );
 
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Processing error:', error);
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML',
-        details: error.toString()
+      JSON.stringify({
+        success: false,
+        error: error.message || 'Unknown error',
+        errorDetails: error.stack
       }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
+      {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
