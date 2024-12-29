@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { toast } from 'sonner';
-import XmlUpload from '@/components/upload/XmlUpload';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { ProductsTable } from '@/components/products/ProductsTable';
+import { PriceFileUpload } from '@/components/products/PriceFileUpload';
 
 interface ProductPrices {
   [key: string]: {
@@ -15,11 +14,10 @@ interface ProductPrices {
 }
 
 const Products = () => {
-  const [isUpdating, setIsUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedProducts, setExpandedProducts] = useState<ProductPrices>({});
   
-  const { data: products, isLoading, error, refetch } = useQuery({
+  const { data: products, isLoading, error } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,7 +36,7 @@ const Products = () => {
   const storeChains = [...new Set(products?.map(p => p.store_chain) || [])];
   const totalStoreChains = storeChains.length;
 
-  // Filter products based on search term (now including product code)
+  // Filter products based on search term
   const filteredProducts = products?.filter(product => 
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -53,28 +51,6 @@ const Products = () => {
     acc[product.product_code].push(product);
     return acc;
   }, {} as Record<string, typeof products>);
-
-  const handleUpdatePrices = async () => {
-    setIsUpdating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-shufersal-prices');
-      
-      if (error) throw error;
-      
-      toast.success('התחלנו לעדכן מחירים משופרסל');
-      console.log('Price update response:', data);
-      
-      setTimeout(() => {
-        refetch();
-      }, 5000);
-      
-    } catch (err) {
-      console.error('Error updating prices:', err);
-      toast.error('שגיאה בעדכון המחירים');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const toggleProductExpansion = (productCode: string) => {
     setExpandedProducts(prev => ({
@@ -111,10 +87,7 @@ const Products = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <ProductsHeader 
-        onUpdatePrices={handleUpdatePrices}
-        isUpdating={isUpdating}
-      />
+      <ProductsHeader />
 
       <ProductsStats
         totalProducts={totalProducts}
@@ -127,7 +100,9 @@ const Products = () => {
         onSearchChange={setSearchTerm}
       />
 
-      <XmlUpload />
+      <div className="my-8">
+        <PriceFileUpload />
+      </div>
       
       <ProductsTable
         productsByCategory={productsByCategory}

@@ -27,6 +27,89 @@ export type Database = {
         }
         Relationships: []
       }
+      price_file_uploads: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          error_log: Json | null
+          filename: string
+          id: string
+          processed_chunks: number
+          started_at: string | null
+          status: string
+          store_chain: string
+          total_chunks: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_log?: Json | null
+          filename: string
+          id?: string
+          processed_chunks?: number
+          started_at?: string | null
+          status?: string
+          store_chain: string
+          total_chunks?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_log?: Json | null
+          filename?: string
+          id?: string
+          processed_chunks?: number
+          started_at?: string | null
+          status?: string
+          store_chain?: string
+          total_chunks?: number
+        }
+        Relationships: []
+      }
+      price_upload_chunks: {
+        Row: {
+          chunk_index: number
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          started_at: string | null
+          status: string
+          upload_id: string | null
+        }
+        Insert: {
+          chunk_index: number
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          upload_id?: string | null
+        }
+        Update: {
+          chunk_index?: number
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string
+          upload_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_upload_chunks_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "price_file_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_alternatives: {
         Row: {
           alternative_name: string
