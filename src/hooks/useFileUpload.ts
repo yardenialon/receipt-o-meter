@@ -33,7 +33,11 @@ export const useFileUpload = () => {
           });
 
           const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
-            body: { xmlContent: text }
+            body: { 
+              xmlContent: text,
+              networkName: networkName,
+              branchName: branchName
+            }
           });
 
           if (error) throw error;
@@ -70,6 +74,11 @@ export const useFileUpload = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('User not authenticated');
+
+      // Validate required parameters
+      if (!networkName || !branchName) {
+        throw new Error('חסרים פרטי רשת וסניף');
+      }
 
       const { data: uploadRecord, error: uploadError } = await supabase
         .from('price_file_uploads')

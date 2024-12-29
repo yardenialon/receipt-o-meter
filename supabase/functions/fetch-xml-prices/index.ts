@@ -20,7 +20,6 @@ async function processXMLWithRetry(xmlContent: string, networkName: string, bran
     console.log(`Attempt ${retryCount + 1} to process XML content of size: ${xmlContent.length} bytes`);
     console.log(`Network: ${networkName}, Branch: ${branchName}`);
     
-    // Parse XML content
     const xmlData = parse(xmlContent);
     console.log('XML parsed successfully');
 
@@ -61,16 +60,21 @@ serve(async (req) => {
       branchName: requestData?.branchName
     });
 
-    if (!requestData?.xmlContent) {
-      throw new Error('לא התקבל תוכן XML');
-    }
-
+    // Validate required parameters
     if (!requestData?.networkName || !requestData?.branchName) {
       throw new Error('חסרים פרטי רשת וסניף');
     }
 
+    if (!requestData?.xmlContent) {
+      throw new Error('לא התקבל תוכן XML');
+    }
+
     console.log('Processing XML content...');
-    const items = await processXMLWithRetry(requestData.xmlContent, requestData.networkName, requestData.branchName);
+    const items = await processXMLWithRetry(
+      requestData.xmlContent, 
+      requestData.networkName, 
+      requestData.branchName
+    );
 
     if (!items || items.length === 0) {
       throw new Error('לא נמצאו פריטים בקובץ ה-XML');
@@ -105,7 +109,6 @@ serve(async (req) => {
             price_update_date: new Date().toISOString()
           };
 
-          // Validate required fields
           if (!product.product_code || !product.product_name || isNaN(product.price) || product.price < 0) {
             console.warn('Invalid product:', product);
             return null;
@@ -125,7 +128,6 @@ serve(async (req) => {
 
     console.log(`Processing ${products.length} valid products`);
 
-    // Process products in batches of 1000
     const BATCH_SIZE = 1000;
     let successCount = 0;
 
