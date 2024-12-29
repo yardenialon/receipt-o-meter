@@ -38,9 +38,9 @@ serve(async (req) => {
       throw new Error('קובץ ה-XML אינו תקין');
     }
 
-    // Navigate through the XML structure to find items
-    const items = xmlData.Items?.Item || [];
-    const itemsArray = Array.isArray(items) ? items : [items];
+    // Safely navigate through the XML structure to find items
+    const items = xmlData?.Items?.Item || [];
+    const itemsArray = Array.isArray(items) ? items : items ? [items] : [];
     console.log(`Found ${itemsArray.length} items in XML`);
     
     if (itemsArray.length === 0) {
@@ -52,33 +52,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Helper function to safely get values
+    const safeGetValue = (item: any, key: string): string => {
+      if (!item || !key) return '';
+      const value = item[key];
+      return value ? String(value).trim() : '';
+    };
+
     const products = itemsArray.map((item) => {
-      // Helper function to safely get text content
-      const getValue = (key: string): string => {
-        const value = item[key];
-        return value ? String(value).trim() : '';
-      };
+      if (!item) return null;
 
       return {
         store_chain: requestData.networkName,
         store_id: requestData.branchName,
-        product_code: getValue('ItemCode'),
-        product_name: getValue('ItemName'),
-        manufacturer: getValue('ManufacturerName'),
-        price: parseFloat(getValue('ItemPrice')) || 0,
-        unit_quantity: getValue('UnitQty'),
-        unit_of_measure: getValue('UnitOfMeasure'),
-        category: getValue('ItemSection') || 'כללי',
+        product_code: safeGetValue(item, 'ItemCode'),
+        product_name: safeGetValue(item, 'ItemName'),
+        manufacturer: safeGetValue(item, 'ManufacturerName'),
+        price: parseFloat(safeGetValue(item, 'ItemPrice')) || 0,
+        unit_quantity: safeGetValue(item, 'UnitQty'),
+        unit_of_measure: safeGetValue(item, 'UnitOfMeasure'),
+        category: safeGetValue(item, 'ItemSection') || 'כללי',
         price_update_date: new Date().toISOString()
       };
-    }).filter(product => 
-      product.product_code && 
-      product.product_name && 
+    }).filter((product): product is NonNullable<typeof product> => 
+      product !== null && 
+      product.product_code !== '' && 
+      product.product_name !== '' && 
       !isNaN(product.price) && 
       product.price >= 0
     );
 
     console.log(`Processing ${products.length} valid products`);
+
+    if (products.length === 0) {
+      throw new Error('לא נמצאו מוצרים תקינים בקובץ');
+    }
 
     const { error: insertError } = await supabase
       .from('store_products')
