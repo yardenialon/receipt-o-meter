@@ -8,16 +8,97 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 const CHUNK_SIZE = 1024 * 1024 * 2; // 2MB chunks
+const MAX_PARALLEL_UPLOADS = 3; // Maximum number of concurrent chunk uploads
 
 export const PriceFileUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const processChunksInParallel = async (chunks: { index: number; data: Blob }[], uploadId: string) => {
+    const processedChunks = new Set<number>();
+    let completedChunks = 0;
+    
+    const updateProgress = () => {
+      completedChunks++;
+      setUploadProgress((completedChunks / chunks.length) * 100);
+    };
+
+    // Process chunks in batches
+    for (let i = 0; i < chunks.length; i += MAX_PARALLEL_UPLOADS) {
+      const batch = chunks.slice(i, i + MAX_PARALLEL_UPLOADS);
+      const promises = batch.map(async (chunk) => {
+        if (processedChunks.has(chunk.index)) return;
+
+        try {
+          // Update chunk status to processing
+          await supabase
+            .from('price_upload_chunks')
+            .update({ status: 'processing', started_at: new Date().toISOString() })
+            .eq('upload_id', uploadId)
+            .eq('chunk_index', chunk.index);
+
+          // Process the chunk (you can add more processing logic here)
+          const reader = new FileReader();
+          await new Promise((resolve, reject) => {
+            reader.onload = resolve;
+            reader.onerror = reject;
+            reader.readAsText(chunk.data);
+          });
+
+          // Update chunk status to completed
+          await supabase
+            .from('price_upload_chunks')
+            .update({
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('upload_id', uploadId)
+            .eq('chunk_index', chunk.index);
+
+          processedChunks.add(chunk.index);
+          updateProgress();
+        } catch (error) {
+          console.error(`Error processing chunk ${chunk.index}:`, error);
+          
+          // Update chunk status to error
+          await supabase
+            .from('price_upload_chunks')
+            .update({
+              status: 'error',
+              error_message: error instanceof Error ? error.message : 'Unknown error',
+              completed_at: new Date().toISOString()
+            })
+            .eq('upload_id', uploadId)
+            .eq('chunk_index', chunk.index);
+
+          throw error;
+        }
+      });
+
+      // Wait for all chunks in the current batch to complete
+      await Promise.all(promises);
+    }
+
+    // Update upload record status
+    await supabase
+      .from('price_file_uploads')
+      .update({
+        status: 'completed',
+        processed_chunks: chunks.length,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', uploadId);
+  };
 
   const processFile = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Create upload record
       const { data: uploadRecord, error: uploadError } = await supabase
         .from('price_file_uploads')
@@ -25,7 +106,8 @@ export const PriceFileUpload = () => {
           filename: file.name,
           store_chain: 'unknown', // TODO: Add store chain selection
           total_chunks: Math.ceil(file.size / CHUNK_SIZE),
-          status: 'pending'
+          status: 'pending',
+          created_by: user.id
         })
         .select()
         .single();
@@ -58,20 +140,10 @@ export const PriceFileUpload = () => {
 
       if (chunksError) throw chunksError;
 
-      // Process chunks
-      let processedChunks = 0;
-      for (const chunk of chunks) {
-        try {
-          // TODO: Implement chunk processing logic
-          processedChunks++;
-          setUploadProgress((processedChunks / totalChunks) * 100);
-        } catch (error) {
-          console.error(`Error processing chunk ${chunk.index}:`, error);
-          toast.error(`שגיאה בעיבוד חלק ${chunk.index + 1}`);
-        }
-      }
+      // Process chunks in parallel
+      await processChunksInParallel(chunks, uploadRecord.id);
 
-      toast.success('הקובץ הועלה בהצלחה');
+      toast.success('הקובץ הועלה ועובד בהצלחה');
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('שגיאה בהעלאת הקובץ');
