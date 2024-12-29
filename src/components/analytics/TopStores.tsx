@@ -47,15 +47,15 @@ export const TopStores = () => {
       <CardHeader>
         <CardTitle className="text-lg sm:text-xl">חנויות מובילות</CardTitle>
       </CardHeader>
-      <CardContent className="h-[300px] sm:h-[400px]">
+      <CardContent className="h-[300px] sm:h-[400px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={storeData} 
             layout="vertical"
             margin={{ 
               top: 5, 
-              right: isMobile ? 40 : 60, 
-              left: isMobile ? 80 : 120, 
+              right: isMobile ? 60 : 80, 
+              left: isMobile ? 100 : 120, 
               bottom: 5 
             }}
           >
@@ -74,11 +74,13 @@ export const TopStores = () => {
                 fontSize: isMobile ? 12 : 14
               }}
               tickMargin={8}
+              domain={[0, 'dataMax']}
+              padding={{ left: 0, right: 20 }}
             />
             <YAxis 
               dataKey="name" 
               type="category" 
-              width={isMobile ? 70 : 100}
+              width={isMobile ? 90 : 110}
               tick={{ 
                 fill: '#374151',
                 fontSize: isMobile ? 12 : 14
@@ -95,8 +97,14 @@ export const TopStores = () => {
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 fontSize: isMobile ? '14px' : '16px',
+                padding: '8px 12px',
               }}
-              wrapperStyle={{ zIndex: 1000 }}
+              wrapperStyle={{ 
+                zIndex: 1000,
+                width: isMobile ? '100%' : 'auto',
+                maxWidth: isMobile ? 'calc(100vw - 32px)' : '300px'
+              }}
+              position={{ x: 0, y: 0 }}
             />
             <Bar 
               dataKey="total" 
