@@ -16,10 +16,10 @@ const UploadZone = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [networkName, setNetworkName] = useState('');
   const [branchName, setBranchName] = useState('');
-  const [pendingFile, setPendingFile] = useState<Blob | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const queryClient = useQueryClient();
 
-  const handleFile = async (file: Blob) => {
+  const handleFile = async (file: File | Blob) => {
     // Check file size
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
     if (file.size > MAX_FILE_SIZE) {
@@ -27,7 +27,9 @@ const UploadZone = () => {
       return;
     }
 
-    setPendingFile(file);
+    // If it's a Blob (from camera capture), convert it to a File
+    const fileToStore = file instanceof File ? file : new File([file], 'camera-capture.jpg', { type: file.type });
+    setPendingFile(fileToStore);
     setShowDialog(true);
   };
 
