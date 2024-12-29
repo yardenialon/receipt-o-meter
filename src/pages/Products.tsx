@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
-import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { ProductsTable } from '@/components/products/ProductsTable';
 import { PriceFileUpload } from '@/components/products/PriceFileUpload';
@@ -58,11 +57,6 @@ const Products = () => {
     }
   });
 
-  // Calculate statistics
-  const totalProducts = products?.length || 0;
-  const storeChains = [...new Set(products?.map(p => p.store_chain) || [])];
-  const totalStoreChains = storeChains.length;
-
   // Filter products based on search term
   const filteredProducts = products?.filter(product => 
     product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,12 +109,6 @@ const Products = () => {
   return (
     <div className="container mx-auto py-8">
       <ProductsHeader />
-
-      <ProductsStats
-        totalProducts={totalProducts}
-        totalStoreChains={totalStoreChains}
-        storeChains={storeChains}
-      />
 
       <ProductsSearch
         searchTerm={searchTerm}
