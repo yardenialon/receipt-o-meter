@@ -1,5 +1,6 @@
 import { useDropzone } from 'react-dropzone';
 import { Upload, File } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UploadZoneProps {
   isUploading: boolean;
@@ -8,7 +9,14 @@ interface UploadZoneProps {
 
 export const UploadZone = ({ isUploading, onDrop }: UploadZoneProps) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (file && file.size > 100 * 1024 * 1024) { // 100MB limit
+        toast.error('הקובץ גדול מדי. הגודל המקסימלי הוא 100MB');
+        return;
+      }
+      onDrop(acceptedFiles);
+    },
     maxFiles: 1,
     disabled: isUploading,
     accept: {
@@ -44,6 +52,9 @@ export const UploadZone = ({ isUploading, onDrop }: UploadZoneProps) => {
           </p>
           <p className="text-sm text-gray-500 mt-1">
             או לחץ לבחירת קובץ
+          </p>
+          <p className="text-xs text-gray-400 mt-2">
+            קבצי XML עד 100MB
           </p>
         </div>
       </div>

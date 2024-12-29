@@ -12,7 +12,7 @@ const RETRY_DELAY = 1000; // 1 second
 
 async function processXMLWithRetry(xmlContent: string, retryCount = 0) {
   try {
-    console.log(`Attempt ${retryCount + 1} to process XML content`);
+    console.log(`Attempt ${retryCount + 1} to process XML content of size: ${xmlContent.length} bytes`);
     
     // Parse XML content
     const xmlData = parse(xmlContent);
@@ -96,20 +96,35 @@ serve(async (req) => {
       throw new Error('לא נמצאו מוצרים תקינים בקובץ');
     }
 
-    const { error: insertError } = await supabase
-      .from('store_products')
-      .insert(products);
+    // Process products in batches of 1000
+    const BATCH_SIZE = 1000;
+    let successCount = 0;
 
-    if (insertError) {
-      console.error('Error inserting products:', insertError);
-      throw new Error(`שגיאה בשמירת המוצרים: ${insertError.message}`);
+    for (let i = 0; i < products.length; i += BATCH_SIZE) {
+      const batch = products.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(products.length / BATCH_SIZE)}`);
+
+      const { error: insertError } = await supabase
+        .from('store_products')
+        .upsert(batch, {
+          onConflict: 'store_chain,product_code',
+          ignoreDuplicates: false
+        });
+
+      if (insertError) {
+        console.error('Error inserting batch:', insertError);
+        throw new Error(`שגיאה בשמירת המוצרים: ${insertError.message}`);
+      }
+
+      successCount += batch.length;
+      console.log(`Successfully processed ${successCount}/${products.length} products`);
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `הועלו ${products.length} מוצרים בהצלחה`,
-        count: products.length
+        message: `הועלו ${successCount} מוצרים בהצלחה`,
+        count: successCount
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
