@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { parseXmlItems } from './xml-parser.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,10 +16,8 @@ serve(async (req) => {
 
   try {
     const requestData = await req.json();
-    const contentLength = requestData?.xmlContent?.length || 0;
-    console.log('Request data received:', {
-      hasXmlContent: !!requestData?.xmlContent,
-      contentLength,
+    console.log('Request received:', {
+      hasContent: !!requestData?.xmlContent,
       networkName: requestData?.networkName,
       branchName: requestData?.branchName
     });
@@ -31,9 +30,22 @@ serve(async (req) => {
       throw new Error('חסרים פרטי רשת או סניף');
     }
 
-    // File size limit check
-    if (contentLength > 100 * 1024 * 1024) {
-      throw new Error('קובץ ה-XML גדול מדי. הגודל המקסימלי הוא 100MB');
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(requestData.xmlContent, 'text/xml');
+    
+    // Check for parsing errors
+    const parserError = xmlDoc.querySelector('parsererror');
+    if (parserError) {
+      console.error('XML parsing error:', parserError.textContent);
+      throw new Error('קובץ ה-XML אינו תקין');
+    }
+
+    // Get items from XML structure
+    const items = xmlDoc.querySelectorAll('Items > Item');
+    console.log(`Found ${items.length} items in XML`);
+    
+    if (!items || items.length === 0) {
+      throw new Error('לא נמצאו פריטים בקובץ ה-XML');
     }
 
     const supabase = createClient(
@@ -41,29 +53,52 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Insert the products into the database
+    const products = Array.from(items).map((item) => {
+      const getElementText = (tagName: string): string => {
+        const element = item.querySelector(tagName);
+        return element?.textContent?.trim() || '';
+      };
+
+      return {
+        store_chain: requestData.networkName,
+        store_id: requestData.branchName,
+        product_code: getElementText('ItemCode'),
+        product_name: getElementText('ItemName'),
+        manufacturer: getElementText('ManufacturerName'),
+        price: parseFloat(getElementText('ItemPrice')) || 0,
+        unit_quantity: getElementText('UnitQty'),
+        unit_of_measure: getElementText('UnitOfMeasure'),
+        category: getElementText('ItemSection') || 'כללי',
+        price_update_date: new Date().toISOString()
+      };
+    }).filter(product => 
+      product.product_code && 
+      product.product_name && 
+      !isNaN(product.price) && 
+      product.price >= 0
+    );
+
+    console.log(`Processing ${products.length} valid products`);
+
     const { error: insertError } = await supabase
       .from('store_products')
-      .insert([
-        {
-          store_chain: requestData.networkName,
-          store_id: requestData.branchName,
-          product_code: '123', // This is a test, we'll parse the XML properly in the next iteration
-          product_name: 'Test Product',
-          price: 100,
-          price_update_date: new Date().toISOString()
-        }
-      ]);
+      .upsert(products, {
+        onConflict: 'product_code,store_chain',
+        ignoreDuplicates: false
+      });
 
     if (insertError) {
       console.error('Error inserting products:', insertError);
       throw new Error('שגיאה בשמירת המוצרים במסד הנתונים');
     }
 
+    console.log('Successfully inserted products');
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'הקובץ עובד בהצלחה'
+        message: `הועלו ${products.length} מוצרים בהצלחה`,
+        count: products.length
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -77,8 +112,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML',
-        details: error?.toString() || 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'שגיאה בעיבוד ה-XML'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

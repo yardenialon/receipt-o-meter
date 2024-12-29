@@ -17,9 +17,15 @@ export const uploadProductsToSupabase = async (xmlContent: string, networkName: 
   }
 
   if (!data) {
+    console.error('No data received from server');
     throw new Error('לא התקבלו נתונים מהשרת');
   }
 
-  console.log('Edge Function response:', data);
+  if (!data.success) {
+    console.error('Upload failed:', data.error);
+    throw new Error(data.error || 'שגיאה בהעלאת המוצרים');
+  }
+
+  console.log('Upload response:', data);
   return data;
 };

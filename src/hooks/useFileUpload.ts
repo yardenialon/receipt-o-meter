@@ -33,11 +33,15 @@ export const useFileUpload = () => {
             reader.readAsText(chunk.data);
           });
 
-          // For now, we'll use hardcoded values for testing
-          await uploadProductsToSupabase(text, 'test-network', 'test-branch');
+          const result = await uploadProductsToSupabase(text, 'test-network', 'test-branch');
+          console.log('Chunk upload result:', result);
 
           processedChunks.add(chunk.index);
           updateProgress();
+          
+          if (result.count > 0) {
+            toast.success(`הועלו ${result.count} מוצרים מתוך חלק ${chunk.index + 1}`);
+          }
         } catch (error) {
           console.error(`Error processing chunk ${chunk.index}:`, error);
           throw error;
