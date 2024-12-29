@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
 import { parseXmlItems } from "./xml-parser.ts";
+import { insertProducts } from "./db-operations.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,10 +26,6 @@ serve(async (req) => {
 
     if (!requestData?.xmlContent) {
       throw new Error('לא התקבל תוכן XML');
-    }
-
-    if (!requestData?.networkName || !requestData?.branchName) {
-      throw new Error('חסרים פרטי רשת או סניף');
     }
 
     console.log('Parsing XML content...');
@@ -65,8 +62,8 @@ serve(async (req) => {
 
     const products = parseXmlItems(items).map(product => ({
       ...product,
-      store_chain: requestData.networkName,
-      store_id: requestData.branchName
+      store_chain: requestData.networkName || 'unknown',
+      store_id: requestData.branchName || 'unknown'
     }));
 
     if (!products || products.length === 0) {
@@ -74,31 +71,13 @@ serve(async (req) => {
     }
 
     console.log(`Processing ${products.length} valid products`);
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const { error: insertError } = await supabase
-      .from('store_products')
-      .upsert(products, {
-        onConflict: 'product_code,store_chain',
-        ignoreDuplicates: false
-      });
-
-    if (insertError) {
-      console.error('Error inserting products:', insertError);
-      throw new Error('שגיאה בשמירת המוצרים במסד הנתונים');
-    }
-
-    console.log('Successfully inserted products');
+    const successCount = await insertProducts(products);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `הועלו ${products.length} מוצרים בהצלחה`,
-        count: products.length
+        message: `הועלו ${successCount} מוצרים בהצלחה`,
+        count: successCount
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

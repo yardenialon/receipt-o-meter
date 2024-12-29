@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { uploadProductsToSupabase } from '@/utils/xml/supabaseUtils';
 
 const CHUNK_SIZE = 1024 * 1024 * 2; // 2MB chunks
 const MAX_PARALLEL_UPLOADS = 3; // Maximum number of concurrent chunk uploads
@@ -33,14 +32,17 @@ export const useFileUpload = () => {
             reader.readAsText(chunk.data);
           });
 
-          const result = await uploadProductsToSupabase(text, 'test-network', 'test-branch');
-          console.log('Chunk upload result:', result);
+          const { data, error } = await supabase.functions.invoke('fetch-xml-prices', {
+            body: { xmlContent: text }
+          });
 
+          if (error) throw error;
+          
           processedChunks.add(chunk.index);
           updateProgress();
           
-          if (result.count > 0) {
-            toast.success(`הועלו ${result.count} מוצרים מתוך חלק ${chunk.index + 1}`);
+          if (data?.count > 0) {
+            toast.success(`הועלו ${data.count} מוצרים מתוך חלק ${chunk.index + 1}`);
           }
         } catch (error) {
           console.error(`Error processing chunk ${chunk.index}:`, error);
@@ -61,7 +63,7 @@ export const useFileUpload = () => {
       .eq('id', uploadId);
   };
 
-  const processFile = async (file: File) => {
+  const processFile = async (file: File, networkName: string, branchName: string) => {
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -73,7 +75,7 @@ export const useFileUpload = () => {
         .from('price_file_uploads')
         .insert({
           filename: file.name,
-          store_chain: 'unknown',
+          store_chain: networkName,
           total_chunks: Math.ceil(file.size / CHUNK_SIZE),
           status: 'pending',
           created_by: session.user.id

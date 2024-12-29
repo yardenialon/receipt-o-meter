@@ -20,7 +20,7 @@ export const PriceFileUpload = () => {
       return;
     }
 
-    await processFile(file);
+    await processFile(file, 'unknown', 'unknown');
   };
 
   return (
