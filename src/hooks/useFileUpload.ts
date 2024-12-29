@@ -34,14 +34,18 @@ export const useFileUpload = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
       console.log('Edge Function response:', data);
       
       if (data?.success) {
-        toast.success(`הקובץ התקבל בהצלחה. גודל: ${Math.round(data.fileSize / 1024)}KB`);
+        toast.success('הקובץ התקבל בהצלחה');
+        setUploadProgress(100);
       } else {
-        throw new Error('שגיאה בעיבוד הקובץ');
+        throw new Error(data?.error || 'שגיאה בעיבוד הקובץ');
       }
 
     } catch (error) {
@@ -50,7 +54,6 @@ export const useFileUpload = () => {
       throw error;
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 

@@ -6,18 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
-// Helper function to split string into chunks
-function* chunkString(str: string, size: number) {
-  for (let i = 0; i < str.length; i += size) {
-    yield str.slice(i, i + size);
-  }
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,35 +13,29 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting file processing...');
-    
-    // Parse the request body
-    const { fileContent: base64Content, networkName, branchName } = await req.json();
-    
-    if (!base64Content) {
+    console.log('Request received');
+    const body = await req.json();
+    console.log('Request body:', body);
+
+    const { fileContent, networkName, branchName } = body;
+
+    if (!fileContent) {
       console.error('No file content provided');
       throw new Error('No file content provided');
     }
 
-    console.log('Received request with:', { networkName, branchName });
-
-    // Decode base64 content
-    const xmlContent = atob(base64Content);
-    
-    // Split content into smaller chunks
-    const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
-    const chunks = Array.from(chunkString(xmlContent, CHUNK_SIZE));
-
-    console.log(`File received. Total size: ${xmlContent.length} bytes`);
-    console.log(`Split into ${chunks.length} chunks`);
-
-    // Process first chunk to validate content
-    const firstChunk = chunks[0];
-    console.log('First chunk preview:', firstChunk.substring(0, 200));
-
     if (!networkName || !branchName) {
+      console.error('Missing network or branch name');
       throw new Error('Network name and branch name are required');
     }
+
+    console.log('Processing file for:', { networkName, branchName });
+
+    // Create Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     // Create upload record
     const { data: uploadRecord, error: uploadError } = await supabase
@@ -61,38 +43,24 @@ serve(async (req) => {
       .insert({
         filename: 'xml-upload',
         store_chain: networkName,
-        total_chunks: chunks.length,
-        status: 'pending'
+        status: 'processing',
+        total_chunks: 1
       })
       .select()
       .single();
 
     if (uploadError) {
+      console.error('Upload record creation error:', uploadError);
       throw uploadError;
     }
 
-    // Create chunk records
-    const chunkRecords = chunks.map((_, index) => ({
-      upload_id: uploadRecord.id,
-      chunk_index: index,
-      status: 'pending'
-    }));
-
-    const { error: chunksError } = await supabase
-      .from('price_upload_chunks')
-      .insert(chunkRecords);
-
-    if (chunksError) {
-      throw chunksError;
-    }
+    console.log('Upload record created:', uploadRecord);
 
     return new Response(
       JSON.stringify({
         success: true,
         uploadId: uploadRecord.id,
-        fileSize: xmlContent.length,
-        numChunks: chunks.length,
-        firstChunkPreview: firstChunk.substring(0, 100)
+        message: 'File processing started'
       }),
       {
         headers: {
@@ -108,11 +76,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Unknown error',
-        errorDetails: error.stack
+        error: error.message,
+        details: error.stack
       }),
       {
-        status: 500,
+        status: 400,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
