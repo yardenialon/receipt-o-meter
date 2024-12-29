@@ -31,15 +31,27 @@ serve(async (req) => {
     }
 
     console.log('Parsing XML content...');
-    const xmlData = parse(requestData.xmlContent);
+    let xmlData;
+    try {
+      xmlData = parse(requestData.xmlContent);
+    } catch (parseError) {
+      console.error('XML parsing error:', parseError);
+      throw new Error('קובץ ה-XML אינו תקין: ' + parseError.message);
+    }
     
     if (!xmlData) {
       console.error('Failed to parse XML document');
       throw new Error('קובץ ה-XML אינו תקין');
     }
 
+    // Extra safety check for Items structure
+    if (!xmlData.Items) {
+      console.error('No Items found in XML structure');
+      throw new Error('מבנה ה-XML אינו תקין: חסר תג Items');
+    }
+
     // Safely navigate through the XML structure to find items
-    const items = xmlData?.Items?.Item || [];
+    const items = xmlData.Items?.Item || [];
     const itemsArray = Array.isArray(items) ? items : items ? [items] : [];
     console.log(`Found ${itemsArray.length} items in XML`);
     
@@ -54,33 +66,66 @@ serve(async (req) => {
 
     // Helper function to safely get values
     const safeGetValue = (item: any, key: string): string => {
-      if (!item || !key) return '';
-      const value = item[key];
-      return value ? String(value).trim() : '';
+      try {
+        if (!item || !key) return '';
+        const value = item[key];
+        return value ? String(value).trim() : '';
+      } catch (error) {
+        console.error(`Error getting value for key ${key}:`, error);
+        return '';
+      }
     };
 
-    const products = itemsArray.map((item) => {
-      if (!item) return null;
+    const products = itemsArray
+      .map((item, index) => {
+        try {
+          if (!item) {
+            console.warn(`Skipping null item at index ${index}`);
+            return null;
+          }
 
-      return {
-        store_chain: requestData.networkName,
-        store_id: requestData.branchName,
-        product_code: safeGetValue(item, 'ItemCode'),
-        product_name: safeGetValue(item, 'ItemName'),
-        manufacturer: safeGetValue(item, 'ManufacturerName'),
-        price: parseFloat(safeGetValue(item, 'ItemPrice')) || 0,
-        unit_quantity: safeGetValue(item, 'UnitQty'),
-        unit_of_measure: safeGetValue(item, 'UnitOfMeasure'),
-        category: safeGetValue(item, 'ItemSection') || 'כללי',
-        price_update_date: new Date().toISOString()
-      };
-    }).filter((product): product is NonNullable<typeof product> => 
-      product !== null && 
-      product.product_code !== '' && 
-      product.product_name !== '' && 
-      !isNaN(product.price) && 
-      product.price >= 0
-    );
+          const product = {
+            store_chain: requestData.networkName,
+            store_id: requestData.branchName,
+            product_code: safeGetValue(item, 'ItemCode'),
+            product_name: safeGetValue(item, 'ItemName'),
+            manufacturer: safeGetValue(item, 'ManufacturerName'),
+            price: parseFloat(safeGetValue(item, 'ItemPrice')) || 0,
+            unit_quantity: safeGetValue(item, 'UnitQty'),
+            unit_of_measure: safeGetValue(item, 'UnitOfMeasure'),
+            category: safeGetValue(item, 'ItemSection') || 'כללי',
+            price_update_date: new Date().toISOString()
+          };
+
+          // Validate required fields
+          if (!product.product_code) {
+            console.warn(`Missing product code for item ${index}`);
+            return null;
+          }
+
+          if (!product.product_name) {
+            console.warn(`Missing product name for item ${index}`);
+            return null;
+          }
+
+          if (isNaN(product.price) || product.price < 0) {
+            console.warn(`Invalid price for item ${index}: ${product.price}`);
+            return null;
+          }
+
+          return product;
+        } catch (error) {
+          console.error(`Error processing item ${index}:`, error);
+          return null;
+        }
+      })
+      .filter((product): product is NonNullable<typeof product> => 
+        product !== null && 
+        product.product_code !== '' && 
+        product.product_name !== '' && 
+        !isNaN(product.price) && 
+        product.price >= 0
+      );
 
     console.log(`Processing ${products.length} valid products`);
 
