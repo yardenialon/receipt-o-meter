@@ -10,7 +10,6 @@ const corsHeaders = {
 async function validateXMLStructure(xmlContent: string) {
   try {
     console.log('XML Content (first 500 chars):', xmlContent.substring(0, 500));
-
     const xmlData = parse(xmlContent);
     
     console.log('Parsed XML structure:', {
@@ -101,20 +100,23 @@ serve(async (req) => {
       })
       .map((item: any) => {
         try {
+          // Handle direct access to properties for Shufersal's format
           const product = {
             store_chain: requestData.networkName,
             store_id: requestData.branchName,
-            product_code: item.ItemCode?._text || '',
-            product_name: item.ItemName?._text || '',
-            manufacturer: item.ManufacturerName?._text || '',
-            price: parseFloat(item.ItemPrice?._text) || 0,
-            unit_quantity: item.Quantity?._text || '',
-            unit_of_measure: item.UnitOfMeasure?._text || '',
-            category: item.ItemSection?._text || 'כללי',
-            price_update_date: new Date(item.PriceUpdateDate?._text || new Date()).toISOString()
+            product_code: item.ItemCode || '',
+            product_name: item.ItemName || '',
+            manufacturer: item.ManufacturerName || '',
+            price: parseFloat(item.ItemPrice) || 0,
+            unit_quantity: item.Quantity || '',
+            unit_of_measure: item.UnitOfMeasure || '',
+            category: 'כללי',
+            price_update_date: item.PriceUpdateDate ? 
+              new Date(item.PriceUpdateDate.replace(' ', 'T')).toISOString() : 
+              new Date().toISOString()
           };
 
-          if (!product.product_code || !product.product_name || isNaN(product.price) || product.price < 0) {
+          if (!product.product_code || !product.product_name || isNaN(product.price) || product.price <= 0) {
             console.warn('Invalid product:', product);
             return null;
           }
