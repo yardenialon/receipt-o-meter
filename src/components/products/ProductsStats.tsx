@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Store } from "lucide-react";
+import { Store, Building2 } from "lucide-react";
 
 interface StoreChainInfo {
   store_chain: string;
@@ -13,14 +13,9 @@ export const ProductsStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['products-import-stats'],
     queryFn: async () => {
-      // Get total products count
-      const { count: totalProducts } = await supabase
-        .from('store_products_import')
-        .select('*', { count: 'exact', head: true });
-
-      // Get unique store chains with their branches
+      // Get unique store chains with their branches from store_products table
       const { data: storeChains } = await supabase
-        .from('store_products_import')
+        .from('store_products')
         .select('store_chain, store_id')
         .not('store_id', 'is', null);
 
@@ -35,13 +30,15 @@ export const ProductsStats = () => {
         }
       });
 
-      const processedChains: StoreChainInfo[] = Array.from(chainMap.entries()).map(([chain, stores]) => ({
-        store_chain: chain,
-        store_ids: Array.from(stores)
-      }));
+      const processedChains: StoreChainInfo[] = Array.from(chainMap.entries())
+        .map(([chain, stores]) => ({
+          store_chain: chain,
+          store_ids: Array.from(stores)
+        }))
+        .sort((a, b) => a.store_chain.localeCompare(b.store_chain)); // Sort alphabetically
 
       return {
-        totalProducts: totalProducts || 0,
+        totalStores: chainMap.size,
         storeChains: processedChains
       };
     }
@@ -60,19 +57,21 @@ export const ProductsStats = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="mb-6">
         <Card className="p-4 bg-blue-50">
-          <h3 className="text-lg font-semibold mb-2">סה״כ מוצרים</h3>
-          <p className="text-2xl font-bold text-blue-600">{stats?.totalProducts}</p>
-        </Card>
-        <Card className="p-4 bg-green-50">
-          <h3 className="text-lg font-semibold mb-2">רשתות</h3>
-          <p className="text-2xl font-bold text-green-600">{stats?.storeChains.length}</p>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold">רשתות פעילות</h3>
+          </div>
+          <p className="text-2xl font-bold text-blue-600 mt-2">{stats?.totalStores || 0}</p>
         </Card>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">פירוט רשתות וסניפים</h3>
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Store className="h-5 w-5" />
+          פירוט רשתות וסניפים
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stats?.storeChains.map((chain) => (
             <Card key={chain.store_chain} className="p-4">
@@ -82,7 +81,11 @@ export const ProductsStats = () => {
               </div>
               <div className="space-y-2">
                 {chain.store_ids.map((storeId) => (
-                  <Badge key={storeId} variant="secondary" className="block w-fit">
+                  <Badge 
+                    key={storeId} 
+                    variant="secondary" 
+                    className="block w-fit"
+                  >
                     סניף {storeId}
                   </Badge>
                 ))}
