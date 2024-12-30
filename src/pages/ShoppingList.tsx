@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { useShoppingListPrices } from '@/hooks/useShoppingListPrices';
+import { ShoppingListPriceComparison } from '@/components/shopping/PriceComparison';
 
 export default function ShoppingList() {
   const [newItem, setNewItem] = useState('');
@@ -26,6 +28,10 @@ export default function ShoppingList() {
       return data;
     },
   });
+
+  // Get price comparisons for all active items across all lists
+  const allItems = lists?.flatMap(list => list.shopping_list_items) || [];
+  const { data: priceComparisons } = useShoppingListPrices(allItems);
 
   const createList = useMutation({
     mutationFn: async () => {
@@ -124,64 +130,72 @@ export default function ShoppingList() {
         </Button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {lists?.map((list) => (
-          <Card key={list.id} className="p-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold mb-4">
-                {list.name}
-              </h2>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="הוסף פריט חדש"
-                  value={newItem}
-                  onChange={(e) => setNewItem(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddItem(list.id);
-                    }
-                  }}
-                />
-                <Button onClick={() => handleAddItem(list.id)}>
-                  הוסף
-                </Button>
+      <div className="grid gap-8 md:grid-cols-2">
+        <div className="space-y-8">
+          {lists?.map((list) => (
+            <Card key={list.id} className="p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold mb-4">
+                  {list.name}
+                </h2>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="הוסף פריט חדש"
+                    value={newItem}
+                    onChange={(e) => setNewItem(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddItem(list.id);
+                      }
+                    }}
+                  />
+                  <Button onClick={() => handleAddItem(list.id)}>
+                    הוסף
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-2">
-                {list.shopping_list_items?.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-2 p-2 rounded hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={item.is_completed}
-                        onCheckedChange={(checked) =>
-                          toggleItem.mutate({
-                            id: item.id,
-                            isCompleted: checked as boolean,
-                          })
-                        }
-                      />
-                      <span className={item.is_completed ? 'line-through text-muted-foreground' : ''}>
-                        {item.name}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteItem.mutate(item.id)}
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-2">
+                  {list.shopping_list_items?.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-2 p-2 rounded hover:bg-muted/50"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={item.is_completed}
+                          onCheckedChange={(checked) =>
+                            toggleItem.mutate({
+                              id: item.id,
+                              isCompleted: checked as boolean,
+                            })
+                          }
+                        />
+                        <span className={item.is_completed ? 'line-through text-muted-foreground' : ''}>
+                          {item.name}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteItem.mutate(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </Card>
+          ))}
+        </div>
+
+        <div className="space-y-8">
+          <Card className="p-6">
+            <ShoppingListPriceComparison comparisons={priceComparisons || []} />
           </Card>
-        ))}
+        </div>
       </div>
     </div>
   );
