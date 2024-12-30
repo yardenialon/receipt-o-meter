@@ -291,7 +291,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      store_products_import: {
+        Row: {
+          AllowDiscount: boolean | null
+          bIsWeighted: boolean | null
+          ItemCode: string | null
+          ItemName: string | null
+          ItemPrice: number | null
+          ItemStatus: string | null
+          ItemType: string | null
+          ManufactureCountry: string | null
+          ManufacturerItemDescription: string | null
+          ManufacturerName: string | null
+          PriceUpdateDate: string | null
+          QtyInPackage: number | null
+          Quantity: number | null
+          UnitOfMeasure: string | null
+          UnitOfMeasurePrice: number | null
+          UnitQty: string | null
+        }
+        Insert: {
+          AllowDiscount?: boolean | null
+          bIsWeighted?: boolean | null
+          ItemCode?: string | null
+          ItemName?: string | null
+          ItemPrice?: number | null
+          ItemStatus?: string | null
+          ItemType?: string | null
+          ManufactureCountry?: string | null
+          ManufacturerItemDescription?: string | null
+          ManufacturerName?: string | null
+          PriceUpdateDate?: string | null
+          QtyInPackage?: number | null
+          Quantity?: number | null
+          UnitOfMeasure?: string | null
+          UnitOfMeasurePrice?: number | null
+          UnitQty?: string | null
+        }
+        Update: {
+          AllowDiscount?: boolean | null
+          bIsWeighted?: boolean | null
+          ItemCode?: string | null
+          ItemName?: string | null
+          ItemPrice?: number | null
+          ItemStatus?: string | null
+          ItemType?: string | null
+          ManufactureCountry?: string | null
+          ManufacturerItemDescription?: string | null
+          ManufacturerName?: string | null
+          PriceUpdateDate?: string | null
+          QtyInPackage?: number | null
+          Quantity?: number | null
+          UnitOfMeasure?: string | null
+          UnitOfMeasurePrice?: number | null
+          UnitQty?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
