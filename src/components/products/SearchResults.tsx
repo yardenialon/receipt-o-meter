@@ -49,7 +49,7 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
   }, {} as Record<string, SearchResult[]>);
 
   return (
-    <div className="space-y-2 absolute w-full bg-white border rounded-md shadow-lg z-10">
+    <div className="space-y-2 absolute w-full bg-white border rounded-md shadow-lg z-10 max-h-[80vh] overflow-y-auto">
       {Object.entries(groupedProducts).map(([itemCode, products]) => {
         const lowestPrice = Math.min(...products.map(p => p.ItemPrice));
         const baseProduct = products[0];
@@ -76,7 +76,7 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
                   <Store className="h-3 w-3" />
                   {product.store_chain}
                   {product.store_id && ` - ${product.store_id}`}
-                  <span className={product.ItemPrice === lowestPrice ? "text-red-600" : ""}>
+                  <span className={product.ItemPrice === lowestPrice ? "text-red-600 mr-1" : "mr-1"}>
                     ₪{product.ItemPrice.toFixed(2)}
                   </span>
                 </Badge>
