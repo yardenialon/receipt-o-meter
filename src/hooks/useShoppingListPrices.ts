@@ -41,12 +41,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         if (!acc[key]) {
           acc[key] = {
             storeName: product.store_chain,
+            storeId: product.store_id,
             items: [],
             total: 0
           };
         }
         return acc;
-      }, {} as Record<string, { storeName: string; items: any[]; total: number }>);
+      }, {} as Record<string, { storeName: string; storeId: string | null; items: any[]; total: number }>);
 
       // For each store, find best matching products for our items
       for (const item of activeItems) {
@@ -83,7 +84,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             storeProducts[storeKey].items.push({
               name: item.name,
               matchedProduct: bestMatch.product_name,
-              price: bestMatch.price
+              price: bestMatch.price,
+              priceUpdateDate: bestMatch.price_update_date
             });
             storeProducts[storeKey].total += bestMatch.price;
           }

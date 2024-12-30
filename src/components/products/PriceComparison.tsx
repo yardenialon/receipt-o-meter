@@ -1,5 +1,7 @@
 import { Store } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface StorePrice {
   store_chain: string;
@@ -39,6 +41,11 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
                 <Badge variant="outline">
                   סניף {price.store_id}
                 </Badge>
+              )}
+              {price.price_update_date && (
+                <span className="text-sm text-muted-foreground">
+                  עודכן: {format(new Date(price.price_update_date), 'dd/MM/yyyy', { locale: he })}
+                </span>
               )}
             </div>
             <div className="flex items-center gap-2">
