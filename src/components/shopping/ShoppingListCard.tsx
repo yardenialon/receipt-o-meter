@@ -2,8 +2,11 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Scale } from 'lucide-react';
 import { AddItemForm } from './AddItemForm';
+import { useState } from 'react';
+import { ShoppingListPriceComparison } from './PriceComparison';
+import { useShoppingListPrices } from '@/hooks/useShoppingListPrices';
 
 interface ShoppingListCardProps {
   list: {
@@ -26,17 +29,40 @@ export const ShoppingListCard = ({
   onToggleItem, 
   onDeleteItem 
 }: ShoppingListCardProps) => {
+  const [showComparison, setShowComparison] = useState(false);
+  const { data: priceComparisons, isLoading } = useShoppingListPrices(list.shopping_list_items);
+
   return (
     <Card className="p-6">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-4">
-          {list.name}
-        </h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {list.name}
+          </h2>
+          <Button 
+            variant="outline"
+            onClick={() => setShowComparison(!showComparison)}
+            className="gap-2"
+          >
+            <Scale className="h-4 w-4" />
+            השוואת מחירים
+          </Button>
+        </div>
         <AddItemForm
           listId={list.id}
           onAddItem={onAddItem}
         />
       </div>
+
+      {showComparison && (
+        <div className="mb-4">
+          {isLoading ? (
+            <div className="text-center p-4">טוען השוואת מחירים...</div>
+          ) : (
+            <ShoppingListPriceComparison comparisons={priceComparisons || []} />
+          )}
+        </div>
+      )}
 
       <ScrollArea className="h-[300px] pr-4">
         <div className="space-y-2">
