@@ -17,8 +17,8 @@ export const BillBeLogo = ({
   return (
     <div className={cn("inline-flex flex-col items-center", className)}>
       <img 
-        src="/lovable-uploads/b1b23f5f-616a-4969-a1b1-b7e10a1338fb.png"
-        alt="BillBe Logo"
+        src="/lovable-uploads/7382a403-382f-4b83-a2d2-50854e4f83d7.png"
+        alt="Spark Logo"
         style={{ 
           width: size,
           height: 'auto',
