@@ -16,11 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== Start processing request ===');
-    console.log('Method:', req.method);
-    console.log('Headers:', Object.fromEntries(req.headers.entries()));
-
-    // Get form data
+    console.log('Processing request...');
     const formData = await req.formData();
     const file = formData.get('file');
     const networkName = formData.get('networkName');
@@ -52,6 +48,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get user ID from the JWT token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT token and get the user ID
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      throw new Error('Invalid authentication');
+    }
+
+    console.log('Authenticated user:', user.id);
+
     // Create upload record
     const { data: uploadRecord, error: uploadError } = await supabase
       .from('price_file_uploads')
@@ -60,7 +75,7 @@ serve(async (req) => {
         store_chain: networkName,
         status: 'processing',
         total_chunks: 1,
-        created_by: req.headers.get('authorization')?.split(' ')[1] // Get user ID from token
+        created_by: user.id // Use the verified user ID
       })
       .select()
       .single();
