@@ -8,26 +8,26 @@ interface StoreChainInfo {
 
 export const ProductsStats = () => {
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['products-stats'],
+    queryKey: ['products-import-stats'],
     queryFn: async () => {
       // Get total products count
       const { count: totalProducts } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('*', { count: 'exact', head: true });
 
       // Get unique store chains with their branches
       const { data: storeChains } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('store_chain, store_id')
         .not('store_id', 'is', null);
 
       // Process store chains data
       const chainMap = new Map<string, Set<string>>();
       storeChains?.forEach(product => {
-        if (!chainMap.has(product.store_chain)) {
+        if (product.store_chain && !chainMap.has(product.store_chain)) {
           chainMap.set(product.store_chain, new Set());
         }
-        if (product.store_id) {
+        if (product.store_chain && product.store_id) {
           chainMap.get(product.store_chain)?.add(product.store_id);
         }
       });
