@@ -13,9 +13,9 @@ export const ProductsStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['products-import-stats'],
     queryFn: async () => {
-      // Get unique store chains with their branches from store_products table
+      // Get unique store chains with their branches from store_products_import table
       const { data: storeChains } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('store_chain, store_id')
         .not('store_id', 'is', null);
 
