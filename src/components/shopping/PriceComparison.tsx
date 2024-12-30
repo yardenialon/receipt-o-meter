@@ -38,7 +38,7 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
                   {comparison.storeName}
                 </Badge>
                 {isLowestPrice && (
-                  <Badge variant="success" className="bg-green-100 text-green-800">
+                  <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
                     המחיר הזול ביותר
                   </Badge>
                 )}
