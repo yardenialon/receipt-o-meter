@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BillBeLogo } from '@/components/BillBeLogo';
 
