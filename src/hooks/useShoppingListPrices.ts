@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { findMatchingProducts } from '@/utils/productMatching';
 
 interface ShoppingListItem {
   name: string;
@@ -21,7 +20,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
-        .select('*');
+        .select('*')
+        .or(activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(','));
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -33,32 +33,55 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      console.log('Found products:', products.length);
+      console.log('Found products:', products);
 
       // Initialize store products map
       const storeProducts: Record<string, {
         storeName: string;
         storeId: string | null;
-        items: any[];
+        items: {
+          name: string;
+          price: number;
+          matchedProduct: string;
+          quantity: number;
+        }[];
         total: number;
       }> = {};
 
-      // Create a map to track quantities of each item
-      const itemQuantities = activeItems.reduce((acc, item) => {
-        acc[item.name] = (acc[item.name] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      // Process each item
+      for (const item of activeItems) {
+        // Find matching products for this item
+        const itemMatches = products.filter(p => 
+          p.ItemName.toLowerCase().includes(item.name.toLowerCase())
+        );
 
-      // Process each unique item
-      const uniqueItems = [...new Set(activeItems.map(item => item.name))];
-      for (const itemName of uniqueItems) {
-        const quantity = itemQuantities[itemName];
-        findMatchingProducts(itemName, quantity, products, storeProducts);
+        // Group matches by store
+        for (const match of itemMatches) {
+          const storeKey = `${match.store_chain}-${match.store_id || 'main'}`;
+          
+          if (!storeProducts[storeKey]) {
+            storeProducts[storeKey] = {
+              storeName: match.store_chain,
+              storeId: match.store_id,
+              items: [],
+              total: 0
+            };
+          }
+
+          const itemPrice = match.ItemPrice;
+          storeProducts[storeKey].items.push({
+            name: item.name,
+            matchedProduct: match.ItemName,
+            price: itemPrice,
+            quantity: 1
+          });
+          storeProducts[storeKey].total += itemPrice;
+        }
       }
 
-      // Convert to array and filter stores that have matches
+      // Convert to array and filter stores that don't have all items
       const results = Object.values(storeProducts)
-        .filter(store => store.items.length > 0)
+        .filter(store => store.items.length === activeItems.length)
         .sort((a, b) => a.total - b.total);
 
       console.log('Final comparison results:', results);
