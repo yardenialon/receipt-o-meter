@@ -19,7 +19,7 @@ export const ProductsSearch = ({ searchTerm, onSearchChange }: ProductsSearchPro
       const { data } = await supabase
         .from('store_products_import')
         .select('*')
-        .or(`product_name.ilike.%${searchTerm}%,ItemCode.ilike.%${searchTerm}%`)
+        .or(`ItemName.ilike.%${searchTerm}%,ItemCode.ilike.%${searchTerm}%`)
         .limit(5);
       
       return data || [];
