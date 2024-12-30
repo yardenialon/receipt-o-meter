@@ -15,34 +15,47 @@ interface PriceComparisonProps {
 export const PriceComparison = ({ prices }: PriceComparisonProps) => {
   // Sort prices from lowest to highest
   const sortedPrices = [...prices].sort((a, b) => a.price - b.price);
+  const lowestPrice = sortedPrices[0]?.price;
   
   return (
     <div className="space-y-2">
-      {sortedPrices.map((price, index) => (
-        <div 
-          key={`${price.store_chain}-${price.store_id}`}
-          className={`flex justify-between items-center p-2 rounded ${
-            index === 0 ? 'bg-red-50' : 'bg-white'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Store className="h-3 w-3" />
-              {price.store_chain}
-            </Badge>
-            {price.store_id && (
-              <Badge variant="outline">
-                סניף {price.store_id}
+      {sortedPrices.map((price, index) => {
+        const isLowestPrice = price.price === lowestPrice;
+        const priceDiff = isLowestPrice ? 0 : ((price.price - lowestPrice) / lowestPrice * 100).toFixed(1);
+        
+        return (
+          <div 
+            key={`${price.store_chain}-${price.store_id}`}
+            className={`flex justify-between items-center p-2 rounded ${
+              isLowestPrice ? 'bg-green-50 border border-green-100' : 'bg-white border'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Badge variant={isLowestPrice ? "default" : "secondary"} className="flex items-center gap-1">
+                <Store className="h-3 w-3" />
+                {price.store_chain}
               </Badge>
-            )}
+              {price.store_id && (
+                <Badge variant="outline">
+                  סניף {price.store_id}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`font-semibold ${
+                isLowestPrice ? 'text-green-600' : ''
+              }`}>
+                ₪{price.price.toFixed(2)}
+              </span>
+              {!isLowestPrice && (
+                <span className="text-sm text-muted-foreground">
+                  (+{priceDiff}%)
+                </span>
+              )}
+            </div>
           </div>
-          <span className={`font-semibold ${
-            index === 0 ? 'text-red-600' : ''
-          }`}>
-            ₪{price.price.toFixed(2)}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Store } from "lucide-react";
 
 interface StoreChainInfo {
   store_chain: string;
@@ -58,30 +61,33 @@ export const ProductsStats = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="p-4 bg-blue-50 rounded-lg">
+        <Card className="p-4 bg-blue-50">
           <h3 className="text-lg font-semibold mb-2">סה״כ מוצרים</h3>
           <p className="text-2xl font-bold text-blue-600">{stats?.totalProducts}</p>
-        </div>
-        <div className="p-4 bg-green-50 rounded-lg">
+        </Card>
+        <Card className="p-4 bg-green-50">
           <h3 className="text-lg font-semibold mb-2">רשתות</h3>
           <p className="text-2xl font-bold text-green-600">{stats?.storeChains.length}</p>
-        </div>
+        </Card>
       </div>
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">פירוט רשתות וסניפים</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {stats?.storeChains.map((chain) => (
-            <div key={chain.store_chain} className="p-4 bg-purple-50 rounded-lg">
-              <h4 className="font-semibold text-purple-700">{chain.store_chain}</h4>
-              <div className="mt-2 space-y-1">
+            <Card key={chain.store_chain} className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Store className="h-5 w-5 text-purple-600" />
+                <h4 className="font-semibold text-purple-700">{chain.store_chain}</h4>
+              </div>
+              <div className="space-y-2">
                 {chain.store_ids.map((storeId) => (
-                  <p key={storeId} className="text-sm text-purple-600">
-                    סניף: {storeId}
-                  </p>
+                  <Badge key={storeId} variant="secondary" className="block w-fit">
+                    סניף {storeId}
+                  </Badge>
                 ))}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       </div>

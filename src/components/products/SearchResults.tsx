@@ -2,6 +2,7 @@ import { Store } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PriceComparison } from "./PriceComparison";
 
 interface SearchResult {
   ItemCode: string;
@@ -51,36 +52,28 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
   return (
     <div className="space-y-2 absolute w-full bg-white border rounded-md shadow-lg z-10 max-h-[80vh] overflow-y-auto">
       {Object.entries(groupedProducts).map(([itemCode, products]) => {
-        const lowestPrice = Math.min(...products.map(p => p.ItemPrice));
         const baseProduct = products[0];
+        const prices = products.map(p => ({
+          store_chain: p.store_chain,
+          store_id: p.store_id,
+          price: p.ItemPrice,
+          price_update_date: new Date().toISOString() // או תאריך אמיתי אם קיים
+        }));
 
         return (
           <Card key={itemCode} className="p-4 hover:bg-gray-50 transition-colors">
-            <div className="flex justify-between items-start mb-2">
+            <div className="space-y-2">
               <div>
                 <h3 className="font-medium">{baseProduct.ItemName}</h3>
-                {baseProduct.ManufacturerName && (
-                  <p className="text-sm text-muted-foreground">{baseProduct.ManufacturerName}</p>
-                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>מק״ט: {itemCode}</span>
+                  {baseProduct.ManufacturerName && (
+                    <span>• יצרן: {baseProduct.ManufacturerName}</span>
+                  )}
+                </div>
               </div>
-              <span className="font-bold text-red-600">₪{lowestPrice.toFixed(2)}</span>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mt-2">
-              {products.map((product, idx) => (
-                <Badge 
-                  key={`${product.store_chain}-${idx}`} 
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  <Store className="h-3 w-3" />
-                  {product.store_chain}
-                  {product.store_id && ` - ${product.store_id}`}
-                  <span className={product.ItemPrice === lowestPrice ? "text-red-600 mr-1" : "mr-1"}>
-                    ₪{product.ItemPrice.toFixed(2)}
-                  </span>
-                </Badge>
-              ))}
+              
+              <PriceComparison prices={prices} />
             </div>
           </Card>
         );
