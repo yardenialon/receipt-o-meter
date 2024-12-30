@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { parseXMLContent } from './xml-parser.ts';
+import { mapProductData } from './product-mapper.ts';
+import { insertProducts } from './db-operations.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +59,8 @@ serve(async (req) => {
         filename: file.name,
         store_chain: networkName,
         status: 'processing',
-        total_chunks: 1
+        total_chunks: 1,
+        created_by: req.headers.get('authorization')?.split(' ')[1] // Get user ID from token
       })
       .select()
       .single();
@@ -68,20 +72,72 @@ serve(async (req) => {
 
     console.log('Upload record created:', uploadRecord);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        uploadId: uploadRecord.id,
-        message: 'File processing started'
-      }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    try {
+      // Parse XML content
+      const items = await parseXMLContent(xmlContent);
+      console.log(`Parsed ${items.length} items from XML`);
 
+      // Map items to product data
+      const products = items
+        .map(item => mapProductData(item))
+        .filter(product => product !== null)
+        .map(product => ({
+          ...product,
+          store_chain: networkName,
+          store_id: branchName
+        }));
+
+      console.log(`Mapped ${products.length} valid products`);
+
+      // Insert products into database
+      const insertedCount = await insertProducts(products);
+      console.log(`Successfully inserted ${insertedCount} products`);
+
+      // Update upload record status
+      const { error: updateError } = await supabase
+        .from('price_file_uploads')
+        .update({
+          status: 'completed',
+          processed_chunks: 1,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', uploadRecord.id);
+
+      if (updateError) {
+        console.error('Error updating upload status:', updateError);
+        throw updateError;
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          uploadId: uploadRecord.id,
+          message: `Successfully processed ${insertedCount} products`
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (error) {
+      // Update upload record with error status
+      const { error: updateError } = await supabase
+        .from('price_file_uploads')
+        .update({
+          status: 'error',
+          error_log: { error: error.message },
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', uploadRecord.id);
+
+      if (updateError) {
+        console.error('Error updating upload status:', updateError);
+      }
+
+      throw error;
+    }
   } catch (error) {
     console.error('Processing error:', {
       message: error.message,
