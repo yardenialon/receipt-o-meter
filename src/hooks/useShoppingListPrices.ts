@@ -21,8 +21,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
-        .select('*')
-        .filter('ItemStatus', 'eq', 'active');
+        .select('*');
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -57,7 +56,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         findMatchingProducts(itemName, quantity, products, storeProducts);
       }
 
-      // Convert to array and filter stores that don't have all items
+      // Convert to array and filter stores that have matches
       const results = Object.values(storeProducts)
         .filter(store => store.items.length > 0)
         .sort((a, b) => a.total - b.total);
