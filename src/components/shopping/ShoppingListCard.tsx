@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Trash2, Scale } from 'lucide-react';
-import { AddItemForm } from './AddItemForm';
 import { useState } from 'react';
 import { ShoppingListPriceComparison } from './PriceComparison';
 import { useShoppingListPrices } from '@/hooks/useShoppingListPrices';
@@ -29,7 +28,6 @@ interface ShoppingListCardProps {
       is_completed: boolean;
     }>;
   };
-  onAddItem: (listId: string, name: string) => void;
   onToggleItem: (id: string, isCompleted: boolean) => void;
   onDeleteItem: (id: string) => void;
   onDeleteList: (id: string) => void;
@@ -37,7 +35,6 @@ interface ShoppingListCardProps {
 
 export const ShoppingListCard = ({ 
   list, 
-  onAddItem, 
   onToggleItem, 
   onDeleteItem,
   onDeleteList
@@ -87,10 +84,6 @@ export const ShoppingListCard = ({
             </AlertDialog>
           </div>
         </div>
-        <AddItemForm
-          listId={list.id}
-          onAddItem={onAddItem}
-        />
       </div>
 
       {showComparison && (

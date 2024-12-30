@@ -72,26 +72,6 @@ export default function ShoppingList() {
     },
   });
 
-  const addItem = useMutation({
-    mutationFn: async ({ listId, name }: { listId: string; name: string }) => {
-      const { data, error } = await supabase
-        .from('shopping_list_items')
-        .insert([{ list_id: listId, name }])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
-      toast.success('פריט נוסף בהצלחה');
-    },
-    onError: () => {
-      toast.error('אירעה שגיאה בהוספת הפריט');
-    },
-  });
-
   const toggleItem = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: string; isCompleted: boolean }) => {
       const { data, error } = await supabase
@@ -124,6 +104,26 @@ export default function ShoppingList() {
     },
     onError: () => {
       toast.error('אירעה שגיאה במחיקת הפריט');
+    },
+  });
+
+  const addItem = useMutation({
+    mutationFn: async ({ listId, name }: { listId: string; name: string }) => {
+      const { data, error } = await supabase
+        .from('shopping_list_items')
+        .insert([{ list_id: listId, name }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      toast.success('פריט נוסף בהצלחה');
+    },
+    onError: () => {
+      toast.error('אירעה שגיאה בהוספת הפריט');
     },
   });
 
@@ -162,7 +162,6 @@ export default function ShoppingList() {
               </div>
               <ShoppingListCard
                 list={list}
-                onAddItem={(listId, name) => addItem.mutate({ listId, name })}
                 onToggleItem={(id, isCompleted) => toggleItem.mutate({ id, isCompleted })}
                 onDeleteItem={(id) => deleteItem.mutate(id)}
                 onDeleteList={(id) => deleteList.mutate(id)}
@@ -171,8 +170,9 @@ export default function ShoppingList() {
           ))}
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-8 sticky top-8">
           <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">השוואת מחירים כוללת</h2>
             <ShoppingListPriceComparison comparisons={priceComparisons || []} />
           </Card>
         </div>
