@@ -25,7 +25,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
         
         return (
           <div 
-            key={`${price.store_chain}-${price.store_id}`}
+            key={`${price.store_chain}-${price.store_id}-${index}`}
             className={`flex justify-between items-center p-2 rounded ${
               isLowestPrice ? 'bg-green-50 border border-green-100' : 'bg-white border'
             }`}

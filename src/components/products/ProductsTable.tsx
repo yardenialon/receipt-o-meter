@@ -39,6 +39,7 @@ export const ProductsTable = ({ productsByCategory, expandedProducts, onToggleEx
                 const baseProduct = products[0];
                 const isExpanded = expandedProducts[productCode]?.expanded;
                 const lowestPrice = Math.min(...products.map(p => p.price));
+                const latestUpdate = new Date(Math.max(...products.map(p => new Date(p.price_update_date).getTime())));
 
                 return (
                   <>
@@ -61,8 +62,7 @@ export const ProductsTable = ({ productsByCategory, expandedProducts, onToggleEx
                         ₪{lowestPrice.toFixed(2)}
                       </TableCell>
                       <TableCell>
-                        {baseProduct.price_update_date && 
-                          format(new Date(baseProduct.price_update_date), 'dd/MM/yyyy HH:mm', { locale: he })}
+                        {format(latestUpdate, 'dd/MM/yyyy HH:mm', { locale: he })}
                       </TableCell>
                     </TableRow>
                     {isExpanded && (
