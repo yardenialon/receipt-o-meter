@@ -9,6 +9,7 @@ interface StoreTotal {
     name: string;
     price: number;
     matchedProduct: string;
+    quantity: number;
   }[];
 }
 
@@ -56,7 +57,9 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
               {comparison.items.map((item, itemIndex) => (
                 <div key={itemIndex} className="flex justify-between text-sm">
                   <div>
-                    <span className="text-muted-foreground">{item.name}</span>
+                    <span className="text-muted-foreground">
+                      {item.name} {item.quantity > 1 && `(x${item.quantity})`}
+                    </span>
                     {item.matchedProduct !== item.name && (
                       <span className="text-xs text-muted-foreground"> → {item.matchedProduct}</span>
                     )}

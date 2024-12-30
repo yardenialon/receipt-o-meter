@@ -49,21 +49,28 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return acc;
       }, {} as Record<string, { storeName: string; storeId: string | null; items: any[]; total: number }>);
 
-      // For each store, find best matching products for our items
-      for (const item of activeItems) {
-        const itemName = item.name.toLowerCase();
-        console.log('Finding matches for item:', itemName);
+      // Create a map to track quantities of each item
+      const itemQuantities = activeItems.reduce((acc, item) => {
+        acc[item.name] = (acc[item.name] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // For each unique item (not counting duplicates yet)
+      const uniqueItems = [...new Set(activeItems.map(item => item.name))];
+      for (const itemName of uniqueItems) {
+        const quantity = itemQuantities[itemName];
+        const itemNameLower = itemName.toLowerCase();
+        console.log(`Finding matches for item: ${itemName} (quantity: ${quantity})`);
         
         // Find all potential matches across all products
         const potentialMatches = products
           .map(product => ({
             product,
-            similarity: calculateImprovedSimilarity(itemName, product.product_name.toLowerCase())
+            similarity: calculateImprovedSimilarity(itemNameLower, product.product_name.toLowerCase())
           }))
           .filter(match => {
-            // Log similarity scores for debugging
-            console.log(`Similarity for "${itemName}" with "${match.product.product_name}": ${match.similarity}`);
-            return match.similarity > 0.4; // Increased threshold for better matches
+            console.log(`Similarity for "${itemNameLower}" with "${match.product.product_name}": ${match.similarity}`);
+            return match.similarity > 0.4;
           })
           .sort((a, b) => b.similarity - a.similarity);
 
@@ -77,24 +84,25 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           return acc;
         }, {} as Record<string, any[]>);
 
-        // Add best match for each store
+        // Add best match for each store, considering quantity
         for (const [storeKey, storeMatches] of Object.entries(matchesByStore)) {
           const bestMatch = storeMatches[0]; // Already sorted by similarity
           if (bestMatch) {
             storeProducts[storeKey].items.push({
-              name: item.name,
+              name: itemName,
               matchedProduct: bestMatch.product_name,
-              price: bestMatch.price,
-              priceUpdateDate: bestMatch.price_update_date
+              price: bestMatch.price * quantity, // Multiply price by quantity
+              priceUpdateDate: bestMatch.price_update_date,
+              quantity: quantity // Add quantity to the item info
             });
-            storeProducts[storeKey].total += bestMatch.price;
+            storeProducts[storeKey].total += bestMatch.price * quantity; // Add total price considering quantity
           }
         }
       }
 
-      // Convert to array and filter stores that don't have all items
+      // Convert to array and filter stores that don't have all unique items
       const results = Object.values(storeProducts)
-        .filter(store => store.items.length === activeItems.length)
+        .filter(store => store.items.length === uniqueItems.length)
         .sort((a, b) => a.total - b.total);
 
       console.log('Final comparison results:', results);
