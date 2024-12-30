@@ -14,6 +14,12 @@ export const ProductsStats = () => {
     queryKey: ['products-import-stats'],
     queryFn: async () => {
       // Get unique store chains with their branches from store_products_import table
+      const { data: uniqueChains } = await supabase
+        .from('store_products_import')
+        .select('store_chain')
+        .not('store_chain', 'is', null);
+
+      // Get store chains with their branches
       const { data: storeChains } = await supabase
         .from('store_products_import')
         .select('store_chain, store_id')
@@ -38,7 +44,7 @@ export const ProductsStats = () => {
         .sort((a, b) => a.store_chain.localeCompare(b.store_chain)); // Sort alphabetically
 
       return {
-        totalStores: chainMap.size,
+        totalUniqueChains: new Set(uniqueChains?.map(chain => chain.store_chain)).size,
         storeChains: processedChains
       };
     }
@@ -63,7 +69,7 @@ export const ProductsStats = () => {
             <Building2 className="h-5 w-5 text-blue-600" />
             <h3 className="text-lg font-semibold">רשתות פעילות</h3>
           </div>
-          <p className="text-2xl font-bold text-blue-600 mt-2">{stats?.totalStores || 0}</p>
+          <p className="text-2xl font-bold text-blue-600 mt-2">{stats?.totalUniqueChains || 0}</p>
         </Card>
       </div>
 
