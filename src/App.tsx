@@ -6,6 +6,7 @@ import Index from './pages/Index';
 import Login from './pages/Login';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
+import ShoppingList from './pages/ShoppingList';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/products" element={<Products />} />
+              <Route path="/shopping-list" element={<ShoppingList />} />
             </Routes>
           </main>
         </div>

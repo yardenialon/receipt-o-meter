@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, BarChart2, Package2, LogOut } from 'lucide-react';
+import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ export const MobileNav = () => {
     { href: '/', label: 'קבלות', icon: Home },
     { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
     { href: '/products', label: 'מוצרים', icon: Package2 },
+    { href: '/shopping-list', label: 'רשימות', icon: ListCheck },
   ];
   const location = useLocation();
   const { signOut } = useAuth();
