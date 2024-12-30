@@ -29,6 +29,7 @@ export const AddItemForm = ({ onAddItem, listId }: AddItemFormProps) => {
         .ilike('product_name', `%${search}%`)
         .limit(10);
       
+      console.log('Search results:', data);
       return data?.map(p => p.product_name) || [];
     },
     enabled: search.length > 0
@@ -42,8 +43,17 @@ export const AddItemForm = ({ onAddItem, listId }: AddItemFormProps) => {
     setSearch("");
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (value) {
+      onAddItem(listId, value);
+      setValue("");
+      setSearch("");
+    }
+  };
+
   return (
-    <div className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex gap-2">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -51,6 +61,7 @@ export const AddItemForm = ({ onAddItem, listId }: AddItemFormProps) => {
             role="combobox"
             aria-expanded={open}
             className="flex-1 justify-between"
+            type="button" // Important: prevent form submission
           >
             {value || "הוסף פריט חדש..."}
           </Button>
@@ -83,17 +94,9 @@ export const AddItemForm = ({ onAddItem, listId }: AddItemFormProps) => {
           </Command>
         </PopoverContent>
       </Popover>
-      <Button 
-        onClick={() => {
-          if (value) {
-            onAddItem(listId, value);
-            setValue("");
-            setSearch("");
-          }
-        }}
-      >
+      <Button type="submit">
         הוסף
       </Button>
-    </div>
+    </form>
   );
 };
