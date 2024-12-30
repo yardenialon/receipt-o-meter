@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 interface BillBeLogoProps {
   className?: string;
   size?: number;
-  variant?: 'full' | 'icon' | 'vertical';
+  variant?: 'full' | 'icon';
   showTagline?: boolean;
 }
 
@@ -17,89 +17,82 @@ export const BillBeLogo = ({
   return (
     <div className={cn("inline-flex flex-col items-center", className)} style={{ width: size }}>
       <svg
-        viewBox="0 0 400 120"
+        viewBox="0 0 400 150"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className={cn(
-          "w-full h-auto",
-          variant === 'icon' && "hidden",
-          variant === 'vertical' && "transform scale-150"
-        )}
+        className="w-full h-auto"
       >
-        {/* Gradient Definitions */}
-        <defs>
-          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#34D399' }} />
-            <stop offset="100%" style={{ stopColor: '#1E40AF' }} />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* Icon - Stylized B with Growth Arrow */}
-        <g filter="url(#glow)">
-          <path
-            d="M60 20 
-               C60 20, 80 20, 90 30
-               C100 40, 100 60, 90 70
-               C80 80, 60 80, 60 80
-               L60 100
-               L40 100
-               L40 20
-               Z"
-            fill="url(#logoGradient)"
-            className="animate-pulse"
-          />
-          {/* Growth Arrow */}
-          <path
-            d="M70 50 L90 50 L80 30 L70 50"
-            fill="#34D399"
-            className="animate-bounce"
-          />
+        {/* Main Text - BILL BE with stripes effect */}
+        <g className="text-primary-500">
+          {/* B */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <path
+              key={`b1-${i}`}
+              d={`M${40 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
+          {/* I */}
+          {[0, 1, 2].map((i) => (
+            <path
+              key={`i1-${i}`}
+              d={`M${120 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
+          {/* L */}
+          {[0, 1, 2, 3].map((i) => (
+            <path
+              key={`l1-${i}`}
+              d={`M${180 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
+          {/* L */}
+          {[0, 1, 2, 3].map((i) => (
+            <path
+              key={`l2-${i}`}
+              d={`M${240 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
+          {/* B */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <path
+              key={`b2-${i}`}
+              d={`M${300 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
+          {/* E */}
+          {[0, 1, 2, 3].map((i) => (
+            <path
+              key={`e-${i}`}
+              d={`M${360 + i * 8} 20h20v80h-20z`}
+              fill="currentColor"
+            />
+          ))}
         </g>
 
-        {/* Text - BILL BE */}
-        <text
-          x="120"
-          y="65"
-          className="font-bold tracking-wider"
-          style={{ 
-            fontSize: '48px',
-            fontFamily: 'Inter, sans-serif'
-          }}
-          fill="#1E40AF"
-        >
-          BILL
-          <tspan
-            x="250"
-            className="font-medium"
-            fill="#34D399"
-          >
-            BE
-          </tspan>
-        </text>
+        {/* Barcode effect */}
+        <g transform="translate(40, 110)">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <rect
+              key={`barcode-${i}`}
+              x={i * 10}
+              y="0"
+              width="4"
+              height={Math.random() * 20 + 10}
+              fill="#666"
+              opacity="0.8"
+            />
+          ))}
+        </g>
       </svg>
-
-      {/* Icon-only variant */}
-      {variant === 'icon' && (
-        <svg
-          viewBox="0 0 120 120"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto"
-        >
-          <use href="#icon" />
-        </svg>
-      )}
 
       {/* Tagline */}
       {showTagline && (
-        <div className="mt-2 text-sm font-assistant text-gray-600 rtl">
+        <div className="mt-4 text-sm font-assistant text-gray-600 rtl">
           חוסכים • לומדים • מרוויחים
         </div>
       )}
