@@ -75,7 +75,7 @@ const Login = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <BillBeLogo size={240} showTagline />
+              <BillBeLogo size={200} showTagline />
             </motion.div>
             <p className="text-primary-700/80 text-sm mt-2">
               מערכת חכמה לניהול קבלות
