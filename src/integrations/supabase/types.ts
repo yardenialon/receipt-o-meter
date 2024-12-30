@@ -289,8 +289,6 @@ export type Database = {
         }
         Relationships: []
       }
-    }
-    Views: {
       store_products_import: {
         Row: {
           AllowDiscount: boolean | null
@@ -349,8 +347,14 @@ export type Database = {
         Relationships: []
       }
     }
-    Functions: {
+    Views: {
       [_ in never]: never
+    }
+    Functions: {
+      process_imported_products: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
