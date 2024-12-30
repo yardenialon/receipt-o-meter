@@ -21,7 +21,7 @@ interface SearchResultsProps {
 export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="absolute w-full bg-white border rounded-md shadow-lg z-10 p-4 space-y-2">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="p-4">
             <Skeleton className="h-4 w-3/4 mb-2" />
@@ -34,7 +34,7 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
 
   if (results.length === 0) {
     return (
-      <Card className="p-4 text-center text-muted-foreground">
+      <Card className="absolute w-full bg-white border rounded-md shadow-lg z-10 p-4 text-center text-muted-foreground">
         לא נמצאו תוצאות
       </Card>
     );
@@ -50,7 +50,7 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
   }, {} as Record<string, SearchResult[]>);
 
   return (
-    <div className="space-y-2 absolute w-full bg-white border rounded-md shadow-lg z-10 max-h-[80vh] overflow-y-auto">
+    <div className="absolute w-full bg-white border rounded-md shadow-lg z-10 max-h-[80vh] overflow-y-auto p-4 space-y-4">
       {Object.entries(groupedProducts).map(([itemCode, products]) => {
         const baseProduct = products[0];
         const prices = products.map(p => ({
@@ -61,8 +61,8 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
         }));
 
         return (
-          <Card key={itemCode} className="p-4 hover:bg-gray-50 transition-colors">
-            <div className="space-y-2">
+          <Card key={itemCode} className="p-4">
+            <div className="space-y-4">
               <div>
                 <h3 className="font-medium">{baseProduct.ItemName}</h3>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

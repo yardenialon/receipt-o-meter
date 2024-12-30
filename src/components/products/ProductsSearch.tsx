@@ -22,9 +22,9 @@ export const ProductsSearch = ({ searchTerm, onSearchChange }: ProductsSearchPro
       
       const { data } = await supabase
         .from('store_products_import')
-        .select('*')
+        .select('ItemCode,ItemName,ItemPrice,store_chain,store_id,ManufacturerName')
         .or(`ItemName.ilike.%${debouncedTerm}%,ItemCode.ilike.%${debouncedTerm}%`)
-        .limit(10);
+        .limit(50);
       
       console.log('Search results:', data);
       return data || [];
