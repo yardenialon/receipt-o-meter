@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BillBeLogo } from '@/components/BillBeLogo';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -75,15 +76,9 @@ const Login = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="relative bg-white/80 p-3 rounded-2xl shadow-lg backdrop-blur-xl border border-white/20">
-                <Receipt className="w-8 h-8 text-primary-500" />
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-400/20 to-blue-400/20 rounded-2xl animate-pulse" />
-              </div>
+              <BillBeLogo size={180} showTagline />
             </motion.div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 via-blue-500 to-indigo-500 bg-clip-text text-transparent mb-2">
-              BillBe
-            </h1>
-            <p className="text-primary-700/80 text-sm">
+            <p className="text-primary-700/80 text-sm mt-2">
               מערכת חכמה לניהול קבלות
             </p>
           </motion.div>
