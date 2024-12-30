@@ -51,6 +51,24 @@ export default function ShoppingList() {
     },
   });
 
+  const deleteList = useMutation({
+    mutationFn: async (listId: string) => {
+      const { error } = await supabase
+        .from('shopping_lists')
+        .delete()
+        .eq('id', listId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      toast.success('הרשימה נמחקה בהצלחה');
+    },
+    onError: () => {
+      toast.error('אירעה שגיאה במחיקת הרשימה');
+    },
+  });
+
   const addItem = useMutation({
     mutationFn: async ({ listId, name }: { listId: string; name: string }) => {
       const { data, error } = await supabase
@@ -129,6 +147,7 @@ export default function ShoppingList() {
               onAddItem={(listId, name) => addItem.mutate({ listId, name })}
               onToggleItem={(id, isCompleted) => toggleItem.mutate({ id, isCompleted })}
               onDeleteItem={(id) => deleteItem.mutate(id)}
+              onDeleteList={(id) => deleteList.mutate(id)}
             />
           ))}
         </div>

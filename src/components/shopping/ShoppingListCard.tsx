@@ -7,6 +7,17 @@ import { AddItemForm } from './AddItemForm';
 import { useState } from 'react';
 import { ShoppingListPriceComparison } from './PriceComparison';
 import { useShoppingListPrices } from '@/hooks/useShoppingListPrices';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ShoppingListCardProps {
   list: {
@@ -21,13 +32,15 @@ interface ShoppingListCardProps {
   onAddItem: (listId: string, name: string) => void;
   onToggleItem: (id: string, isCompleted: boolean) => void;
   onDeleteItem: (id: string) => void;
+  onDeleteList: (id: string) => void;
 }
 
 export const ShoppingListCard = ({ 
   list, 
   onAddItem, 
   onToggleItem, 
-  onDeleteItem 
+  onDeleteItem,
+  onDeleteList
 }: ShoppingListCardProps) => {
   const [showComparison, setShowComparison] = useState(false);
   const { data: priceComparisons, isLoading } = useShoppingListPrices(list.shopping_list_items);
@@ -39,14 +52,40 @@ export const ShoppingListCard = ({
           <h2 className="text-xl font-semibold">
             {list.name}
           </h2>
-          <Button 
-            variant="outline"
-            onClick={() => setShowComparison(!showComparison)}
-            className="gap-2"
-          >
-            <Scale className="h-4 w-4" />
-            השוואת מחירים
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setShowComparison(!showComparison)}
+              className="gap-2"
+            >
+              <Scale className="h-4 w-4" />
+              השוואת מחירים
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    פעולה זו תמחק את רשימת הקניות לצמיתות ולא ניתן יהיה לשחזר אותה.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>ביטול</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => onDeleteList(list.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    מחק רשימה
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
         <AddItemForm
           listId={list.id}
