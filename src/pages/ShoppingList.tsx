@@ -8,10 +8,12 @@ import { ListPlus, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ShoppingList() {
   const [newItem, setNewItem] = useState('');
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: lists, isLoading } = useQuery({
     queryKey: ['shopping-lists'],
@@ -27,9 +29,11 @@ export default function ShoppingList() {
 
   const createList = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error('Must be logged in to create a list');
+      
       const { data, error } = await supabase
         .from('shopping_lists')
-        .insert([{}])
+        .insert([{ user_id: user.id }])
         .select()
         .single();
       
