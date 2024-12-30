@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
-import { PriceFileUpload } from '@/components/products/PriceFileUpload';
 import { ProductsStats } from '@/components/products/ProductsStats';
 import { toast } from 'sonner';
+import { Database } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [importCount, setImportCount] = useState<number | null>(null);
   const navigate = useNavigate();
   
-  // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -35,14 +36,37 @@ const Products = () => {
     };
   }, [navigate]);
 
+  // Fetch import count
+  useEffect(() => {
+    const fetchImportCount = async () => {
+      const { count, error } = await supabase
+        .from('store_products_import')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('Error fetching import count:', error);
+        toast.error('שגיאה בטעינת נתוני ייבוא');
+      } else {
+        setImportCount(count);
+      }
+    };
+
+    fetchImportCount();
+  }, []);
+
   return (
     <div className="container mx-auto py-8">
       <ProductsHeader />
       <ProductsStats />
       
-      <div className="my-8">
-        <PriceFileUpload />
-      </div>
+      {importCount !== null && importCount > 0 && (
+        <Alert className="my-4 bg-blue-50">
+          <Database className="h-4 w-4" />
+          <AlertDescription>
+            יש {importCount} מוצרים בטבלת הייבוא המוכנים לעיבוד
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="mt-8">
         <ProductsSearch
