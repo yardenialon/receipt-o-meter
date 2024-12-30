@@ -14,16 +14,28 @@ export const ProductsStats = () => {
     queryKey: ['products-import-stats'],
     queryFn: async () => {
       // Get unique store chains with their branches from store_products_import table
-      const { data: uniqueChains } = await supabase
+      const { data: uniqueChains, error: chainsError } = await supabase
         .from('store_products_import')
         .select('store_chain')
-        .not('store_chain', 'is', null);
+        .not('store_chain', 'is', null)
+        .or('store_chain.eq.שופרסל,store_chain.eq.ויקטורי,store_chain.eq.מחסני השוק,store_chain.eq.קרפור');
+
+      if (chainsError) {
+        console.error('Error fetching chains:', chainsError);
+        throw chainsError;
+      }
 
       // Get store chains with their branches
-      const { data: storeChains } = await supabase
+      const { data: storeChains, error: branchesError } = await supabase
         .from('store_products_import')
         .select('store_chain, store_id')
-        .not('store_id', 'is', null);
+        .not('store_id', 'is', null)
+        .or('store_chain.eq.שופרסל,store_chain.eq.ויקטורי,store_chain.eq.מחסני השוק,store_chain.eq.קרפור');
+
+      if (branchesError) {
+        console.error('Error fetching branches:', branchesError);
+        throw branchesError;
+      }
 
       // Process store chains data
       const chainMap = new Map<string, Set<string>>();
@@ -43,8 +55,19 @@ export const ProductsStats = () => {
         }))
         .sort((a, b) => a.store_chain.localeCompare(b.store_chain)); // Sort alphabetically
 
+      // Ensure all chains are included even if they don't have branches yet
+      const allChains = new Set(uniqueChains?.map(chain => chain.store_chain) || []);
+      ['שופרסל', 'ויקטורי', 'מחסני השוק', 'קרפור'].forEach(chain => {
+        if (!processedChains.some(pc => pc.store_chain === chain)) {
+          processedChains.push({
+            store_chain: chain,
+            store_ids: []
+          });
+        }
+      });
+
       return {
-        totalUniqueChains: new Set(uniqueChains?.map(chain => chain.store_chain)).size,
+        totalUniqueChains: allChains.size || processedChains.length,
         storeChains: processedChains
       };
     }
@@ -86,15 +109,19 @@ export const ProductsStats = () => {
                 <h4 className="font-semibold text-purple-700">{chain.store_chain}</h4>
               </div>
               <div className="space-y-2">
-                {chain.store_ids.map((storeId) => (
-                  <Badge 
-                    key={storeId} 
-                    variant="secondary" 
-                    className="block w-fit"
-                  >
-                    סניף {storeId}
-                  </Badge>
-                ))}
+                {chain.store_ids.length > 0 ? (
+                  chain.store_ids.map((storeId) => (
+                    <Badge 
+                      key={storeId} 
+                      variant="secondary" 
+                      className="block w-fit"
+                    >
+                      סניף {storeId}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">אין סניפים זמינים כרגע</p>
+                )}
               </div>
             </Card>
           ))}
