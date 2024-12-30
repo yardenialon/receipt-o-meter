@@ -1,11 +1,10 @@
-import { calculateSimilarity } from './textSimilarity';
-
 interface Product {
   store_chain: string;
   store_id: string | null;
-  product_name: string;
-  price: number;
-  price_update_date?: string;
+  ItemCode: string;
+  ItemName: string;
+  ItemPrice: number;
+  PriceUpdateDate?: string;
   [key: string]: any;
 }
 
@@ -28,25 +27,24 @@ export function findMatchingProducts(
   products: Product[],
   storeProducts: Record<string, StoreProduct>
 ) {
-  const itemNameLower = itemName.toLowerCase();
-  console.log(`Finding matches for item: ${itemName} (quantity: ${quantity})`);
-  
-  // Find all potential matches across all products with lower similarity threshold
-  const potentialMatches = products
-    .map(product => ({
-      product,
-      similarity: calculateSimilarity(itemNameLower, product.product_name.toLowerCase())
-    }))
-    .filter(match => {
-      console.log(`Similarity for "${itemNameLower}" with "${match.product.product_name}": ${match.similarity}`);
-      return match.similarity > 0.3; // Lowered threshold for better matching
-    })
-    .sort((a, b) => b.similarity - a.similarity);
+  // Find the original product's ItemCode from the search results
+  const originalProduct = products.find(p => p.ItemName === itemName);
+  if (!originalProduct) {
+    console.log(`No matching product found for: ${itemName}`);
+    return storeProducts;
+  }
 
-  console.log('Potential matches found:', potentialMatches.length);
+  console.log(`Finding matches for item: ${itemName} (ItemCode: ${originalProduct.ItemCode})`);
+  
+  // Find all products with the same ItemCode across different stores
+  const matchingProducts = products.filter(product => 
+    product.ItemCode === originalProduct.ItemCode
+  );
+
+  console.log('Matching products found:', matchingProducts.length);
 
   // Group matches by store
-  const matchesByStore = potentialMatches.reduce((acc, { product }) => {
+  const matchesByStore = matchingProducts.reduce((acc, product) => {
     const key = `${product.store_chain}-${product.store_id || 'main'}`;
     if (!acc[key]) acc[key] = [];
     acc[key].push(product);
@@ -55,7 +53,7 @@ export function findMatchingProducts(
 
   // Add best match for each store
   for (const [storeKey, storeMatches] of Object.entries(matchesByStore)) {
-    const bestMatch = storeMatches[0];
+    const bestMatch = storeMatches[0]; // Since all matches have the same ItemCode, we can take the first one
     if (bestMatch) {
       if (!storeProducts[storeKey]) {
         storeProducts[storeKey] = {
@@ -66,12 +64,12 @@ export function findMatchingProducts(
         };
       }
       
-      const itemPrice = bestMatch.price * quantity;
+      const itemPrice = bestMatch.ItemPrice * quantity;
       storeProducts[storeKey].items.push({
         name: itemName,
-        matchedProduct: bestMatch.product_name,
+        matchedProduct: bestMatch.ItemName,
         price: itemPrice,
-        priceUpdateDate: bestMatch.price_update_date,
+        priceUpdateDate: bestMatch.PriceUpdateDate,
         quantity
       });
       storeProducts[storeKey].total += itemPrice;

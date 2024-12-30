@@ -20,9 +20,9 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // Get all store products that match any of our items
       const { data: products, error } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('*')
-        .filter('item_status', 'eq', 'active');
+        .filter('ItemStatus', 'eq', 'active');
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -57,10 +57,9 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         findMatchingProducts(itemName, quantity, products, storeProducts);
       }
 
-      // Convert to array and filter stores that don't have enough matches
-      const minMatchThreshold = Math.max(1, Math.floor(uniqueItems.length * 0.6)); // At least 60% of items must match
+      // Convert to array and filter stores that don't have all items
       const results = Object.values(storeProducts)
-        .filter(store => store.items.length >= minMatchThreshold)
+        .filter(store => store.items.length > 0)
         .sort((a, b) => a.total - b.total);
 
       console.log('Final comparison results:', results);
