@@ -8,9 +8,10 @@ import debounce from 'lodash/debounce';
 interface ProductsSearchProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  onProductSelect?: (product: any) => void;
 }
 
-export const ProductsSearch = ({ searchTerm, onSearchChange }: ProductsSearchProps) => {
+export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: ProductsSearchProps) => {
   const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
 
   const { data: results = [], isLoading } = useQuery({
@@ -52,7 +53,13 @@ export const ProductsSearch = ({ searchTerm, onSearchChange }: ProductsSearchPro
         onChange={handleSearchChange}
         className="w-full"
       />
-      {searchTerm && <SearchResults results={results} isLoading={isLoading} />}
+      {searchTerm && (
+        <SearchResults 
+          results={results} 
+          isLoading={isLoading} 
+          onProductSelect={onProductSelect}
+        />
+      )}
     </div>
   );
 };

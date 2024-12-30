@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceComparison } from "./PriceComparison";
+import { Button } from "@/components/ui/button";
 
 interface SearchResult {
   ItemCode: string;
@@ -16,9 +17,10 @@ interface SearchResult {
 interface SearchResultsProps {
   results: SearchResult[];
   isLoading: boolean;
+  onProductSelect?: (product: SearchResult) => void;
 }
 
-export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
+export const SearchResults = ({ results, isLoading, onProductSelect }: SearchResultsProps) => {
   if (isLoading) {
     return (
       <div className="absolute w-full bg-white border rounded-md shadow-lg z-10 p-4 space-y-2">
@@ -63,14 +65,25 @@ export const SearchResults = ({ results, isLoading }: SearchResultsProps) => {
         return (
           <Card key={itemCode} className="p-4">
             <div className="space-y-4">
-              <div>
-                <h3 className="font-medium">{baseProduct.ItemName}</h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>מק״ט: {itemCode}</span>
-                  {baseProduct.ManufacturerName && (
-                    <span>• יצרן: {baseProduct.ManufacturerName}</span>
-                  )}
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-medium">{baseProduct.ItemName}</h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>מק״ט: {itemCode}</span>
+                    {baseProduct.ManufacturerName && (
+                      <span>• יצרן: {baseProduct.ManufacturerName}</span>
+                    )}
+                  </div>
                 </div>
+                {onProductSelect && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => onProductSelect(baseProduct)}
+                  >
+                    הוסף לרשימה
+                  </Button>
+                )}
               </div>
               
               <PriceComparison prices={prices} />

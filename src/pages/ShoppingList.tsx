@@ -8,10 +8,13 @@ import { ShoppingListPriceComparison } from '@/components/shopping/PriceComparis
 import { ShoppingListCard } from '@/components/shopping/ShoppingListCard';
 import { Button } from '@/components/ui/button';
 import { ListPlus } from 'lucide-react';
+import { ProductsSearch } from '@/components/products/ProductsSearch';
+import { useState } from 'react';
 
 export default function ShoppingList() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: lists, isLoading } = useQuery({
     queryKey: ['shopping-lists'],
@@ -124,6 +127,14 @@ export default function ShoppingList() {
     },
   });
 
+  const handleAddProductToList = (listId: string, product: any) => {
+    addItem.mutate({
+      listId,
+      name: product.ItemName
+    });
+    setSearchTerm('');
+  };
+
   if (isLoading) {
     return <div className="p-8">טוען...</div>;
   }
@@ -141,14 +152,22 @@ export default function ShoppingList() {
       <div className="grid gap-8 md:grid-cols-2">
         <div className="space-y-8">
           {lists?.map((list) => (
-            <ShoppingListCard
-              key={list.id}
-              list={list}
-              onAddItem={(listId, name) => addItem.mutate({ listId, name })}
-              onToggleItem={(id, isCompleted) => toggleItem.mutate({ id, isCompleted })}
-              onDeleteItem={(id) => deleteItem.mutate(id)}
-              onDeleteList={(id) => deleteList.mutate(id)}
-            />
+            <div key={list.id} className="space-y-4">
+              <div className="relative">
+                <ProductsSearch
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  onProductSelect={(product) => handleAddProductToList(list.id, product)}
+                />
+              </div>
+              <ShoppingListCard
+                list={list}
+                onAddItem={(listId, name) => addItem.mutate({ listId, name })}
+                onToggleItem={(id, isCompleted) => toggleItem.mutate({ id, isCompleted })}
+                onDeleteItem={(id) => deleteItem.mutate(id)}
+                onDeleteList={(id) => deleteList.mutate(id)}
+              />
+            </div>
           ))}
         </div>
 
