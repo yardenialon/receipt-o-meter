@@ -13,7 +13,7 @@ export async function parseXMLContent(xmlContent: string) {
       throw new Error('Failed to parse XML data');
     }
 
-    // Handle Shufersal's XML structure with null checks
+    // Handle XML structure with null checks
     let items;
     if (xmlData?.root?.Items?.Item) {
       items = xmlData.root.Items.Item;
@@ -27,6 +27,11 @@ export async function parseXMLContent(xmlContent: string) {
     // Convert to array if single item
     const itemsArray = Array.isArray(items) ? items : [items].filter(Boolean);
     console.log(`Found ${itemsArray.length} items in XML`);
+    
+    if (itemsArray.length === 0) {
+      throw new Error('No items found in XML');
+    }
+    
     return itemsArray;
   } catch (error) {
     console.error('XML Parsing Error:', error);

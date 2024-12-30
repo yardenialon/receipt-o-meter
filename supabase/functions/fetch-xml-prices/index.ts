@@ -22,6 +22,10 @@ serve(async (req) => {
     const networkName = formData.get('networkName');
     const branchName = formData.get('branchName');
 
+    if (!file || !networkName || !branchName) {
+      throw new Error('Missing required fields: file, networkName, or branchName');
+    }
+
     console.log('Received data:', {
       hasFile: !!file,
       networkName,
@@ -29,18 +33,6 @@ serve(async (req) => {
       fileName: file?.name,
       fileSize: file?.size
     });
-
-    if (!networkName || !branchName) {
-      throw new Error('חסרים פרטי רשת וסניף');
-    }
-
-    if (!file) {
-      throw new Error('לא נבחר קובץ');
-    }
-
-    // Read file content
-    const xmlContent = await file.text();
-    console.log('File content length:', xmlContent.length);
 
     // Create Supabase client
     const supabase = createClient(
@@ -54,10 +46,8 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    // Extract the JWT token
+    // Extract the JWT token and verify user
     const token = authHeader.replace('Bearer ', '');
-    
-    // Verify the JWT token and get the user ID
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
@@ -75,19 +65,23 @@ serve(async (req) => {
         store_chain: networkName,
         status: 'processing',
         total_chunks: 1,
-        created_by: user.id // Use the verified user ID
+        created_by: user.id
       })
       .select()
       .single();
 
-    if (uploadError) {
+    if (uploadError || !uploadRecord) {
       console.error('Upload record creation error:', uploadError);
-      throw uploadError;
+      throw new Error('Failed to create upload record');
     }
 
     console.log('Upload record created:', uploadRecord);
 
     try {
+      // Read and parse XML content
+      const xmlContent = await file.text();
+      console.log('File content length:', xmlContent.length);
+
       // Parse XML content
       const items = await parseXMLContent(xmlContent);
       console.log(`Parsed ${items.length} items from XML`);
@@ -95,7 +89,7 @@ serve(async (req) => {
       // Map items to product data
       const products = items
         .map(item => mapProductData(item))
-        .filter(product => product !== null)
+        .filter((product): product is NonNullable<ReturnType<typeof mapProductData>> => product !== null)
         .map(product => ({
           ...product,
           store_chain: networkName,
@@ -103,6 +97,10 @@ serve(async (req) => {
         }));
 
       console.log(`Mapped ${products.length} valid products`);
+
+      if (products.length === 0) {
+        throw new Error('No valid products found in XML file');
+      }
 
       // Insert products into database
       const insertedCount = await insertProducts(products);
