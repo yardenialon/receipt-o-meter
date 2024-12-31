@@ -22,11 +22,14 @@ export const SpendingByCategory = () => {
           category,
           price,
           quantity,
-          receipts!inner(created_at)
+          receipts(created_at)
         `)
         .gte('receipts.created_at', startOfMonth.toISOString());
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching spending data:', error);
+        throw error;
+      }
 
       const categoryTotals = data.reduce((acc: { [key: string]: number }, item) => {
         const category = item.category || 'אחר';
