@@ -69,19 +69,19 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
         </p>
       </div>
       
-      <div className="relative">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              type="search"
-              placeholder="חפש מוצר לפי שם או ברקוד..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
-            />
-          </div>
+      <div className="relative space-y-3">
+        <div className="flex justify-center">
           <BarcodeScanner onScan={handleBarcodeScanned} />
+        </div>
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Input
+            type="search"
+            placeholder="חפש מוצר לפי שם או ברקוד..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
+          />
         </div>
         {searchTerm && (
           <SearchResults 
