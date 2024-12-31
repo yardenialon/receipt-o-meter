@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 interface BarcodeScannerProps {
@@ -17,10 +18,18 @@ interface BarcodeScannerProps {
 export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showGoogleLens, setShowGoogleLens] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const detectorRef = useRef<any>(null);
   const isMobile = useIsMobile();
+
+  const openGoogleLens = () => {
+    const googleLensScannerUrl = 'https://lens.google.com';
+    window.open(googleLensScannerUrl, '_blank');
+    toast.info('נפתח סורק Google Lens בחלון חדש');
+    setShowGoogleLens(false);
+  };
 
   const startScanning = async () => {
     try {
@@ -63,15 +72,14 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
           };
         }
       } else {
-        console.log('BarcodeDetector not supported, falling back to Google Lens');
-        // Fallback to Google Lens if BarcodeDetector is not supported
-        const googleLensScannerUrl = 'https://lens.google.com';
-        window.open(googleLensScannerUrl, '_blank');
-        toast.info('נפתח סורק הברקודים');
+        console.log('BarcodeDetector not supported, showing Google Lens option');
+        setShowGoogleLens(true);
+        setIsInitializing(false);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast.error('לא ניתן לגשת למצלמה');
+      setShowGoogleLens(true);
       setIsScanning(false);
       setIsInitializing(false);
     }
@@ -106,6 +114,7 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
     }
     setIsScanning(false);
     setIsInitializing(false);
+    setShowGoogleLens(false);
   };
 
   const handleScan = (barcode: string) => {
@@ -153,6 +162,25 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
           <p className="text-center text-sm text-muted-foreground">
             {isInitializing ? 'מאתחל את המצלמה...' : 'מחפש ברקוד...'}
           </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showGoogleLens} onOpenChange={(open) => !open && setShowGoogleLens(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>סריקת ברקוד באמצעות Google Lens</DialogTitle>
+            <DialogDescription>
+              לא ניתן להשתמש בסורק המובנה. האם תרצה להשתמש ב-Google Lens לסריקת הברקוד?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => setShowGoogleLens(false)}>
+              ביטול
+            </Button>
+            <Button onClick={openGoogleLens}>
+              פתח את Google Lens
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
