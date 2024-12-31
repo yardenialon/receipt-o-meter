@@ -59,7 +59,7 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
           store_chain: p.store_chain,
           store_id: p.store_id,
           price: p.ItemPrice,
-          price_update_date: new Date().toISOString() // או תאריך אמיתי אם קיים
+          price_update_date: new Date().toISOString()
         }));
 
         return (
@@ -86,7 +86,21 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
                 )}
               </div>
               
-              <PriceComparison prices={prices} />
+              <PriceComparison 
+                prices={prices.map(price => ({
+                  ...price,
+                  storeName: (
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-1">
+                      <span>{price.store_chain}</span>
+                      {price.store_id && (
+                        <span className="text-xs text-muted-foreground md:before:content-['•'] md:before:mx-1">
+                          סניף {price.store_id}
+                        </span>
+                      )}
+                    </div>
+                  )
+                }))} 
+              />
             </div>
           </Card>
         );
