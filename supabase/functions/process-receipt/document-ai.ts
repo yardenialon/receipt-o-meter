@@ -89,13 +89,13 @@ export async function processDocument(
   ];
   
   // מילים שמעידות על פריט
-  const itemIndicators = ['קוד', 'מק"ט', 'פריט', 'תאור', 'שם פריט', 'כמות'];
+  const itemIndicators = ['קוד', 'מק"ט', 'פריט', 'תאור', 'שם פריט', 'כמות', 'ברקוד'];
   
   // ביטוי רגולרי לזיהוי מחיר - מספר עם אופציה לנקודה עשרונית ואופציה לסימן מטבע
   const priceRegex = /([0-9,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
   
-  // ביטוי רגולרי לזיהוי מק"ט - מספרים בתחילת השורה או אחרי המילה מק"ט/קוד
-  const productCodeRegex = /(?:^|\b(?:מק"ט|קוד)\s*)(\d{4,})/;
+  // ביטוי רגולרי לזיהוי מק"ט/ברקוד - מספרים בתחילת השורה או אחרי המילים מק"ט/קוד/ברקוד
+  const productCodeRegex = /(?:^|\b(?:מק"ט|קוד|ברקוד)\s*)(\d{4,})/;
 
   let foundTotal = false;
   
@@ -129,11 +129,11 @@ export async function processDocument(
             .replace(/^\d+\s*/, '') // הסרת מספרים בתחילת השורה (כמו מק"ט)
             .trim();
 
-          // חיפוש מק"ט
+          // חיפוש מק"ט/ברקוד
           const productCodeMatch = line.match(productCodeRegex);
           const product_code = productCodeMatch ? productCodeMatch[1] : undefined;
           
-          // הסרת המק"ט מהשם אם נמצא
+          // הסרת המק"ט/ברקוד מהשם אם נמצא
           if (product_code) {
             name = name.replace(productCodeMatch[0], '').trim();
           }
