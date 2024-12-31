@@ -18,13 +18,31 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items
+      // First, get the ItemCodes for our items by searching by name
+      const { data: itemMatches, error: matchError } = await supabase
+        .from('store_products_import')
+        .select('ItemCode, ItemName')
+        .or(activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(','));
+
+      if (matchError) {
+        console.error('Error finding item matches:', matchError);
+        throw matchError;
+      }
+
+      if (!itemMatches?.length) {
+        console.log('No matching products found');
+        return [];
+      }
+
+      // Get unique ItemCodes
+      const itemCodes = [...new Set(itemMatches.map(match => match.ItemCode))];
+      console.log('Found ItemCodes:', itemCodes);
+
+      // Get all store products with these ItemCodes
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
-        .or(
-          activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(',')
-        );
+        .in('ItemCode', itemCodes);
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -68,11 +86,17 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           availableItemsCount: 0
         };
 
-        // For each item in our list, try to find a matching product
+        // For each item in our list, find matching products by ItemCode
         comparison.items.forEach((item, index) => {
-          // Find all products that match the item name
+          // Find matching products for this item
+          const itemMatches = itemMatches.filter(match => 
+            match.ItemName.toLowerCase().includes(item.name.toLowerCase())
+          );
+          const matchingItemCodes = itemMatches.map(match => match.ItemCode);
+          
+          // Find all products in this store with matching ItemCodes
           const matchingProducts = store.products.filter(p => 
-            p.ItemName.toLowerCase().includes(item.name.toLowerCase())
+            matchingItemCodes.includes(p.ItemCode)
           );
 
           if (matchingProducts.length > 0) {
@@ -100,7 +124,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         store.availableItemsCount > 0
       );
 
-      // Sort by total price only, regardless of available items count
+      // Sort by total price
       const sortedComparisons = storesWithItems.sort((a, b) => a.total - b.total);
 
       console.log('Final sorted comparisons:', sortedComparisons);
