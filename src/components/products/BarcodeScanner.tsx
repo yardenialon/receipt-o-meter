@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { supabase } from '@/lib/supabase';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -31,22 +32,48 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
     setShowGoogleLens(false);
   };
 
+  const findProductByBarcode = async (barcode: string) => {
+    console.log('Searching for product with barcode:', barcode);
+    
+    try {
+      const { data, error } = await supabase
+        .from('store_products_import')
+        .select('*')
+        .eq('ItemCode', barcode)
+        .limit(1);
+
+      if (error) {
+        console.error('Error searching for product:', error);
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        console.log('Product found:', data[0]);
+        return data[0];
+      } else {
+        console.log('No product found with barcode:', barcode);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error in findProductByBarcode:', error);
+      toast.error('שגיאה בחיפוש המוצר');
+      return null;
+    }
+  };
+
   const startScanning = async () => {
     try {
       setIsInitializing(true);
       console.log('Starting barcode scanner...');
       
-      // Check if BarcodeDetector is supported
       if ('BarcodeDetector' in window) {
         setIsScanning(true);
         
-        // Initialize BarcodeDetector with supported formats
         console.log('Initializing BarcodeDetector...');
         detectorRef.current = new (window as any).BarcodeDetector({
           formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e']
         });
         
-        // Get camera stream with optimal settings
         console.log('Requesting camera access...');
         const stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
@@ -62,7 +89,6 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
           
-          // Start detection loop when video is ready
           videoRef.current.onloadedmetadata = () => {
             console.log('Video stream ready, starting detection...');
             videoRef.current?.play();
@@ -90,14 +116,20 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
 
     try {
       const barcodes = await detectorRef.current.detect(videoRef.current);
-      console.log('Scanning frame...', barcodes.length > 0 ? 'Barcode found!' : 'No barcode detected');
       
       if (barcodes.length > 0) {
         const barcode = barcodes[0].rawValue;
         console.log('Barcode detected:', barcode);
-        handleScan(barcode);
+        
+        const product = await findProductByBarcode(barcode);
+        if (product) {
+          handleScan(barcode);
+          toast.success('מוצר נמצא!');
+        } else {
+          toast.error('לא נמצא מוצר עם ברקוד זה');
+          requestAnimationFrame(detectBarcode);
+        }
       } else {
-        // Continue scanning if no barcode is detected
         requestAnimationFrame(detectBarcode);
       }
     } catch (error) {
