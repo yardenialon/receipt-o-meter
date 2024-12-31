@@ -51,7 +51,9 @@ export async function processWithVeryfi(
         auto_delete: true,
         boost_mode: true,
         external_id: `receipt_${Date.now()}`,
-        max_pages_to_process: 1
+        max_pages_to_process: 1,
+        document_share_urls: false,
+        tags: ['לתשלום', 'סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ']
       }),
     });
 
