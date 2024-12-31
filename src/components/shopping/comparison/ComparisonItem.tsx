@@ -10,7 +10,7 @@ interface ComparisonItemProps {
 export const ComparisonItem = ({ name, price, quantity, isAvailable }: ComparisonItemProps) => {
   if (!isAvailable) {
     return (
-      <div className="flex justify-between py-2 text-sm text-muted-foreground">
+      <div className="flex justify-between items-center py-2 text-sm text-muted-foreground" dir="rtl">
         <div className="flex items-center gap-2">
           <span>
             {name} {quantity > 1 && `(x${quantity})`}
@@ -25,7 +25,7 @@ export const ComparisonItem = ({ name, price, quantity, isAvailable }: Compariso
   }
 
   return (
-    <div className="flex justify-between py-2 text-sm">
+    <div className="flex justify-between items-center py-2 text-sm" dir="rtl">
       <div className="flex items-center gap-2">
         <span>
           {name} {quantity > 1 && `(x${quantity})`}
