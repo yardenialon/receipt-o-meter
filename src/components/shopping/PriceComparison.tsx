@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Store, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface StoreTotal {
   storeName: string;
@@ -35,6 +36,30 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
   const mostExpensiveTotal = sortedComparisons[sortedComparisons.length - 1].total;
   const potentialSavings = mostExpensiveTotal - cheapestTotal;
   const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+
+  // Group items by product name to compare prices across stores
+  const productComparisons: Record<string, Array<{
+    storeName: string;
+    storeId: string | null;
+    price: number;
+    matchedProduct: string;
+    quantity: number;
+  }>> = {};
+
+  sortedComparisons.forEach(store => {
+    store.items.forEach(item => {
+      if (!productComparisons[item.name]) {
+        productComparisons[item.name] = [];
+      }
+      productComparisons[item.name].push({
+        storeName: store.storeName,
+        storeId: store.storeId,
+        price: item.price,
+        matchedProduct: item.matchedProduct,
+        quantity: item.quantity
+      });
+    });
+  });
 
   return (
     <div className="space-y-6">
@@ -89,7 +114,7 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
 
                 <Progress value={progressValue} className="h-2" />
 
-                <div className="space-y-2 mt-4">
+                <div className="space-y-2">
                   {comparison.items.map((item, itemIndex) => (
                     <div key={itemIndex} className="flex justify-between text-sm">
                       <div className="flex items-center gap-2">
@@ -109,6 +134,58 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
           );
         })}
       </div>
+
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="detailed-comparison">
+          <AccordionTrigger className="text-sm text-muted-foreground">
+            השוואת מחירים מפורטת לפי מוצר
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-6 mt-4">
+              {Object.entries(productComparisons).map(([productName, stores]) => {
+                const sortedStores = [...stores].sort((a, b) => a.price - b.price);
+                const lowestPrice = sortedStores[0].price;
+                
+                return (
+                  <div key={productName} className="space-y-2">
+                    <h4 className="font-medium">{productName}</h4>
+                    <div className="space-y-1">
+                      {sortedStores.map((store, storeIndex) => {
+                        const priceDiff = ((store.price - lowestPrice) / lowestPrice * 100).toFixed(1);
+                        const isLowestPrice = store.price === lowestPrice;
+                        
+                        return (
+                          <div key={storeIndex} className="flex justify-between items-center text-sm">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={isLowestPrice ? "default" : "secondary"} className="text-xs">
+                                {store.storeName}
+                                {store.storeId && ` (${store.storeId})`}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {store.matchedProduct}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-medium ${isLowestPrice ? 'text-green-600' : ''}`}>
+                                ₪{store.price.toFixed(2)}
+                              </span>
+                              {!isLowestPrice && (
+                                <span className="text-xs text-muted-foreground">
+                                  (+{priceDiff}%)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
