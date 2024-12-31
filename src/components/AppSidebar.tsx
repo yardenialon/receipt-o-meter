@@ -12,7 +12,7 @@ export function AppSidebar() {
   const sidebarContent = (
     <div className="flex flex-col gap-4 py-4">
       <div className="px-3 py-2">
-        <BillBeLogo size={isMobile ? 120 : 180} />
+        <BillBeLogo size={isMobile ? 180 : 180} />
       </div>
       <div className="px-3 py-2">
         <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">

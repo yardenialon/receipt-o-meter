@@ -35,7 +35,7 @@ const Index = () => {
         <div className="flex justify-center items-center mb-8">
           <div className="text-center">
             <div className="flex flex-col items-center justify-center gap-3 mb-4">
-              <BillBeLogo size={isMobile ? 150 : 200} className="mb-4" />
+              <BillBeLogo size={isMobile ? 225 : 200} className="mb-4" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isMobile ? 'קבלות' : 'ניהול קבלות'}
