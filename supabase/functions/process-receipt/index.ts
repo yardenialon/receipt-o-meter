@@ -38,7 +38,6 @@ serve(async (req) => {
       const { items, total, storeName } = await processDocumentAI(base64Image, contentType, isPDF);
       console.log('Document AI processing completed:', { itemsCount: items?.length, total, storeName });
 
-      // Initialize Supabase client
       const supabaseUrl = Deno.env.get('SUPABASE_URL');
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -48,7 +47,6 @@ serve(async (req) => {
 
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Format total to ensure it's within numeric(12,2) range
       const formattedTotal = Math.min(9999999999.99, Math.max(0, Number(total) || 0));
       
       console.log('Updating receipt details in database:', { 
@@ -57,7 +55,6 @@ serve(async (req) => {
         formattedTotal 
       });
       
-      // Update receipt with store name and total
       const { error: updateError } = await supabase
         .from('receipts')
         .update({ 
@@ -71,11 +68,9 @@ serve(async (req) => {
         throw new Error(`שגיאה בעדכון פרטי הקבלה: ${updateError.message}`);
       }
 
-      // Insert items if any were found
       if (items && items.length > 0) {
         console.log('Processing receipt items:', items.length);
         
-        // Filter out invalid items and format numbers
         const validItems = items
           .filter(item => 
             item.name && 
@@ -85,9 +80,9 @@ serve(async (req) => {
           .map(item => ({
             receipt_id: receiptId,
             name: item.name,
-            // Format price and quantity to ensure they're within numeric(12,2) range
             price: Math.min(9999999999.99, Math.max(0, Number(item.price) || 0)),
-            quantity: Math.min(9999999999.99, Math.max(0, Number(item.quantity) || 1))
+            quantity: Math.min(9999999999.99, Math.max(0, Number(item.quantity) || 1)),
+            product_code: item.product_code  // Added product code
           }));
 
         if (validItems.length > 0) {

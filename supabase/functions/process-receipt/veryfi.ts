@@ -2,6 +2,7 @@ interface VeryfiLineItem {
   description: string;
   total: number;
   quantity?: number;
+  sku?: string;  // Added for product codes
 }
 
 interface VeryfiResponse {
@@ -61,7 +62,8 @@ export async function processWithVeryfi(
     items: result.line_items.map(item => ({
       name: item.description,
       price: item.total,
-      quantity: item.quantity || 1
+      quantity: item.quantity || 1,
+      product_code: item.sku || undefined  // Added product code mapping
     })),
     total: result.total,
     storeName: result.vendor?.name || 'חנות לא ידועה'

@@ -153,6 +153,7 @@ export type Database = {
           id: string
           name: string
           price: number
+          product_code: string | null
           quantity: number | null
           receipt_id: string
           refundable_amount: number | null
@@ -163,6 +164,7 @@ export type Database = {
           id?: string
           name: string
           price: number
+          product_code?: string | null
           quantity?: number | null
           receipt_id: string
           refundable_amount?: number | null
@@ -173,6 +175,7 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          product_code?: string | null
           quantity?: number | null
           receipt_id?: string
           refundable_amount?: number | null
