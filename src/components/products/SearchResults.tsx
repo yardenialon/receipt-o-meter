@@ -10,6 +10,7 @@ interface SearchResult {
   PriceUpdateDate?: string;
   store_chain?: string;
   store_id?: string;
+  ManufacturerName?: string;
 }
 
 interface SearchResultsProps {
