@@ -72,35 +72,24 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
         // For each item in our list, try to find a matching product
         comparison.items.forEach((item, index) => {
-          // Find exact matches by name first
-          const exactMatches = store.products.filter(p => 
-            p.ItemName.toLowerCase() === item.name.toLowerCase()
+          // Find all products that match the item name
+          const matchingProducts = store.products.filter(p => 
+            p.ItemName.toLowerCase().includes(item.name.toLowerCase())
           );
 
-          // If no exact match, look for products with same ItemCode
-          let matchingProduct;
-          if (exactMatches.length > 0) {
-            matchingProduct = exactMatches[0];
-          } else {
-            // Try to find a product with matching ItemCode from any store
-            const anyMatch = products.find(p => 
-              p.ItemName.toLowerCase() === item.name.toLowerCase()
-            );
-            if (anyMatch) {
-              matchingProduct = store.products.find(p => 
-                p.ItemCode === anyMatch.ItemCode
-              );
-            }
-          }
+          if (matchingProducts.length > 0) {
+            // If we have multiple matches, use the cheapest one
+            const cheapestProduct = matchingProducts.reduce((min, p) => 
+              p.ItemPrice < min.ItemPrice ? p : min
+            , matchingProducts[0]);
 
-          if (matchingProduct) {
             comparison.items[index] = {
               ...item,
-              price: matchingProduct.ItemPrice,
-              matchedProduct: matchingProduct.ItemName,
+              price: cheapestProduct.ItemPrice,
+              matchedProduct: cheapestProduct.ItemName,
               isAvailable: true
             };
-            comparison.total += matchingProduct.ItemPrice * item.quantity;
+            comparison.total += cheapestProduct.ItemPrice * item.quantity;
             comparison.availableItemsCount++;
           }
         });
@@ -108,15 +97,26 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return comparison;
       });
 
-      // Sort comparisons first by total price (only for stores with all items available)
-      const sortedComparisons = allStoreComparisons.sort((a, b) => {
+      // Filter out stores with no available items
+      const storesWithItems = allStoreComparisons.filter(store => 
+        store.availableItemsCount > 0
+      );
+
+      // Sort comparisons by availability and total price
+      const sortedComparisons = storesWithItems.sort((a, b) => {
         // If both stores have all items available, sort by total price
         if (a.availableItemsCount === activeItems.length && 
             b.availableItemsCount === activeItems.length) {
           return a.total - b.total;
         }
-        // Otherwise, prioritize stores with more available items
-        return b.availableItemsCount - a.availableItemsCount;
+        // If one store has all items and the other doesn't, prioritize the complete one
+        if (a.availableItemsCount === activeItems.length) return -1;
+        if (b.availableItemsCount === activeItems.length) return 1;
+        // Otherwise, sort by number of available items, then by total price
+        if (a.availableItemsCount !== b.availableItemsCount) {
+          return b.availableItemsCount - a.availableItemsCount;
+        }
+        return a.total - b.total;
       });
 
       console.log('Final sorted comparisons:', sortedComparisons);
