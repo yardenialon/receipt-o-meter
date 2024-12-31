@@ -9,6 +9,7 @@ import { BillBeLogo } from '@/components/BillBeLogo';
 
 const Login = () => {
   const navigate = useNavigate();
+  const currentOrigin = window.location.origin;
 
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
@@ -135,7 +136,7 @@ const Login = () => {
                 }
               }}
               providers={['google']}
-              redirectTo="https://receipt-o-meter.lovable.app/login"
+              redirectTo={`${currentOrigin}/login`}
               localization={{
                 variables: {
                   sign_in: {
