@@ -50,15 +50,8 @@ export async function processWithVeryfi(
         categories: ['Grocery', 'Utilities', 'Supplies'],
         auto_delete: true,
         boost_mode: true,
-        ocr_engine: 2,
         external_id: `receipt_${Date.now()}`,
-        max_pages_to_process: 1,
-        parameters: {
-          receipt_number_prefix: ['מספר קבלה', 'מס קבלה', 'קבלה מס'],
-          total_amount_keywords: ['סה"כ לתשלום', 'סה״כ', 'לתשלום', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ'],
-          ignore_amount_keywords: ['מע"מ', 'פטור ממע"מ', 'חייב מע"מ', 'VAT', 'Tax', 'סה"כ ללא מע"מ'],
-          language: 'he'
-        }
+        max_pages_to_process: 1
       }),
     });
 
