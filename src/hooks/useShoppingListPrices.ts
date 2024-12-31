@@ -40,64 +40,65 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products:', products);
 
-      // Get unique store chains (limit to 5 as requested)
-      const storeChains = [...new Set(products.map(p => p.store_chain))].slice(0, 5);
-      console.log('Store chains found:', storeChains);
+      // Get all unique store chains without limiting to 5 yet
+      const allStoreChains = [...new Set(products.map(p => p.store_chain))];
+      console.log('All store chains found:', allStoreChains);
 
-      // Initialize store comparisons
-      const storeComparisons = storeChains.map(chain => ({
-        storeName: chain,
-        storeId: null,
-        items: activeItems.map(item => ({
-          name: item.name,
-          price: null,
-          matchedProduct: '',
-          quantity: item.quantity || 1,
-          isAvailable: false
-        })),
-        total: 0
-      }));
-
-      // Process each store
-      storeComparisons.forEach(store => {
-        const storeProducts = products.filter(p => p.store_chain === store.storeName);
-        console.log(`Processing store ${store.storeName}, found ${storeProducts.length} products`);
+      // Initialize comparisons for all stores
+      const allStoreComparisons = allStoreChains.map(chain => {
+        const storeProducts = products.filter(p => p.store_chain === chain);
+        console.log(`Processing ${chain}, found ${storeProducts.length} products`);
         
-        // Match items to products
-        store.items.forEach((item, index) => {
-          // Find best matching product for this item in this store
+        const comparison = {
+          storeName: chain,
+          storeId: null,
+          items: activeItems.map(item => ({
+            name: item.name,
+            price: null,
+            matchedProduct: '',
+            quantity: item.quantity || 1,
+            isAvailable: false
+          })),
+          total: 0,
+          availableItemsCount: 0
+        };
+
+        // Process items for this store
+        comparison.items.forEach((item, index) => {
           const matchingProducts = storeProducts.filter(p => 
             p.ItemName.toLowerCase().includes(item.name.toLowerCase()) ||
             item.name.toLowerCase().includes(p.ItemName.toLowerCase())
           );
 
-          console.log(`Found ${matchingProducts.length} matching products for ${item.name} in ${store.storeName}`);
+          console.log(`Found ${matchingProducts.length} matching products for ${item.name} in ${chain}`);
 
           if (matchingProducts.length > 0) {
             // Use the cheapest matching product
             const cheapestProduct = matchingProducts.reduce((min, p) => 
-              (p.ItemPrice || 0) < (min.ItemPrice || 0) ? p : min
+              (!min.ItemPrice || (p.ItemPrice && p.ItemPrice < min.ItemPrice)) ? p : min
             );
 
-            store.items[index] = {
-              ...item,
-              price: cheapestProduct.ItemPrice || 0,
-              matchedProduct: cheapestProduct.ItemName,
-              isAvailable: true
-            };
-
-            // Add to total only if product is available and has a price
             if (cheapestProduct.ItemPrice) {
-              store.total += cheapestProduct.ItemPrice * item.quantity;
+              comparison.items[index] = {
+                ...item,
+                price: cheapestProduct.ItemPrice,
+                matchedProduct: cheapestProduct.ItemName,
+                isAvailable: true
+              };
+              comparison.total += cheapestProduct.ItemPrice * item.quantity;
+              comparison.availableItemsCount++;
             }
           }
         });
+
+        return comparison;
       });
 
-      // Filter out stores with no matches and sort by total price
-      const validComparisons = storeComparisons
-        .filter(store => store.items.some(item => item.isAvailable))
-        .sort((a, b) => a.total - b.total);
+      // Filter stores that have at least one available item and sort by total price
+      const validComparisons = allStoreComparisons
+        .filter(store => store.availableItemsCount > 0)
+        .sort((a, b) => a.total - b.total)
+        .slice(0, 5); // Now take top 5 cheapest stores
 
       console.log('Final comparison results:', validComparisons);
       return validComparisons;
