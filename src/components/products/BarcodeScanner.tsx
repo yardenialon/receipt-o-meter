@@ -13,11 +13,12 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const isMobile = useIsMobile();
 
   const openGoogleLens = () => {
-    // Open Google Lens directly in browser
-    const googleLensUrl = 'https://lens.google.com/search';
-    window.open(googleLensUrl, '_blank');
+    // Open Google Lens barcode scanner directly
+    // This URL opens the camera interface directly for barcode scanning
+    const googleLensScannerUrl = 'https://lens.google.com/v3/scan';
+    window.open(googleLensScannerUrl, '_blank');
 
-    toast.info('נפתח Google Lens לסריקת הברקוד');
+    toast.info('נפתח סורק הברקודים');
   };
 
   return (
