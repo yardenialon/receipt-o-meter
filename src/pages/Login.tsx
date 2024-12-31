@@ -13,8 +13,10 @@ const Login = () => {
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
       if (event === 'SIGNED_IN' && session) {
+        // Use replaceState to avoid CORB issues with history navigation
         window.history.replaceState({}, document.title, '/login');
         toast.success('התחברת בהצלחה!');
+        navigate('/', { replace: true });
       }
       if (event === 'SIGNED_OUT') {
         toast.info('התנתקת בהצלחה');
@@ -24,9 +26,14 @@ const Login = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        toast.error('אירעה שגיאה בבדיקת החיבור');
       }
     };
     checkSession();
