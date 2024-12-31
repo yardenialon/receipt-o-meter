@@ -124,8 +124,19 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         store.availableItemsCount > 0
       );
 
-      // Sort by total price
-      const sortedComparisons = storesWithItems.sort((a, b) => a.total - b.total);
+      // Sort stores: first by availability (complete baskets first), then by total price
+      const sortedComparisons = storesWithItems.sort((a, b) => {
+        // First, compare by whether all items are available
+        const aComplete = a.availableItemsCount === activeItems.length;
+        const bComplete = b.availableItemsCount === activeItems.length;
+        
+        if (aComplete !== bComplete) {
+          return bComplete ? 1 : -1; // Complete baskets come first
+        }
+        
+        // If both have the same availability status, sort by total price
+        return a.total - b.total;
+      });
 
       console.log('Final sorted comparisons:', sortedComparisons);
       
