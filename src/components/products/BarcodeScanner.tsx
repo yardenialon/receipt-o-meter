@@ -12,91 +12,32 @@ interface BarcodeScannerProps {
 export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const isMobile = useIsMobile();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        toast.loading('מעבד את התמונה...');
-        console.log('Starting barcode scan process for file:', file.name);
-        
-        // Upload the image to Supabase storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('receipts')
-          .upload(`barcodes/${Date.now()}-${file.name}`, file);
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw uploadError;
-        }
-
-        console.log('File uploaded successfully:', uploadData.path);
-
-        // Get the public URL of the uploaded image
-        const { data: { publicUrl } } = supabase.storage
-          .from('receipts')
-          .getPublicUrl(uploadData.path);
-
-        console.log('Processing image URL:', publicUrl);
-
-        // Call the Edge Function to detect barcode
-        const { data, error } = await supabase.functions.invoke('detect-barcode', {
-          body: { imageUrl: publicUrl }
-        });
-
-        console.log('Edge function response:', data);
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-        
-        if (!data?.barcode) {
-          console.error('No barcode detected in image');
-          throw new Error('לא זוהה ברקוד בתמונה');
-        }
-
-        console.log('Barcode detected:', data.barcode);
-        toast.dismiss();
-        onScan(data.barcode);
-        toast.success('ברקוד נסרק בהצלחה');
-
-        // Clean up - delete the uploaded file
-        const { error: deleteError } = await supabase.storage
-          .from('receipts')
-          .remove([uploadData.path]);
-
-        if (deleteError) {
-          console.error('Error deleting temporary file:', deleteError);
-        }
-
-      } catch (err) {
-        toast.dismiss();
-        console.error('Error scanning barcode:', err);
-        toast.error(err instanceof Error ? err.message : 'שגיאה בסריקת הברקוד');
-      }
+  const openGoogleLens = () => {
+    // Google Lens URL for barcode scanning
+    const googleLensUrl = 'https://lens.google.com/';
+    
+    // Check if it's a mobile device
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // For mobile devices, try to open the Google Lens app
+      window.location.href = 'googlelens://scan';
+      
+      // Fallback to web version after a short delay if app doesn't open
+      setTimeout(() => {
+        window.location.href = googleLensUrl;
+      }, 500);
+    } else {
+      // For desktop, open Google Lens in a new tab
+      window.open(googleLensUrl, '_blank');
     }
-    // Reset input value to allow selecting the same file again
-    event.target.value = '';
-  };
 
-  const startScanning = () => {
-    fileInputRef.current?.click();
+    toast.info('נפתח Google Lens לסריקת הברקוד');
   };
 
   return (
     <div>
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleFileInput}
-      />
       <Button
-        onClick={startScanning}
+        onClick={openGoogleLens}
         size="lg"
         className="relative overflow-hidden group bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl px-8 py-6 w-full md:w-auto"
       >
