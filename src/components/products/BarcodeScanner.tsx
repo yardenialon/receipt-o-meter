@@ -18,6 +18,7 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
+        toast.loading('מעבד את התמונה...');
         console.log('Starting barcode scan process for file:', file.name);
         
         // Upload the image to Supabase storage
@@ -57,9 +58,21 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
         }
 
         console.log('Barcode detected:', data.barcode);
+        toast.dismiss();
         onScan(data.barcode);
         toast.success('ברקוד נסרק בהצלחה');
+
+        // Clean up - delete the uploaded file
+        const { error: deleteError } = await supabase.storage
+          .from('receipts')
+          .remove([uploadData.path]);
+
+        if (deleteError) {
+          console.error('Error deleting temporary file:', deleteError);
+        }
+
       } catch (err) {
+        toast.dismiss();
         console.error('Error scanning barcode:', err);
         toast.error(err instanceof Error ? err.message : 'שגיאה בסריקת הברקוד');
       }
@@ -69,12 +82,7 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   };
 
   const startScanning = () => {
-    if (isMobile) {
-      fileInputRef.current?.click();
-    } else {
-      setIsScanning(true);
-      toast.info('סריקת ברקוד דרך המצלמה תתמך בקרוב');
-    }
+    fileInputRef.current?.click();
   };
 
   return (

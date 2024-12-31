@@ -53,8 +53,9 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
   };
 
   const handleBarcodeScanned = (barcode: string) => {
+    console.log('Barcode scanned:', barcode);
     onSearchChange(barcode);
-    debouncedSearch(barcode);
+    setDebouncedTerm(barcode); // Trigger immediate search
   };
 
   return (
