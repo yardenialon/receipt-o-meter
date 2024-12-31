@@ -14,10 +14,19 @@ interface SearchResult {
 
 interface SearchResultsProps {
   results: SearchResult[];
+  isLoading?: boolean;
   onSelect?: (result: SearchResult) => void;
 }
 
-export const SearchResults = ({ results, onSelect }: SearchResultsProps) => {
+export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
+  if (isLoading) {
+    return (
+      <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border shadow-lg p-4" dir="rtl">
+        <div className="text-center text-muted-foreground">טוען...</div>
+      </div>
+    );
+  }
+
   if (!results.length) return null;
 
   return (
@@ -40,12 +49,12 @@ export const SearchResults = ({ results, onSelect }: SearchResultsProps) => {
               </div>
               <div className="text-xs text-muted-foreground">
                 מק״ט: {result.ItemCode}
+                {result.PriceUpdateDate && (
+                  <div className="text-xs text-muted-foreground">
+                    עודכן: {format(new Date(result.PriceUpdateDate), 'dd/MM/yyyy', { locale: he })}
+                  </div>
+                )}
               </div>
-              {result.PriceUpdateDate && (
-                <div className="text-xs text-muted-foreground">
-                  עודכן: {format(new Date(result.PriceUpdateDate), 'dd/MM/yyyy', { locale: he })}
-                </div>
-              )}
             </div>
             <div className="text-lg font-semibold">
               ₪{result.ItemPrice?.toFixed(2)}

@@ -24,7 +24,7 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
       
       const { data } = await supabase
         .from('store_products_import')
-        .select('ItemCode,ItemName,ItemPrice,store_chain,store_id,ManufacturerName')
+        .select('ItemCode,ItemName,ItemPrice,store_chain,store_id,ManufacturerName,PriceUpdateDate')
         .or(`ItemName.ilike.%${debouncedTerm}%,ItemCode.ilike.%${debouncedTerm}%`)
         .limit(50);
       
@@ -71,7 +71,7 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
           <SearchResults 
             results={results} 
             isLoading={isLoading} 
-            onProductSelect={onProductSelect}
+            onSelect={onProductSelect}
           />
         )}
       </div>
