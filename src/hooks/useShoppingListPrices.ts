@@ -18,14 +18,15 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items
+      // Get all store products that match any of our items using a more flexible search
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
         .or(
-          activeItems.map(item => 
-            `ItemName.ilike.%${item.name}%`
-          ).join(',')
+          activeItems.map(item => {
+            const searchTerms = item.name.split(' ').filter(term => term.length > 2);
+            return searchTerms.map(term => `ItemName.ilike.%${term}%`).join(',');
+          }).join(',')
         );
 
       if (error) {
@@ -70,12 +71,18 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           availableItemsCount: 0
         };
 
-        // For each item in our list, try to find a matching product
+        // For each item in our list, try to find the best matching product
         comparison.items.forEach((item, index) => {
-          // Find all products that match the item name
-          const matchingProducts = store.products.filter(p => 
-            p.ItemName.toLowerCase().includes(item.name.toLowerCase())
-          );
+          // Find all products that match the item name using more flexible matching
+          const matchingProducts = store.products.filter(p => {
+            const itemWords = item.name.toLowerCase().split(' ');
+            const productWords = p.ItemName.toLowerCase().split(' ');
+            // Product matches if it contains at least half of the search terms
+            const matchCount = itemWords.filter(word => 
+              productWords.some(pWord => pWord.includes(word) || word.includes(pWord))
+            ).length;
+            return matchCount >= Math.ceil(itemWords.length / 2);
+          });
 
           if (matchingProducts.length > 0) {
             // If we have multiple matches, use the cheapest one
