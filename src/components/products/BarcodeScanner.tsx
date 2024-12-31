@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -14,22 +13,9 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const isMobile = useIsMobile();
 
   const openGoogleLens = () => {
-    // Google Lens URL for barcode scanning
-    const googleLensUrl = 'https://lens.google.com/';
-    
-    // Check if it's a mobile device
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      // For mobile devices, try to open the Google Lens app
-      window.location.href = 'googlelens://scan';
-      
-      // Fallback to web version after a short delay if app doesn't open
-      setTimeout(() => {
-        window.location.href = googleLensUrl;
-      }, 500);
-    } else {
-      // For desktop, open Google Lens in a new tab
-      window.open(googleLensUrl, '_blank');
-    }
+    // Open Google Lens directly in browser
+    const googleLensUrl = 'https://lens.google.com/search';
+    window.open(googleLensUrl, '_blank');
 
     toast.info('נפתח Google Lens לסריקת הברקוד');
   };
