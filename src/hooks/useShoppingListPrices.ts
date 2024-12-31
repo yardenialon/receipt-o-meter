@@ -42,6 +42,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // Get unique store chains (limit to 5 as requested)
       const storeChains = [...new Set(products.map(p => p.store_chain))].slice(0, 5);
+      console.log('Store chains found:', storeChains);
 
       // Initialize store comparisons
       const storeComparisons = storeChains.map(chain => ({
@@ -60,6 +61,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       // Process each store
       storeComparisons.forEach(store => {
         const storeProducts = products.filter(p => p.store_chain === store.storeName);
+        console.log(`Processing store ${store.storeName}, found ${storeProducts.length} products`);
         
         // Match items to products
         store.items.forEach((item, index) => {
@@ -68,6 +70,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             p.ItemName.toLowerCase().includes(item.name.toLowerCase()) ||
             item.name.toLowerCase().includes(p.ItemName.toLowerCase())
           );
+
+          console.log(`Found ${matchingProducts.length} matching products for ${item.name} in ${store.storeName}`);
 
           if (matchingProducts.length > 0) {
             // Use the cheapest matching product
