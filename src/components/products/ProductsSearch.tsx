@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import debounce from 'lodash/debounce';
 import { Search } from 'lucide-react';
+import { BarcodeScanner } from './BarcodeScanner';
 
 interface ProductsSearchProps {
   searchTerm: string;
@@ -51,6 +52,11 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
     }
   };
 
+  const handleBarcodeScanned = (barcode: string) => {
+    onSearchChange(barcode);
+    debouncedSearch(barcode);
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -63,15 +69,18 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
       </div>
       
       <div className="relative">
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          <Input
-            type="search"
-            placeholder="חפש מוצר לפי שם או ברקוד..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
+            <Input
+              type="search"
+              placeholder="חפש מוצר לפי שם או ברקוד..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
+            />
+          </div>
+          <BarcodeScanner onScan={handleBarcodeScanned} />
         </div>
         {searchTerm && (
           <SearchResults 
