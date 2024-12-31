@@ -140,8 +140,8 @@ export default function ShoppingList() {
   }
 
   return (
-    <div className="container mx-auto p-8 md:pb-8 pb-32">
-      <div className="flex items-center justify-between mb-8">
+    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32">
+      <div className="flex items-center justify-between mb-8 px-4 md:px-0">
         <h1 className="text-3xl font-bold">רשימות קניות</h1>
         <Button onClick={() => createList.mutate()}>
           <ListPlus className="h-5 w-5 ml-2" />
@@ -150,7 +150,7 @@ export default function ShoppingList() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-2">
-        <div className="space-y-8">
+        <div className="space-y-8 px-4 md:px-0">
           {lists?.map((list) => (
             <div key={list.id} className="space-y-4">
               <div className="relative">
@@ -170,7 +170,7 @@ export default function ShoppingList() {
           ))}
         </div>
 
-        <div className="space-y-8 sticky top-8">
+        <div className="space-y-8 sticky top-8 px-4 md:px-0">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">השוואת מחירים כוללת</h2>
             <ShoppingListPriceComparison comparisons={priceComparisons || []} />
