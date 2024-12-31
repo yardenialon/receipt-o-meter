@@ -20,6 +20,7 @@ export const ShoppingListItem = ({ item, onToggle, onDelete }: ShoppingListItemP
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className="group flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-primary-50/50 transition-all duration-300"
+      dir="rtl"
     >
       <div className="flex items-center gap-3 flex-1">
         <Checkbox

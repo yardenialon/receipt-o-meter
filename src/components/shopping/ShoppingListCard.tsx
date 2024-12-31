@@ -32,7 +32,7 @@ export const ShoppingListCard = ({
   const { data: priceComparisons, isLoading } = useShoppingListPrices(list.shopping_list_items);
 
   return (
-    <Card className="p-6 bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm border-primary-100/20">
+    <Card className="p-6 bg-gradient-to-br from-white to-gray-50/50 backdrop-blur-sm border-primary-100/20" dir="rtl">
       <ShoppingListHeader 
         name={list.name}
         onToggleComparison={() => setShowComparison(!showComparison)}
