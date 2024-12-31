@@ -40,18 +40,23 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products:', products);
 
-      // Get all unique store chains
-      const allStoreChains = [...new Set(products.map(p => p.store_chain))];
-      console.log('All store chains found:', allStoreChains);
+      // Get all unique store chains and their store IDs
+      const storeKeys = [...new Set(products.map(p => `${p.store_chain}-${p.store_id || 'main'}`))];
+      console.log('All store keys found:', storeKeys);
 
       // Initialize comparisons for all stores
-      const allStoreComparisons = allStoreChains.map(chain => {
-        const storeProducts = products.filter(p => p.store_chain === chain);
-        console.log(`Processing ${chain}, found ${storeProducts.length} products`);
+      const allStoreComparisons = storeKeys.map(storeKey => {
+        const [chain, storeId] = storeKey.split('-');
+        const storeProducts = products.filter(p => 
+          p.store_chain === chain && 
+          (storeId === 'main' || p.store_id === storeId)
+        );
+        
+        console.log(`Processing ${chain} (Store ID: ${storeId}), found ${storeProducts.length} products`);
         
         const comparison = {
           storeName: chain,
-          storeId: storeProducts[0]?.store_id || null,
+          storeId: storeId === 'main' ? null : storeId,
           items: activeItems.map(item => ({
             name: item.name,
             price: null,
@@ -94,14 +99,19 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return comparison;
       });
 
-      // Filter stores that have at least one available item and sort by total price
-      const validComparisons = allStoreComparisons
-        .filter(store => store.availableItemsCount > 0)
-        .sort((a, b) => a.total - b.total);
+      // Include all stores in results, sorted by total price
+      const validComparisons = allStoreComparisons.sort((a, b) => a.total - b.total);
 
       console.log('Final comparison results:', validComparisons);
       return validComparisons;
     },
-    enabled: items.length > 0
+    // Enable automatic updates when items change
+    enabled: items.length > 0,
+    // Refresh data every minute to keep prices current
+    refetchInterval: 60000,
+    // Retry up to 3 times on failure
+    retry: 3,
+    // Show stale data while revalidating
+    staleTime: 30000,
   });
 };
