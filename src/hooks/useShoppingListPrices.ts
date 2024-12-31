@@ -22,14 +22,10 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         .from('store_products_import')
         .select('*')
         .or(
-          activeItems.map(item => {
-            // Split the item name into words and create a search condition for each significant word
-            const searchWords = item.name
-              .split(' ')
-              .filter(word => word.length > 2) // Filter out short words
-              .map(word => `ItemName.ilike.%${word}%`);
-            return searchWords.join(','); // Join with OR condition
-          }).join(',')
+          activeItems.map(item => 
+            // Create a search condition for each item name
+            `ItemName.ilike.%${item.name}%`
+          ).join(',')
         );
 
       if (error) {
@@ -63,17 +59,14 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         const itemMatches = products.filter(p => {
           if (!p.ItemName) return false;
           
-          // Split both names into words and check for significant word matches
-          const itemWords = item.name.toLowerCase().split(' ').filter(w => w.length > 2);
-          const productWords = p.ItemName.toLowerCase().split(' ').filter(w => w.length > 2);
+          // Convert both names to lowercase for comparison
+          const itemNameLower = item.name.toLowerCase();
+          const productNameLower = p.ItemName.toLowerCase();
           
-          // Count matching words
-          const matchingWords = itemWords.filter(word => 
-            productWords.some(pWord => pWord.includes(word) || word.includes(pWord))
-          );
-          
-          // Require at least 50% of words to match
-          return matchingWords.length >= Math.ceil(itemWords.length * 0.5);
+          // Check if the product name contains the search term
+          // or if the search term contains the product name
+          return productNameLower.includes(itemNameLower) || 
+                 itemNameLower.includes(productNameLower);
         });
 
         // Group matches by store
