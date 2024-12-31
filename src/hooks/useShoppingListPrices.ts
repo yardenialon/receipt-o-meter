@@ -18,13 +18,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items
+      // Get all store products that match any of our items from the import table
       const { data: products, error } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('*')
         .or(
           activeItems.map(item => 
-            `product_name.ilike.%${item.name}%`
+            `ItemName.ilike.%${item.name}%`
           ).join(',')
         );
 
@@ -40,13 +40,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products:', products);
 
-      // Get unique store chains
+      // Get unique store chains (limit to 5 as requested)
       const storeChains = [...new Set(products.map(p => p.store_chain))].slice(0, 5);
 
       // Initialize store comparisons
       const storeComparisons = storeChains.map(chain => ({
         storeName: chain,
-        storeId: null, // We could add store selection later
+        storeId: null,
         items: activeItems.map(item => ({
           name: item.name,
           price: null,
@@ -65,25 +65,27 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         store.items.forEach((item, index) => {
           // Find best matching product for this item in this store
           const matchingProducts = storeProducts.filter(p => 
-            p.product_name.toLowerCase().includes(item.name.toLowerCase()) ||
-            item.name.toLowerCase().includes(p.product_name.toLowerCase())
+            p.ItemName.toLowerCase().includes(item.name.toLowerCase()) ||
+            item.name.toLowerCase().includes(p.ItemName.toLowerCase())
           );
 
           if (matchingProducts.length > 0) {
             // Use the cheapest matching product
             const cheapestProduct = matchingProducts.reduce((min, p) => 
-              p.price < min.price ? p : min
+              (p.ItemPrice || 0) < (min.ItemPrice || 0) ? p : min
             );
 
             store.items[index] = {
               ...item,
-              price: cheapestProduct.price,
-              matchedProduct: cheapestProduct.product_name,
+              price: cheapestProduct.ItemPrice || 0,
+              matchedProduct: cheapestProduct.ItemName,
               isAvailable: true
             };
 
-            // Add to total only if product is available
-            store.total += cheapestProduct.price * item.quantity;
+            // Add to total only if product is available and has a price
+            if (cheapestProduct.ItemPrice) {
+              store.total += cheapestProduct.ItemPrice * item.quantity;
+            }
           }
         });
       });
