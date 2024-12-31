@@ -48,15 +48,28 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     );
   }
 
-  const cheapestTotal = Math.min(...comparisons.map(c => c.total));
-  const mostExpensiveTotal = Math.max(...comparisons.map(c => c.total));
-  const potentialSavings = mostExpensiveTotal - cheapestTotal;
-  const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+  // Filter stores with all items available
+  const completeBaskets = comparisons.filter(store => 
+    store.items.every(item => item.isAvailable)
+  );
+
+  // Calculate savings only if we have complete baskets
+  let cheapestTotal = 0;
+  let mostExpensiveTotal = 0;
+  let potentialSavings = 0;
+  let savingsPercentage = "0.0";
+
+  if (completeBaskets.length > 0) {
+    cheapestTotal = Math.min(...completeBaskets.map(c => c.total));
+    mostExpensiveTotal = Math.max(...completeBaskets.map(c => c.total));
+    potentialSavings = mostExpensiveTotal - cheapestTotal;
+    savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+  }
 
   return (
     <div className="space-y-6">
       <AnimatePresence>
-        {potentialSavings > 0 && (
+        {potentialSavings > 0 && completeBaskets.length > 1 && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -70,8 +83,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                 <div>
                   <h4 className="text-lg font-semibold">חיסכון פוטנציאלי</h4>
                   <p className="text-sm">
-                    ניתן לחסוך עד ₪{potentialSavings.toFixed(2)} ({savingsPercentage}%) בקנייה ברשת {comparisons[0].storeName}
-                    {comparisons[0].storeId && ` (סניף ${comparisons[0].storeId})`}
+                    ניתן לחסוך עד ₪{potentialSavings.toFixed(2)} ({savingsPercentage}%) בקנייה ברשת {completeBaskets[0].storeName}
+                    {completeBaskets[0].storeId && ` (סניף ${completeBaskets[0].storeId})`}
                   </p>
                 </div>
               </div>
@@ -83,9 +96,13 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       <ScrollArea className="h-[600px] pr-4">
         <div className="space-y-4">
           {comparisons.map((comparison, index) => {
-            const isLowestPrice = comparison.total === cheapestTotal;
-            const priceDiff = isLowestPrice ? 0 : ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1);
-            const progressValue = (comparison.total / mostExpensiveTotal) * 100;
+            const isComplete = comparison.items.every(item => item.isAvailable);
+            const priceDiff = isComplete && completeBaskets.length > 0 ? 
+              ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1) : 
+              null;
+            const progressValue = mostExpensiveTotal > 0 ? 
+              (comparison.total / mostExpensiveTotal) * 100 : 
+              0;
             const unavailableItems = comparison.items.filter(item => !item.isAvailable);
             const availableItems = comparison.items.filter(item => item.isAvailable);
             
@@ -97,18 +114,18 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                 transition={{ delay: index * 0.1 }}
               >
                 <Card 
-                  className={`p-4 ${isLowestPrice ? 'border-green-200 bg-green-50/30' : ''}`}
+                  className={`p-4 ${isComplete && comparison.total === cheapestTotal ? 'border-green-200 bg-green-50/30' : ''}`}
                 >
                   <div className="space-y-4">
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <Badge variant={isLowestPrice ? "default" : "secondary"}>
+                          <Badge variant={isComplete && comparison.total === cheapestTotal ? "default" : "secondary"}>
                             <Store className="h-4 w-4 mr-1" />
                             {comparison.storeName}
                             {comparison.storeId && ` (סניף ${comparison.storeId})`}
                           </Badge>
-                          {isLowestPrice && (
+                          {isComplete && comparison.total === cheapestTotal && (
                             <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
                               המחיר הזול ביותר
                             </Badge>
@@ -130,7 +147,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                       </div>
                       <div className="text-lg font-bold">
                         ₪{comparison.total.toFixed(2)}
-                        {!isLowestPrice && (
+                        {isComplete && priceDiff && Number(priceDiff) > 0 && (
                           <span className="text-sm text-muted-foreground mr-2">
                             (+{priceDiff}%)
                           </span>
