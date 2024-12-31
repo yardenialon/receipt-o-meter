@@ -15,7 +15,7 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const openGoogleLens = () => {
     // Open Google Lens barcode scanner directly
     // This URL opens the camera interface directly for barcode scanning
-    const googleLensScannerUrl = 'https://lens.google.com/v3/scan';
+    const googleLensScannerUrl = 'https://lens.google.com';
     window.open(googleLensScannerUrl, '_blank');
 
     toast.info('נפתח סורק הברקודים');
