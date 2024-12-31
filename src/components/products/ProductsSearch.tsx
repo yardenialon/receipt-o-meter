@@ -4,6 +4,7 @@ import { SearchResults } from './SearchResults';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import debounce from 'lodash/debounce';
+import { Search } from 'lucide-react';
 
 interface ProductsSearchProps {
   searchTerm: string;
@@ -45,21 +46,35 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
   };
 
   return (
-    <div className="relative">
-      <Input
-        type="search"
-        placeholder="חפש מוצר לפי שם או ברקוד..."
-        value={searchTerm}
-        onChange={handleSearchChange}
-        className="w-full"
-      />
-      {searchTerm && (
-        <SearchResults 
-          results={results} 
-          isLoading={isLoading} 
-          onProductSelect={onProductSelect}
-        />
-      )}
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
+          צור רשימת קניות חכמה
+        </h2>
+        <p className="text-muted-foreground">
+          מצא את הסל המשתלם ביותר בסביבתך
+        </p>
+      </div>
+      
+      <div className="relative">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Input
+            type="search"
+            placeholder="חפש מוצר לפי שם או ברקוד..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
+          />
+        </div>
+        {searchTerm && (
+          <SearchResults 
+            results={results} 
+            isLoading={isLoading} 
+            onProductSelect={onProductSelect}
+          />
+        )}
+      </div>
     </div>
   );
 };
