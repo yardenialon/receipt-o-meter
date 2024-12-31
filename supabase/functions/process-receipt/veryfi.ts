@@ -12,6 +12,7 @@ interface VeryfiResponse {
   tax?: number;
   vendor?: {
     name?: string;
+    display_name?: string;
   };
 }
 
@@ -52,7 +53,8 @@ export async function processWithVeryfi(
         boost_mode: true,
         external_id: `receipt_${Date.now()}`,
         max_pages_to_process: 1,
-        tags: ['לתשלום', 'סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ']
+        tags: ['לתשלום', 'סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ'],
+        vendor_names: ['שופרסל', 'רמי לוי', 'יינות ביתן', 'ויקטורי', 'מגה', 'יוחננוף', 'אושר עד', 'חצי חינם']
       }),
     });
 
@@ -73,7 +75,8 @@ export async function processWithVeryfi(
       total: result.total,
       subtotal: result.subtotal,
       tax: result.tax,
-      vendorName: result.vendor?.name
+      vendorName: result.vendor?.name,
+      vendorDisplayName: result.vendor?.display_name
     });
 
     if (!result.line_items || !Array.isArray(result.line_items)) {
@@ -114,6 +117,10 @@ export async function processWithVeryfi(
       finalTotal = itemsTotal; // Fallback to items total
     }
 
+    // Get the store name from either display_name or name, with a fallback
+    const storeName = result.vendor?.display_name || result.vendor?.name || 'חנות לא ידועה';
+    console.log('Detected store name:', storeName);
+
     return {
       items: result.line_items.map(item => ({
         name: item.description || 'פריט לא ידוע',
@@ -122,7 +129,7 @@ export async function processWithVeryfi(
         product_code: item.sku
       })),
       total: Math.max(0, finalTotal), // Ensure non-negative total
-      storeName: result.vendor?.name || 'חנות לא ידועה'
+      storeName: storeName
     };
   } catch (error) {
     console.error('Error in Veryfi processing:', error);
