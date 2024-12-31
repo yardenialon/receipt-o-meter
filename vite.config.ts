@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
         "default-src 'self'",
         "img-src 'self' data: blob: https:",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
         "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://prices.shufersal.co.il",
         "frame-src 'self' https://*.supabase.co",
         "font-src 'self' data: https://fonts.gstatic.com",
