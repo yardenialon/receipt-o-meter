@@ -23,7 +23,7 @@ interface SearchResultsProps {
 export const SearchResults = ({ results, isLoading, onProductSelect }: SearchResultsProps) => {
   if (isLoading) {
     return (
-      <div className="absolute w-full bg-white border rounded-md shadow-lg z-10 p-4 space-y-2">
+      <div className="fixed inset-x-0 top-[4.5rem] md:relative md:top-0 bg-white/80 backdrop-blur-sm border-t md:border md:rounded-md shadow-lg z-50 p-4 space-y-2 max-h-[80vh] overflow-y-auto">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="p-4">
             <Skeleton className="h-4 w-3/4 mb-2" />
@@ -36,7 +36,7 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
 
   if (results.length === 0) {
     return (
-      <Card className="absolute w-full bg-white border rounded-md shadow-lg z-10 p-4 text-center text-muted-foreground">
+      <Card className="fixed inset-x-0 top-[4.5rem] md:relative md:top-0 bg-white/80 backdrop-blur-sm border-t md:border md:rounded-md shadow-lg z-50 p-4 text-center text-muted-foreground">
         לא נמצאו תוצאות
       </Card>
     );
@@ -52,59 +52,69 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
   }, {} as Record<string, SearchResult[]>);
 
   return (
-    <div className="absolute w-full bg-white border rounded-md shadow-lg z-10 max-h-[80vh] overflow-y-auto p-4 space-y-4">
-      {Object.entries(groupedProducts).map(([itemCode, products]) => {
-        const baseProduct = products[0];
-        const prices = products.map(p => ({
-          store_chain: p.store_chain,
-          store_id: p.store_id,
-          price: p.ItemPrice,
-          price_update_date: new Date().toISOString()
-        }));
+    <div className="fixed inset-x-0 top-[4.5rem] md:relative md:top-0 bg-white/80 backdrop-blur-sm border-t md:border md:rounded-md shadow-lg z-50 max-h-[80vh] overflow-y-auto">
+      <div className="p-4 space-y-4 divide-y divide-gray-100">
+        {Object.entries(groupedProducts).map(([itemCode, products]) => {
+          const baseProduct = products[0];
+          const prices = products.map(p => ({
+            store_chain: p.store_chain,
+            store_id: p.store_id,
+            price: p.ItemPrice,
+            price_update_date: new Date().toISOString()
+          }));
 
-        return (
-          <Card key={itemCode} className="p-4">
-            <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">{baseProduct.ItemName}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>מק״ט: {itemCode}</span>
-                    {baseProduct.ManufacturerName && (
-                      <span>• יצרן: {baseProduct.ManufacturerName}</span>
-                    )}
-                  </div>
-                </div>
-                {onProductSelect && (
-                  <Button 
-                    variant="secondary" 
-                    size="sm"
-                    onClick={() => onProductSelect(baseProduct)}
-                  >
-                    הוסף לרשימה
-                  </Button>
-                )}
-              </div>
-              
-              <PriceComparison 
-                prices={prices.map(price => ({
-                  ...price,
-                  storeName: (
-                    <div className="flex flex-col md:flex-row md:items-center md:gap-1">
-                      <span>{price.store_chain}</span>
-                      {price.store_id && (
-                        <span className="text-xs text-muted-foreground md:before:content-['•'] md:before:mx-1">
-                          סניף {price.store_id}
-                        </span>
+          return (
+            <Card key={itemCode} className="p-4 bg-white border-0 shadow-none first:pt-0 last:pb-0">
+              <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-base">{baseProduct.ItemName}</h3>
+                    <div className="flex flex-col md:flex-row gap-1 text-sm text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-xs">מק״ט:</span> {itemCode}
+                      </span>
+                      {baseProduct.ManufacturerName && (
+                        <>
+                          <span className="hidden md:inline">•</span>
+                          <span className="inline-flex items-center gap-1">
+                            <span className="text-xs">יצרן:</span> {baseProduct.ManufacturerName}
+                          </span>
+                        </>
                       )}
                     </div>
-                  )
-                }))} 
-              />
-            </div>
-          </Card>
-        );
-      })}
+                  </div>
+                  {onProductSelect && (
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => onProductSelect(baseProduct)}
+                      className="w-full md:w-auto"
+                    >
+                      הוסף לרשימה
+                    </Button>
+                  )}
+                </div>
+                
+                <PriceComparison 
+                  prices={prices.map(price => ({
+                    ...price,
+                    storeName: (
+                      <div className="flex flex-col md:flex-row md:items-center gap-1">
+                        <span className="font-medium">{price.store_chain}</span>
+                        {price.store_id && (
+                          <span className="text-xs text-muted-foreground md:before:content-['•'] md:before:mx-1">
+                            סניף {price.store_id}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  }))} 
+                />
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };
