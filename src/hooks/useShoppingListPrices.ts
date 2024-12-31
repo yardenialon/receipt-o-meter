@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { calculateSimilarity } from '@/utils/textSimilarity';
 
 interface ShoppingListItem {
   name: string;
@@ -18,7 +19,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items
+      // Get all store products that match any of our items using text similarity
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
@@ -41,7 +42,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       console.log('Found products:', products);
 
       // Get all unique store chains and their store IDs
-      const storeKeys = [...new Set(products.map(p => `${p.store_chain}-${p.store_id || 'main'}`))];
+      const storeKeys = [...new Set(products.map(p => `${p.store_chain}-${p.store_id}`))];
       console.log('All store keys found:', storeKeys);
 
       // Initialize comparisons for all stores
@@ -57,7 +58,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         // Initialize store comparison with all items marked as unavailable
         const comparison = {
           storeName: chain,
-          storeId: storeId === 'main' ? null : storeId,
+          storeId: storeId,
           items: activeItems.map(item => ({
             name: item.name,
             price: null,
@@ -71,43 +72,50 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
         // Process each item for this store
         comparison.items.forEach((item, index) => {
-          const matchingProducts = storeProducts.filter(p => 
-            p.ItemName.toLowerCase().includes(item.name.toLowerCase()) ||
-            item.name.toLowerCase().includes(p.ItemName.toLowerCase())
-          );
+          // Find matching products using text similarity
+          const matchingProducts = storeProducts
+            .map(product => ({
+              product,
+              similarity: calculateSimilarity(item.name, product.ItemName)
+            }))
+            .filter(match => match.similarity > 0.6) // Adjust threshold as needed
+            .sort((a, b) => b.similarity - a.similarity);
 
           console.log(`Found ${matchingProducts.length} matching products for ${item.name} in ${chain}`);
 
           if (matchingProducts.length > 0) {
-            // Use the cheapest matching product
-            const cheapestProduct = matchingProducts.reduce((min, p) => 
-              (!min.ItemPrice || (p.ItemPrice && p.ItemPrice < min.ItemPrice)) ? p : min
-            );
-
-            if (cheapestProduct.ItemPrice) {
-              comparison.items[index] = {
-                ...item,
-                price: cheapestProduct.ItemPrice,
-                matchedProduct: cheapestProduct.ItemName,
-                isAvailable: true
-              };
-              comparison.total += cheapestProduct.ItemPrice * item.quantity;
-              comparison.availableItemsCount++;
-            }
+            // Use the best matching product
+            const bestMatch = matchingProducts[0].product;
+            comparison.items[index] = {
+              ...item,
+              price: bestMatch.ItemPrice,
+              matchedProduct: bestMatch.ItemName,
+              isAvailable: true
+            };
+            comparison.total += bestMatch.ItemPrice * item.quantity;
+            comparison.availableItemsCount++;
           }
         });
 
         return comparison;
       });
 
-      // Sort comparisons by total price
-      const sortedComparisons = allStoreComparisons.sort((a, b) => a.total - b.total);
+      // Sort comparisons by total price and availability
+      const sortedComparisons = allStoreComparisons.sort((a, b) => {
+        // If both stores have the same number of available items, sort by price
+        if (a.availableItemsCount === b.availableItemsCount) {
+          return a.total - b.total;
+        }
+        // Otherwise, prioritize stores with more available items
+        return b.availableItemsCount - a.availableItemsCount;
+      });
+
       console.log('Final sorted comparisons:', sortedComparisons);
       
       return sortedComparisons;
     },
     enabled: items.length > 0,
-    refetchInterval: 60000,
+    refetchInterval: 60000, // Refresh every minute
     retry: 3,
     staleTime: 30000,
   });

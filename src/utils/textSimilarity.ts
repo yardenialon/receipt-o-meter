@@ -1,32 +1,7 @@
-// Helper function to calculate Levenshtein distance
-function levenshteinDistance(str1: string, str2: string): number {
-  const m = str1.length;
-  const n = str2.length;
-  const dp: number[][] = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (str1[i - 1] === str2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = Math.min(
-          dp[i - 1][j - 1] + 1,
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1
-        );
-      }
-    }
-  }
-
-  return dp[m][n];
-}
-
 // Clean and normalize strings for comparison
 export const normalizeText = (s: string) => {
-  return s.toLowerCase().trim()
+  return s.toLowerCase()
+    .trim()
     .replace(/['".,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
     .replace(/\s+/g, ' ');
 };
@@ -47,40 +22,38 @@ export function calculateSimilarity(str1: string, str2: string): number {
   const words2 = n2.split(/\s+/);
   
   let matches = 0;
+  let totalWords = Math.max(words1.length, words2.length);
   
-  // Check each word from the search term against the product name
+  // Check each word from str1 against str2
   for (const word1 of words1) {
-    let bestWordMatch = 0;
+    if (word1.length < 2) continue; // Skip very short words
     
     for (const word2 of words2) {
+      if (word2.length < 2) continue;
+      
       // Exact word match
       if (word1 === word2) {
-        bestWordMatch = 1;
+        matches++;
         break;
       }
       
-      // One word contains the other (minimum 3 characters)
-      if (word1.length >= 3 && word2.length >= 3) {
+      // One word contains the other
+      if (word1.length > 3 && word2.length > 3) {
         if (word2.includes(word1) || word1.includes(word2)) {
-          bestWordMatch = Math.max(bestWordMatch, 0.8);
-          continue;
+          matches += 0.8;
+          break;
         }
       }
       
-      // Calculate Levenshtein distance for similar words
-      if (word1.length > 2 && word2.length > 2) {
-        const distance = levenshteinDistance(word1, word2);
-        const maxLength = Math.max(word1.length, word2.length);
-        const similarity = 1 - (distance / maxLength);
-        if (similarity > 0.6) { // Lowered threshold for better matching
-          bestWordMatch = Math.max(bestWordMatch, similarity);
+      // Partial match (start of word)
+      if (word1.length > 3 && word2.length > 3) {
+        if (word1.startsWith(word2) || word2.startsWith(word1)) {
+          matches += 0.6;
+          break;
         }
       }
     }
-    
-    matches += bestWordMatch;
   }
 
-  // Calculate final similarity score with more lenient thresholds
-  return matches / Math.max(words1.length, 1);
+  return matches / totalWords;
 }
