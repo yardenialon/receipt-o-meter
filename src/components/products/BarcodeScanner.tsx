@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -11,16 +12,33 @@ interface BarcodeScannerProps {
 export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const isMobile = useIsMobile();
-  const fileInputRef = useState<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
-        // Here we would integrate with Google Lens API
-        // For now, we'll just simulate finding a barcode
-        const simulatedBarcode = "7290000066318"; // Example barcode
-        onScan(simulatedBarcode);
+        // Upload the image to Supabase storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('receipts')
+          .upload(`barcodes/${Date.now()}-${file.name}`, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get the public URL of the uploaded image
+        const { data: { publicUrl } } = supabase.storage
+          .from('receipts')
+          .getPublicUrl(uploadData.path);
+
+        // Call the Edge Function to detect barcode
+        const { data, error } = await supabase.functions.invoke('detect-barcode', {
+          body: { imageUrl: publicUrl }
+        });
+
+        if (error) throw error;
+        if (!data?.barcode) throw new Error('No barcode detected');
+
+        onScan(data.barcode);
         toast.success('ברקוד נסרק בהצלחה');
       } catch (err) {
         console.error('Error scanning barcode:', err);
