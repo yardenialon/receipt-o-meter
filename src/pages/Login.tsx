@@ -6,14 +6,23 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { motion } from 'framer-motion';
 import { BillBeLogo } from '@/components/BillBeLogo';
+import { useAuth } from '@/hooks/use-auth';
 
 const Login = () => {
   const navigate = useNavigate();
   const currentOrigin = window.location.origin;
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const handleAuthChange = (event: string, session: any) => {
-      if (event === 'SIGNED_IN' && session) {
+    // If user is already logged in, redirect to home
+    if (user && !isLoading) {
+      navigate('/', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
+
+  useEffect(() => {
+    const handleAuthChange = (event: string) => {
+      if (event === 'SIGNED_IN') {
         window.history.replaceState({}, document.title, '/login');
         toast.success('התחברת בהצלחה!');
         navigate('/', { replace: true });
@@ -25,24 +34,29 @@ const Login = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Session check error:', error);
-        toast.error('אירעה שגיאה בבדיקת החיבור');
-        return;
-      }
-      if (session) {
-        navigate('/', { replace: true });
-      }
-    };
-    
-    checkSession();
-
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-blue-50 to-indigo-50">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <BillBeLogo size={150} showTagline={false} />
+          <p className="mt-4 text-primary-600">טוען...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary-50 via-blue-50 to-indigo-50">
@@ -65,7 +79,6 @@ const Login = () => {
             ease: 'linear',
           }}
         />
-        <div className="absolute inset-0 bg-noise opacity-[0.02]" />
       </div>
 
       <div className="relative flex min-h-screen items-center justify-center p-4">
