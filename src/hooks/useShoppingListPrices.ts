@@ -18,15 +18,12 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items using a more flexible search
+      // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
         .or(
-          activeItems.map(item => {
-            const searchTerms = item.name.split(' ').filter(term => term.length > 2);
-            return searchTerms.map(term => `ItemName.ilike.%${term}%`).join(',');
-          }).join(',')
+          activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(',')
         );
 
       if (error) {
@@ -71,18 +68,12 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           availableItemsCount: 0
         };
 
-        // For each item in our list, try to find the best matching product
+        // For each item in our list, try to find a matching product
         comparison.items.forEach((item, index) => {
-          // Find all products that match the item name using more flexible matching
-          const matchingProducts = store.products.filter(p => {
-            const itemWords = item.name.toLowerCase().split(' ');
-            const productWords = p.ItemName.toLowerCase().split(' ');
-            // Product matches if it contains at least half of the search terms
-            const matchCount = itemWords.filter(word => 
-              productWords.some(pWord => pWord.includes(word) || word.includes(pWord))
-            ).length;
-            return matchCount >= Math.ceil(itemWords.length / 2);
-          });
+          // Find all products that match the item name
+          const matchingProducts = store.products.filter(p => 
+            p.ItemName.toLowerCase().includes(item.name.toLowerCase())
+          );
 
           if (matchingProducts.length > 0) {
             // If we have multiple matches, use the cheapest one
@@ -109,26 +100,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         store.availableItemsCount > 0
       );
 
-      // Sort comparisons:
-      // 1. Stores with all items first, sorted by total price
-      // 2. Then stores with partial items, sorted by number of available items and price
-      const sortedComparisons = storesWithItems.sort((a, b) => {
-        const aHasAll = a.availableItemsCount === activeItems.length;
-        const bHasAll = b.availableItemsCount === activeItems.length;
-        
-        // If both have all items or both don't have all items
-        if (aHasAll === bHasAll) {
-          // If they have the same number of available items, sort by price
-          if (a.availableItemsCount === b.availableItemsCount) {
-            return a.total - b.total;
-          }
-          // Otherwise sort by number of available items
-          return b.availableItemsCount - a.availableItemsCount;
-        }
-        
-        // Prioritize stores with all items
-        return aHasAll ? -1 : 1;
-      });
+      // Sort by total price only, regardless of available items count
+      const sortedComparisons = storesWithItems.sort((a, b) => a.total - b.total);
 
       console.log('Final sorted comparisons:', sortedComparisons);
       
