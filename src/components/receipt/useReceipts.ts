@@ -46,7 +46,6 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
           if (!processingProgress[receipt.id]) {
             newProgress[receipt.id] = 0;
           } else {
-            // Increment progress more slowly
             newProgress[receipt.id] = Math.min(95, processingProgress[receipt.id] + 5);
           }
         } else {
@@ -59,16 +58,14 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
     },
     refetchInterval: (query) => {
       const data = query.state.data as ReceiptData[] | undefined;
-      // Only refetch if there are processing receipts
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
-        return 5000; // Refetch every 5 seconds instead of 2 seconds
+        return 5000; // הגדלת המרווח בין הבקשות ל-5 שניות
       }
       return false;
     },
-    // Add staleTime to prevent unnecessary refetches
-    staleTime: 1000 * 30, // Data stays fresh for 30 seconds
-    // Add cacheTime to keep data in cache longer
-    gcTime: 1000 * 60 * 5, // Keep unused data in cache for 5 minutes
+    staleTime: 1000 * 30, // הנתונים נשארים "טריים" למשך 30 שניות
+    gcTime: 1000 * 60 * 5, // שמירת נתונים לא בשימוש במטמון למשך 5 דקות
+    retry: 1, // הגבלת מספר הניסיונות החוזרים במקרה של כישלון
   });
 
   const deleteReceipt = async (receiptId: string) => {
@@ -82,7 +79,10 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
         throw deleteError;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      queryClient.setQueryData(['receipts'], (oldData: ReceiptData[] | undefined) => {
+        return oldData?.filter(receipt => receipt.id !== receiptId);
+      });
+      
       toast.success('הקבלה נמחקה בהצלחה');
     } catch (err) {
       console.error('Error deleting receipt:', err);
@@ -102,7 +102,7 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
         throw deleteError;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      queryClient.setQueryData(['receipts'], []);
       toast.success('כל הקבלות נמחקו בהצלחה');
     } catch (err) {
       console.error('Error deleting all receipts:', err);
