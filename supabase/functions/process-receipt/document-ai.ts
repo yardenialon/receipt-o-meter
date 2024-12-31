@@ -1,5 +1,4 @@
-import { ProcessedReceipt, ReceiptItem } from './types'; // Adjust the import based on your project structure
-import { someOtherImports } from './someOtherFile'; // Adjust the import based on your project structure
+import { ProcessedReceipt, ReceiptItem } from './types';
 
 export async function processReceiptWithDocumentAI(
   imageBytes: Uint8Array,
@@ -10,7 +9,7 @@ export async function processReceiptWithDocumentAI(
   const priceRegex = /([0-9,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
   
   // אופטימיזציה של הביטוי הרגולרי לזיהוי מהיר יותר
-  const productCodeRegex = /(?:^|(?:מק"ט|קוד|ברקוד)\s+)(\d{4,})/;
+  const productCodeRegex = /(?:^|(?:מק"ט|קוד|ברקוד)\s*)(\d{4,})/;
 
   let foundTotal = false;
   
@@ -19,7 +18,7 @@ export async function processReceiptWithDocumentAI(
   let storeName: string | undefined;
 
   const processLine = (line: string) => {
-    let name = line; // Initialize name with the line content
+    let name = line.trim(); // Initialize name with the trimmed line content
 
     if (!foundTotal) {
       // חיפוש מק"ט/ברקוד עם הביטוי הרגולרי המשופר
@@ -27,6 +26,7 @@ export async function processReceiptWithDocumentAI(
       const product_code = productCodeMatch ? productCodeMatch[1] : undefined;
       
       if (product_code) {
+        // Remove the product code and any leading text from the name
         name = name.replace(productCodeMatch[0], '').trim();
       }
 

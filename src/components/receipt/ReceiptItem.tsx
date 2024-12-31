@@ -52,6 +52,11 @@ export const ReceiptItem = ({
     }
   };
 
+  // Function to reverse the word order in Hebrew text
+  const reverseHebrewText = (text: string) => {
+    return text.split(' ').reverse().join(' ');
+  };
+
   return (
     <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-primary-100/50 hover:border-primary-200 transition-all duration-300 hover:shadow-xl">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -127,11 +132,11 @@ export const ReceiptItem = ({
                 <div key={item.id} className="flex justify-between text-sm p-2 rounded-lg hover:bg-primary-50 transition-colors">
                   <span className="text-gray-700 truncate flex-1 ml-2">
                     {item.product_code && (
-                      <span className="text-gray-500 ml-1">
-                        {item.product_code} -
+                      <span className="text-gray-500 ml-2">
+                        מק"ט: {item.product_code}
                       </span>
                     )}
-                    {item.name}
+                    {reverseHebrewText(item.name)}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {item.quantity > 1 && (
