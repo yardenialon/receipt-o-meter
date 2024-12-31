@@ -1,10 +1,9 @@
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Store } from 'lucide-react';
+import { Store, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PriceComparison } from './PriceComparison';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
 
 interface SearchResult {
   ItemCode?: string;
@@ -64,6 +63,11 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
             <div className="flex items-start justify-between mb-2">
               <div className="space-y-1">
                 <div className="font-medium">{mainItem.ItemName}</div>
+                {mainItem.PriceUpdateDate && (
+                  <div className="text-sm text-muted-foreground">
+                    עודכן: {format(new Date(mainItem.PriceUpdateDate), 'dd/MM/yyyy', { locale: he })}
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">
                   מק״ט: {mainItem.ItemCode}
                 </div>
@@ -73,6 +77,15 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
                   </div>
                 )}
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSelect?.(mainItem)}
+                className="shrink-0"
+              >
+                <Plus className="h-4 w-4 ml-2" />
+                הוסף לרשימה
+              </Button>
             </div>
             
             <div className="mt-4">
