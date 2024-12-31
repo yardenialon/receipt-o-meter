@@ -29,7 +29,6 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
   const { data: receipts, isLoading, error } = useQuery({
     queryKey: ['receipts'],
     queryFn: async () => {
-      console.log('Fetching receipts...');
       const { data: receiptsData, error: receiptsError } = await supabase
         .from('receipts')
         .select('*, receipt_items(*)')
@@ -40,14 +39,15 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
         throw receiptsError;
       }
 
-      // Update progress for processing receipts
+      // Update progress only for receipts that are still processing
       const newProgress = { ...processingProgress };
       receiptsData?.forEach(receipt => {
         if (receipt.store_name === 'מעבד...') {
           if (!processingProgress[receipt.id]) {
             newProgress[receipt.id] = 0;
           } else {
-            newProgress[receipt.id] = Math.min(95, processingProgress[receipt.id] + 15);
+            // Increment progress more slowly
+            newProgress[receipt.id] = Math.min(95, processingProgress[receipt.id] + 5);
           }
         } else {
           delete newProgress[receipt.id];
@@ -55,16 +55,20 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
       });
       setProcessingProgress(newProgress);
 
-      console.log('Fetched receipts:', receiptsData);
       return receiptsData as ReceiptData[];
     },
     refetchInterval: (query) => {
       const data = query.state.data as ReceiptData[] | undefined;
+      // Only refetch if there are processing receipts
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
-        return 2000; // Refetch every 2 seconds if processing
+        return 5000; // Refetch every 5 seconds instead of 2 seconds
       }
-      return false; // Stop refetching when no receipts are processing
-    }
+      return false;
+    },
+    // Add staleTime to prevent unnecessary refetches
+    staleTime: 1000 * 30, // Data stays fresh for 30 seconds
+    // Add cacheTime to keep data in cache longer
+    gcTime: 1000 * 60 * 5, // Keep unused data in cache for 5 minutes
   });
 
   const deleteReceipt = async (receiptId: string) => {
@@ -92,7 +96,7 @@ export const useReceipts = (processingProgress: Record<string, number>, setProce
       const { error: deleteError } = await supabase
         .from('receipts')
         .delete()
-        .neq('id', ''); // This will delete all receipts for the current user due to RLS
+        .neq('id', '');
 
       if (deleteError) {
         throw deleteError;
