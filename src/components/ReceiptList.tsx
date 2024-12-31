@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useReceipts, ReceiptData } from './receipt/useReceipts';
+import { useReceipts } from './receipt/useReceipts';
+import { ReceiptData } from './receipt/types';
 import { ReceiptItem } from './receipt/ReceiptItem';
 import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner';

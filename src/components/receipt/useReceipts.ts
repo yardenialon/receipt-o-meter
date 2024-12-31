@@ -32,13 +32,13 @@ export const useReceipts = (
     refetchInterval: (query) => {
       const data = query.state.data as ReceiptData[] | undefined;
       if (data?.some(receipt => receipt.store_name === 'מעבד...')) {
-        return 5000; // הגדלת המרווח בין הבקשות ל-5 שניות
+        return 5000;
       }
       return false;
     },
-    staleTime: 1000 * 30, // הנתונים נשארים "טריים" למשך 30 שניות
-    gcTime: 1000 * 60 * 5, // שמירת נתונים לא בשימוש במטמון למשך 5 דקות
-    retry: 1, // הגבלת מספר הניסיונות החוזרים במקרה של כישלון
+    staleTime: 1000 * 30,
+    gcTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
   return {
