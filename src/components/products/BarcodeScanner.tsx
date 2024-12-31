@@ -18,31 +18,50 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
+        console.log('Starting barcode scan process for file:', file.name);
+        
         // Upload the image to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(`barcodes/${Date.now()}-${file.name}`, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw uploadError;
+        }
+
+        console.log('File uploaded successfully:', uploadData.path);
 
         // Get the public URL of the uploaded image
         const { data: { publicUrl } } = supabase.storage
           .from('receipts')
           .getPublicUrl(uploadData.path);
 
+        console.log('Processing image URL:', publicUrl);
+
         // Call the Edge Function to detect barcode
         const { data, error } = await supabase.functions.invoke('detect-barcode', {
           body: { imageUrl: publicUrl }
         });
 
-        if (error) throw error;
-        if (!data?.barcode) throw new Error('No barcode detected');
+        console.log('Edge function response:', data);
 
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
+        
+        if (!data?.barcode) {
+          console.error('No barcode detected in image');
+          throw new Error('לא זוהה ברקוד בתמונה');
+        }
+
+        console.log('Barcode detected:', data.barcode);
         onScan(data.barcode);
         toast.success('ברקוד נסרק בהצלחה');
       } catch (err) {
         console.error('Error scanning barcode:', err);
-        toast.error('שגיאה בסריקת הברקוד');
+        toast.error(err instanceof Error ? err.message : 'שגיאה בסריקת הברקוד');
       }
     }
     // Reset input value to allow selecting the same file again
@@ -54,8 +73,6 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
       fileInputRef.current?.click();
     } else {
       setIsScanning(true);
-      // Here we would initialize web camera scanning
-      // For now just show a message
       toast.info('סריקת ברקוד דרך המצלמה תתמך בקרוב');
     }
   };
