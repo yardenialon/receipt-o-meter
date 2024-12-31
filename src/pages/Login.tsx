@@ -12,9 +12,8 @@ const Login = () => {
   const currentOrigin = window.location.origin;
 
   useEffect(() => {
-    const handleAuthChange = async (event: string, session: any) => {
+    const handleAuthChange = (event: string, session: any) => {
       if (event === 'SIGNED_IN' && session) {
-        // Use replaceState to avoid CORB issues with history navigation
         window.history.replaceState({}, document.title, '/login');
         toast.success('התחברת בהצלחה!');
         navigate('/', { replace: true });
@@ -27,16 +26,17 @@ const Login = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          navigate('/', { replace: true });
-        }
-      } catch (error) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
         console.error('Session check error:', error);
         toast.error('אירעה שגיאה בבדיקת החיבור');
+        return;
+      }
+      if (session) {
+        navigate('/', { replace: true });
       }
     };
+    
     checkSession();
 
     return () => {
@@ -46,11 +46,11 @@ const Login = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary-50 via-blue-50 to-indigo-50">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(56,189,248,0.1),rgba(52,211,153,0.1),rgba(129,140,248,0.1))]" />
         <motion.div
           className="absolute inset-0 opacity-30"
+          initial={{ opacity: 0 }}
           animate={{
             background: [
               'radial-gradient(circle at 50% 50%, #34D399 0%, transparent 50%)',
@@ -68,10 +68,8 @@ const Login = () => {
         <div className="absolute inset-0 bg-noise opacity-[0.02]" />
       </div>
 
-      {/* Content container */}
       <div className="relative flex min-h-screen items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Logo and title section */}
           <motion.div 
             className="text-center mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -90,7 +88,6 @@ const Login = () => {
             </p>
           </motion.div>
 
-          {/* Auth form container */}
           <motion.div 
             className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -128,7 +125,7 @@ const Login = () => {
                 },
                 className: {
                   container: 'auth-container space-y-4',
-                  button: 'relative overflow-hidden font-medium transition-all duration-300 hover:shadow-lg active:scale-[0.98] after:absolute after:inset-0 after:bg-gradient-to-r after:from-white/0 after:via-white/20 after:to-white/0 after:translate-x-[-100%] hover:after:translate-x-[100%] after:transition-transform after:duration-500',
+                  button: 'relative overflow-hidden font-medium transition-all duration-300 hover:shadow-lg active:scale-[0.98]',
                   label: 'font-medium text-gray-700',
                   input: 'transition-all duration-200 bg-white/80 backdrop-blur-sm focus:bg-white',
                   loader: 'text-primary-500',
