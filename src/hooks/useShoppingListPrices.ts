@@ -17,7 +17,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items
+      // Get all store products that match any of our items from the import table
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
@@ -52,11 +52,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       for (const item of activeItems) {
         // Find matching products for this item
         const itemMatches = products.filter(p => 
-          p.ItemName.toLowerCase().includes(item.name.toLowerCase())
+          p.ItemName?.toLowerCase().includes(item.name.toLowerCase())
         );
 
         // Group matches by store
         for (const match of itemMatches) {
+          if (!match.store_chain || !match.ItemPrice) continue;
+
           const storeKey = `${match.store_chain}-${match.store_id || 'main'}`;
           
           if (!storeProducts[storeKey]) {
@@ -71,7 +73,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           const itemPrice = match.ItemPrice;
           storeProducts[storeKey].items.push({
             name: item.name,
-            matchedProduct: match.ItemName,
+            matchedProduct: match.ItemName || '',
             price: itemPrice,
             quantity: 1
           });
