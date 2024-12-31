@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceComparison } from "./PriceComparison";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { he } from "date-fns/locale";
 
 interface SearchResult {
   ItemCode: string;
@@ -12,6 +14,7 @@ interface SearchResult {
   store_chain: string;
   store_id: string | null;
   ManufacturerName: string | null;
+  PriceUpdateDate?: string | null;
 }
 
 interface SearchResultsProps {
@@ -60,8 +63,12 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
             store_chain: p.store_chain,
             store_id: p.store_id,
             price: p.ItemPrice,
-            price_update_date: new Date().toISOString()
+            price_update_date: p.PriceUpdateDate || new Date().toISOString()
           }));
+
+          const formattedDate = baseProduct.PriceUpdateDate 
+            ? format(new Date(baseProduct.PriceUpdateDate), "dd/MM/yyyy", { locale: he })
+            : null;
 
           return (
             <Card key={itemCode} className="p-4 bg-white border-0 shadow-none first:pt-0 last:pb-0">
@@ -69,17 +76,19 @@ export const SearchResults = ({ results, isLoading, onProductSelect }: SearchRes
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div className="space-y-1">
                     <h3 className="font-medium text-base">{baseProduct.ItemName}</h3>
-                    <div className="flex flex-col md:flex-row gap-1 text-sm text-muted-foreground">
+                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <span className="text-xs">מק״ט:</span> {itemCode}
                       </span>
+                      {formattedDate && (
+                        <span className="text-xs text-muted-foreground">
+                          עודכן בתאריך: {formattedDate}
+                        </span>
+                      )}
                       {baseProduct.ManufacturerName && (
-                        <>
-                          <span className="hidden md:inline">•</span>
-                          <span className="inline-flex items-center gap-1">
-                            <span className="text-xs">יצרן:</span> {baseProduct.ManufacturerName}
-                          </span>
-                        </>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-xs">יצרן:</span> {baseProduct.ManufacturerName}
+                        </span>
                       )}
                     </div>
                   </div>
