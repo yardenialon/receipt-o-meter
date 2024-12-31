@@ -97,26 +97,30 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return comparison;
       });
 
-      // Filter out stores with no available items
+      // Include all stores that have at least one item available
       const storesWithItems = allStoreComparisons.filter(store => 
         store.availableItemsCount > 0
       );
 
-      // Sort comparisons by availability and total price
+      // Sort comparisons:
+      // 1. Stores with all items first, sorted by total price
+      // 2. Then stores with partial items, sorted by number of available items and price
       const sortedComparisons = storesWithItems.sort((a, b) => {
-        // If both stores have all items available, sort by total price
-        if (a.availableItemsCount === activeItems.length && 
-            b.availableItemsCount === activeItems.length) {
-          return a.total - b.total;
-        }
-        // If one store has all items and the other doesn't, prioritize the complete one
-        if (a.availableItemsCount === activeItems.length) return -1;
-        if (b.availableItemsCount === activeItems.length) return 1;
-        // Otherwise, sort by number of available items, then by total price
-        if (a.availableItemsCount !== b.availableItemsCount) {
+        const aHasAll = a.availableItemsCount === activeItems.length;
+        const bHasAll = b.availableItemsCount === activeItems.length;
+        
+        // If both have all items or both don't have all items
+        if (aHasAll === bHasAll) {
+          // If they have the same number of available items, sort by price
+          if (a.availableItemsCount === b.availableItemsCount) {
+            return a.total - b.total;
+          }
+          // Otherwise sort by number of available items
           return b.availableItemsCount - a.availableItemsCount;
         }
-        return a.total - b.total;
+        
+        // Prioritize stores with all items
+        return aHasAll ? -1 : 1;
       });
 
       console.log('Final sorted comparisons:', sortedComparisons);
