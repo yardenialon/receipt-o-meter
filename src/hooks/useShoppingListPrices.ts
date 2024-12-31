@@ -19,7 +19,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       console.log('Active items to compare:', activeItems);
 
       // First, get the ItemCodes for our items by searching by name
-      const { data: itemMatches, error: matchError } = await supabase
+      const { data: productMatches, error: matchError } = await supabase
         .from('store_products_import')
         .select('ItemCode, ItemName')
         .or(activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(','));
@@ -29,13 +29,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         throw matchError;
       }
 
-      if (!itemMatches?.length) {
+      if (!productMatches?.length) {
         console.log('No matching products found');
         return [];
       }
 
       // Get unique ItemCodes
-      const itemCodes = [...new Set(itemMatches.map(match => match.ItemCode))];
+      const itemCodes = [...new Set(productMatches.map(match => match.ItemCode))];
       console.log('Found ItemCodes:', itemCodes);
 
       // Get all store products with these ItemCodes
@@ -89,7 +89,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         // For each item in our list, find matching products by ItemCode
         comparison.items.forEach((item, index) => {
           // Find matching products for this item
-          const itemMatches = itemMatches.filter(match => 
+          const itemMatches = productMatches.filter(match => 
             match.ItemName.toLowerCase().includes(item.name.toLowerCase())
           );
           const matchingItemCodes = itemMatches.map(match => match.ItemCode);
