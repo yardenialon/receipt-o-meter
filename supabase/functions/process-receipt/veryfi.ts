@@ -31,75 +31,94 @@ export async function processWithVeryfi(
 
   console.log('Processing document with Veryfi...');
 
-  const response = await fetch('https://api.veryfi.com/api/v8/partner/documents', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Client-Id': clientId,
-      'Authorization': `apikey ${username}:${apiKey}`,
-    },
-    body: JSON.stringify({
-      file_data: base64Image,
-      file_name: `receipt.${isPDF ? 'pdf' : 'jpg'}`,
-      categories: ['Grocery', 'Utilities', 'Supplies'],
-      auto_delete: true,
-      boost_mode: true, // מפעיל מצב מדויק יותר
-      ocr_engine: 2, // משתמש במנוע OCR מתקדם יותר
-      external_id: `receipt_${Date.now()}`,
-      max_pages_to_process: 1,
-      parameters: {
-        // הגדרות ספציפיות לזיהוי קבלות ישראליות
-        receipt_number_prefix: ['מספר קבלה', 'מס קבלה', 'קבלה מס'],
-        total_amount_keywords: ['סה"כ לתשלום', 'סה״כ', 'לתשלום', 'סכום כולל', 'Total'],
-        ignore_amount_keywords: ['מע"מ', 'פטור ממע"מ', 'חייב מע"מ', 'VAT', 'Tax'],
-      }
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Veryfi API error:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorText
+  try {
+    const response = await fetch('https://api.veryfi.com/api/v8/partner/documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Client-Id': clientId,
+        'Authorization': `apikey ${username}:${apiKey}`,
+      },
+      body: JSON.stringify({
+        file_data: base64Image,
+        file_name: `receipt.${isPDF ? 'pdf' : 'jpg'}`,
+        categories: ['Grocery', 'Utilities', 'Supplies'],
+        auto_delete: true,
+        boost_mode: true,
+        ocr_engine: 2,
+        external_id: `receipt_${Date.now()}`,
+        max_pages_to_process: 1,
+        parameters: {
+          receipt_number_prefix: ['מספר קבלה', 'מס קבלה', 'קבלה מס'],
+          total_amount_keywords: ['סה"כ לתשלום', 'סה״כ', 'לתשלום', 'סכום כולל', 'Total'],
+          ignore_amount_keywords: ['מע"מ', 'פטור ממע"מ', 'חייב מע"מ', 'VAT', 'Tax']
+        }
+      }),
     });
-    throw new Error(`Error processing document: ${response.status} ${response.statusText}`);
-  }
 
-  const result: VeryfiResponse = await response.json();
-  console.log('Veryfi response received:', result);
-
-  // מנסה לזהות את הסכום הכולל האמיתי
-  let finalTotal = result.total;
-  
-  // אם יש subtotal וגם tax, נוודא שה-total הוא אכן הסכום של שניהם
-  if (result.subtotal && result.tax) {
-    const calculatedTotal = result.subtotal + result.tax;
-    // אם יש הבדל קטן (עד 1 שקל), נשתמש בסכום המחושב
-    if (Math.abs(calculatedTotal - result.total) <= 1) {
-      finalTotal = calculatedTotal;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Veryfi API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Error processing document: ${response.status} ${response.statusText}`);
     }
-  }
 
-  // בדיקה שהסכום הכולל הגיוני ביחס לסכום הפריטים
-  const itemsTotal = result.line_items.reduce((sum, item) => sum + item.total, 0);
-  if (Math.abs(itemsTotal - finalTotal) > itemsTotal * 0.5) {
-    console.warn('Total amount seems incorrect, using items total instead', {
-      originalTotal: finalTotal,
-      itemsTotal: itemsTotal
-    });
-    finalTotal = itemsTotal;
-  }
+    const result: VeryfiResponse = await response.json();
+    console.log('Veryfi response received:', result);
 
-  return {
-    items: result.line_items.map(item => ({
-      name: item.description,
-      price: item.total,
-      quantity: item.quantity || 1,
-      product_code: item.sku || undefined
-    })),
-    total: finalTotal,
-    storeName: result.vendor?.name || 'חנות לא ידועה'
-  };
+    if (!result.line_items || !Array.isArray(result.line_items)) {
+      console.error('Invalid response format - missing line items:', result);
+      throw new Error('Invalid response format from Veryfi API');
+    }
+
+    // Calculate the total from line items
+    const itemsTotal = result.line_items.reduce((sum, item) => {
+      const itemTotal = typeof item.total === 'number' ? item.total : 0;
+      return sum + itemTotal;
+    }, 0);
+
+    // Use the most reliable total amount
+    let finalTotal = result.total;
+
+    // If we have subtotal and tax, verify the total
+    if (typeof result.subtotal === 'number' && typeof result.tax === 'number') {
+      const calculatedTotal = result.subtotal + result.tax;
+      if (Math.abs(calculatedTotal - result.total) <= 1) {
+        finalTotal = calculatedTotal;
+      }
+    }
+
+    // Validate the final total against items total
+    if (Math.abs(itemsTotal - finalTotal) > itemsTotal * 0.5) {
+      console.warn('Total amount validation failed, using items total:', {
+        originalTotal: finalTotal,
+        itemsTotal: itemsTotal
+      });
+      finalTotal = itemsTotal;
+    }
+
+    // Ensure we have a valid total
+    if (typeof finalTotal !== 'number' || isNaN(finalTotal)) {
+      console.error('Invalid total amount:', finalTotal);
+      finalTotal = itemsTotal; // Fallback to items total
+    }
+
+    return {
+      items: result.line_items.map(item => ({
+        name: item.description || 'פריט לא ידוע',
+        price: typeof item.total === 'number' ? item.total : 0,
+        quantity: typeof item.quantity === 'number' ? item.quantity : 1,
+        product_code: item.sku
+      })),
+      total: Math.max(0, finalTotal), // Ensure non-negative total
+      storeName: result.vendor?.name || 'חנות לא ידועה'
+    };
+  } catch (error) {
+    console.error('Error in Veryfi processing:', error);
+    throw error;
+  }
 }
