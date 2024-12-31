@@ -18,6 +18,7 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
   const isMobile = useIsMobile();
 
   const startScanning = async () => {
@@ -25,35 +26,29 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
       // Check if BarcodeDetector is supported
       if ('BarcodeDetector' in window) {
         setIsScanning(true);
+        
+        // Initialize BarcodeDetector
+        detectorRef.current = new (window as any).BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+        });
+        
+        // Get camera stream
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: isMobile ? 'environment' : 'user' } 
+          video: { 
+            facingMode: isMobile ? 'environment' : 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
         });
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
           
-          const barcodeDetector = new (window as any).BarcodeDetector();
-          
-          // Start detection loop
-          const detect = async () => {
-            if (videoRef.current && isScanning) {
-              try {
-                const barcodes = await barcodeDetector.detect(videoRef.current);
-                if (barcodes.length > 0) {
-                  const barcode = barcodes[0].rawValue;
-                  handleScan(barcode);
-                }
-                requestAnimationFrame(detect);
-              } catch (error) {
-                console.error('Detection error:', error);
-              }
-            }
-          };
-          
+          // Start detection loop when video is ready
           videoRef.current.onloadedmetadata = () => {
             videoRef.current?.play();
-            detect();
+            detectBarcode();
           };
         }
       } else {
@@ -66,6 +61,26 @@ export const BarcodeScanner = ({ onScan }: BarcodeScannerProps) => {
       console.error('Error accessing camera:', error);
       toast.error('לא ניתן לגשת למצלמה');
       setIsScanning(false);
+    }
+  };
+
+  const detectBarcode = async () => {
+    if (!videoRef.current || !detectorRef.current || !isScanning) return;
+
+    try {
+      const barcodes = await detectorRef.current.detect(videoRef.current);
+      
+      if (barcodes.length > 0) {
+        const barcode = barcodes[0].rawValue;
+        console.log('Barcode detected:', barcode);
+        handleScan(barcode);
+      } else {
+        // Continue scanning if no barcode is detected
+        requestAnimationFrame(detectBarcode);
+      }
+    } catch (error) {
+      console.error('Detection error:', error);
+      requestAnimationFrame(detectBarcode);
     }
   };
 
