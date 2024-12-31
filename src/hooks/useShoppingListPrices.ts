@@ -17,11 +17,20 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items from the import table
+      // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
-        .or(activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(','));
+        .or(
+          activeItems.map(item => {
+            // Split the item name into words and create a search condition for each significant word
+            const searchWords = item.name
+              .split(' ')
+              .filter(word => word.length > 2) // Filter out short words
+              .map(word => `ItemName.ilike.%${word}%`);
+            return searchWords.join(','); // Join with OR condition
+          }).join(',')
+        );
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -50,10 +59,22 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // Process each item
       for (const item of activeItems) {
-        // Find matching products for this item
-        const itemMatches = products.filter(p => 
-          p.ItemName?.toLowerCase().includes(item.name.toLowerCase())
-        );
+        // Find matching products for this item using fuzzy matching
+        const itemMatches = products.filter(p => {
+          if (!p.ItemName) return false;
+          
+          // Split both names into words and check for significant word matches
+          const itemWords = item.name.toLowerCase().split(' ').filter(w => w.length > 2);
+          const productWords = p.ItemName.toLowerCase().split(' ').filter(w => w.length > 2);
+          
+          // Count matching words
+          const matchingWords = itemWords.filter(word => 
+            productWords.some(pWord => pWord.includes(word) || word.includes(pWord))
+          );
+          
+          // Require at least 50% of words to match
+          return matchingWords.length >= Math.ceil(itemWords.length * 0.5);
+        });
 
         // Group matches by store
         for (const match of itemMatches) {
