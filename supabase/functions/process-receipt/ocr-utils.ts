@@ -10,8 +10,21 @@ export async function processDocumentAI(
   storeName: string;
 }> {
   try {
-    console.log('Starting Veryfi processing...');
-    return await processWithVeryfi(base64Image, contentType, isPDF);
+    console.log('Starting Veryfi processing...', {
+      contentType,
+      isPDF,
+      imageSize: base64Image.length
+    });
+    
+    const result = await processWithVeryfi(base64Image, contentType, isPDF);
+    
+    console.log('Veryfi processing completed successfully:', {
+      itemsCount: result.items.length,
+      total: result.total,
+      storeName: result.storeName
+    });
+    
+    return result;
   } catch (error) {
     console.error('Error in Veryfi processing:', error);
     throw error;

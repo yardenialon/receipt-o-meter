@@ -29,7 +29,11 @@ export async function processWithVeryfi(
     throw new Error('Missing Veryfi credentials');
   }
 
-  console.log('Processing document with Veryfi...');
+  console.log('Processing document with Veryfi...', {
+    contentType,
+    isPDF,
+    imageSize: base64Image.length
+  });
 
   try {
     const response = await fetch('https://api.veryfi.com/api/v8/partner/documents', {
@@ -51,8 +55,9 @@ export async function processWithVeryfi(
         max_pages_to_process: 1,
         parameters: {
           receipt_number_prefix: ['מספר קבלה', 'מס קבלה', 'קבלה מס'],
-          total_amount_keywords: ['סה"כ לתשלום', 'סה״כ', 'לתשלום', 'סכום כולל', 'Total'],
-          ignore_amount_keywords: ['מע"מ', 'פטור ממע"מ', 'חייב מע"מ', 'VAT', 'Tax']
+          total_amount_keywords: ['סה"כ לתשלום', 'סה״כ', 'לתשלום', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ'],
+          ignore_amount_keywords: ['מע"מ', 'פטור ממע"מ', 'חייב מע"מ', 'VAT', 'Tax', 'סה"כ ללא מע"מ'],
+          language: 'he'
         }
       }),
     });
@@ -62,13 +67,20 @@ export async function processWithVeryfi(
       console.error('Veryfi API error:', {
         status: response.status,
         statusText: response.statusText,
-        error: errorText
+        error: errorText,
+        headers: Object.fromEntries(response.headers.entries())
       });
-      throw new Error(`Error processing document: ${response.status} ${response.statusText}`);
+      throw new Error(`Error processing document: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const result: VeryfiResponse = await response.json();
-    console.log('Veryfi response received:', result);
+    console.log('Veryfi response received:', {
+      hasLineItems: !!result.line_items?.length,
+      total: result.total,
+      subtotal: result.subtotal,
+      tax: result.tax,
+      vendorName: result.vendor?.name
+    });
 
     if (!result.line_items || !Array.isArray(result.line_items)) {
       console.error('Invalid response format - missing line items:', result);
@@ -96,7 +108,8 @@ export async function processWithVeryfi(
     if (Math.abs(itemsTotal - finalTotal) > itemsTotal * 0.5) {
       console.warn('Total amount validation failed, using items total:', {
         originalTotal: finalTotal,
-        itemsTotal: itemsTotal
+        itemsTotal: itemsTotal,
+        difference: Math.abs(itemsTotal - finalTotal)
       });
       finalTotal = itemsTotal;
     }
