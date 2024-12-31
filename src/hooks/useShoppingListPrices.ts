@@ -108,11 +108,14 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return comparison;
       });
 
-      // Sort comparisons by availability and total price
+      // Sort comparisons first by total price (only for stores with all items available)
       const sortedComparisons = allStoreComparisons.sort((a, b) => {
-        if (a.availableItemsCount === b.availableItemsCount) {
+        // If both stores have all items available, sort by total price
+        if (a.availableItemsCount === activeItems.length && 
+            b.availableItemsCount === activeItems.length) {
           return a.total - b.total;
         }
+        // Otherwise, prioritize stores with more available items
         return b.availableItemsCount - a.availableItemsCount;
       });
 
