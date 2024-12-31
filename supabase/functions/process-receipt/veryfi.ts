@@ -53,8 +53,7 @@ export async function processWithVeryfi(
         boost_mode: true,
         external_id: `receipt_${Date.now()}`,
         max_pages_to_process: 1,
-        tags: ['לתשלום', 'סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ'],
-        vendor_names: ['שופרסל', 'רמי לוי', 'יינות ביתן', 'ויקטורי', 'מגה', 'יוחננוף', 'אושר עד', 'חצי חינם']
+        tags: ['לתשלום', 'סה"כ לתשלום', 'סה״כ', 'סכום כולל', 'Total', 'סה"כ כולל מע"מ']
       }),
     });
 
