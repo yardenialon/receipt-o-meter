@@ -45,6 +45,12 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
     debouncedSearch(value);
   };
 
+  const handleProductSelect = (product: any) => {
+    if (onProductSelect) {
+      onProductSelect(product);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -71,7 +77,7 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
           <SearchResults 
             results={results} 
             isLoading={isLoading} 
-            onSelect={onProductSelect}
+            onSelect={handleProductSelect}
           />
         )}
       </div>
