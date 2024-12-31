@@ -18,7 +18,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items from the import table
+      // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
@@ -40,7 +40,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products:', products);
 
-      // Get all unique store chains without limiting to 5 yet
+      // Get all unique store chains
       const allStoreChains = [...new Set(products.map(p => p.store_chain))];
       console.log('All store chains found:', allStoreChains);
 
@@ -51,7 +51,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         
         const comparison = {
           storeName: chain,
-          storeId: null,
+          storeId: storeProducts[0]?.store_id || null,
           items: activeItems.map(item => ({
             name: item.name,
             price: null,
@@ -97,8 +97,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       // Filter stores that have at least one available item and sort by total price
       const validComparisons = allStoreComparisons
         .filter(store => store.availableItemsCount > 0)
-        .sort((a, b) => a.total - b.total)
-        .slice(0, 5); // Now take top 5 cheapest stores
+        .sort((a, b) => a.total - b.total);
 
       console.log('Final comparison results:', validComparisons);
       return validComparisons;
