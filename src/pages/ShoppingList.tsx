@@ -140,7 +140,7 @@ export default function ShoppingList() {
   }
 
   return (
-    <div className="container mx-auto p-8">
+    <div className="container mx-auto p-8 md:pb-8 pb-32">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">רשימות קניות</h1>
         <Button onClick={() => createList.mutate()}>
