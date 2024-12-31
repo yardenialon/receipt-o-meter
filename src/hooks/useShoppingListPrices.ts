@@ -49,7 +49,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         const [chain, storeId] = storeKey.split('-');
         const storeProducts = products.filter(p => 
           p.store_chain === chain && 
-          (storeId === 'main' || p.store_id === storeId)
+          p.store_id === storeId
         );
         
         console.log(`Processing ${chain} (Store ID: ${storeId}), found ${storeProducts.length} products`);
