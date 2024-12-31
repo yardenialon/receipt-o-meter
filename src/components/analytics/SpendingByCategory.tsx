@@ -16,22 +16,33 @@ export const SpendingByCategory = () => {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data, error } = await supabase
-        .from('receipt_items')
-        .select(`
-          category,
-          price,
-          quantity,
-          receipts(created_at)
-        `)
-        .gte('receipts.created_at', startOfMonth.toISOString());
+      // First get all receipts for the current month
+      const { data: receipts, error: receiptsError } = await supabase
+        .from('receipts')
+        .select('id')
+        .gte('created_at', startOfMonth.toISOString());
 
-      if (error) {
-        console.error('Error fetching spending data:', error);
-        throw error;
+      if (receiptsError) {
+        console.error('Error fetching receipts:', receiptsError);
+        throw receiptsError;
       }
 
-      const categoryTotals = data.reduce((acc: { [key: string]: number }, item) => {
+      if (!receipts?.length) {
+        return [];
+      }
+
+      // Then get all items for these receipts
+      const { data: items, error: itemsError } = await supabase
+        .from('receipt_items')
+        .select('category, price, quantity')
+        .in('receipt_id', receipts.map(r => r.id));
+
+      if (itemsError) {
+        console.error('Error fetching receipt items:', itemsError);
+        throw itemsError;
+      }
+
+      const categoryTotals = (items || []).reduce((acc: { [key: string]: number }, item) => {
         const category = item.category || 'אחר';
         const total = (item.price || 0) * (item.quantity || 1);
         acc[category] = (acc[category] || 0) + total;
