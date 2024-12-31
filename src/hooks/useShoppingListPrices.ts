@@ -4,11 +4,12 @@ import { supabase } from '@/lib/supabase';
 interface ShoppingListItem {
   name: string;
   is_completed?: boolean;
+  quantity?: number;
 }
 
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
-    queryKey: ['shopping-list-prices', items.map(i => i.name).join(',')],
+    queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}`).join(',')],
     queryFn: async () => {
       if (!items.length) return [];
 
@@ -19,12 +20,11 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // Get all store products that match any of our items
       const { data: products, error } = await supabase
-        .from('store_products_import')
+        .from('store_products')
         .select('*')
         .or(
           activeItems.map(item => 
-            // Create a search condition for each item name
-            `ItemName.ilike.%${item.name}%`
+            `product_name.ilike.%${item.name}%`
           ).join(',')
         );
 
@@ -40,68 +40,61 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products:', products);
 
-      // Initialize store products map
-      const storeProducts: Record<string, {
-        storeName: string;
-        storeId: string | null;
-        items: {
-          name: string;
-          price: number;
-          matchedProduct: string;
-          quantity: number;
-        }[];
-        total: number;
-      }> = {};
+      // Get unique store chains
+      const storeChains = [...new Set(products.map(p => p.store_chain))].slice(0, 5);
 
-      // Process each item
-      for (const item of activeItems) {
-        // Find matching products for this item using fuzzy matching
-        const itemMatches = products.filter(p => {
-          if (!p.ItemName) return false;
-          
-          // Convert both names to lowercase for comparison
-          const itemNameLower = item.name.toLowerCase();
-          const productNameLower = p.ItemName.toLowerCase();
-          
-          // Check if the product name contains the search term
-          // or if the search term contains the product name
-          return productNameLower.includes(itemNameLower) || 
-                 itemNameLower.includes(productNameLower);
-        });
+      // Initialize store comparisons
+      const storeComparisons = storeChains.map(chain => ({
+        storeName: chain,
+        storeId: null, // We could add store selection later
+        items: activeItems.map(item => ({
+          name: item.name,
+          price: null,
+          matchedProduct: '',
+          quantity: item.quantity || 1,
+          isAvailable: false
+        })),
+        total: 0
+      }));
 
-        // Group matches by store
-        for (const match of itemMatches) {
-          if (!match.store_chain || !match.ItemPrice) continue;
+      // Process each store
+      storeComparisons.forEach(store => {
+        const storeProducts = products.filter(p => p.store_chain === store.storeName);
+        
+        // Match items to products
+        store.items.forEach((item, index) => {
+          // Find best matching product for this item in this store
+          const matchingProducts = storeProducts.filter(p => 
+            p.product_name.toLowerCase().includes(item.name.toLowerCase()) ||
+            item.name.toLowerCase().includes(p.product_name.toLowerCase())
+          );
 
-          const storeKey = `${match.store_chain}-${match.store_id || 'main'}`;
-          
-          if (!storeProducts[storeKey]) {
-            storeProducts[storeKey] = {
-              storeName: match.store_chain,
-              storeId: match.store_id,
-              items: [],
-              total: 0
+          if (matchingProducts.length > 0) {
+            // Use the cheapest matching product
+            const cheapestProduct = matchingProducts.reduce((min, p) => 
+              p.price < min.price ? p : min
+            );
+
+            store.items[index] = {
+              ...item,
+              price: cheapestProduct.price,
+              matchedProduct: cheapestProduct.product_name,
+              isAvailable: true
             };
+
+            // Add to total only if product is available
+            store.total += cheapestProduct.price * item.quantity;
           }
+        });
+      });
 
-          const itemPrice = match.ItemPrice;
-          storeProducts[storeKey].items.push({
-            name: item.name,
-            matchedProduct: match.ItemName || '',
-            price: itemPrice,
-            quantity: 1
-          });
-          storeProducts[storeKey].total += itemPrice;
-        }
-      }
-
-      // Convert to array and filter stores that don't have all items
-      const results = Object.values(storeProducts)
-        .filter(store => store.items.length === activeItems.length)
+      // Filter out stores with no matches and sort by total price
+      const validComparisons = storeComparisons
+        .filter(store => store.items.some(item => item.isAvailable))
         .sort((a, b) => a.total - b.total);
 
-      console.log('Final comparison results:', results);
-      return results;
+      console.log('Final comparison results:', validComparisons);
+      return validComparisons;
     },
     enabled: items.length > 0
   });

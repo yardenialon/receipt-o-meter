@@ -1,31 +1,46 @@
 import { Card } from "@/components/ui/card";
-import { Store, TrendingDown } from "lucide-react";
+import { Store, TrendingDown, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface StoreTotal {
+interface StoreComparison {
   storeName: string;
   storeId: string | null;
   total: number;
   items: {
     name: string;
-    price: number;
+    price: number | null;
     matchedProduct: string;
     quantity: number;
+    isAvailable: boolean;
   }[];
 }
 
 interface PriceComparisonProps {
-  comparisons: StoreTotal[];
+  comparisons: StoreComparison[];
+  isLoading?: boolean;
 }
 
-export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProps) => {
+export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <p className="text-center text-muted-foreground mt-2">
+          מחשב השוואת מחירים...
+        </p>
+      </Card>
+    );
+  }
+
   if (!comparisons.length) {
     return (
       <Card className="p-6">
         <p className="text-center text-muted-foreground">
-          לא נמצאו חנויות עם כל המוצרים המבוקשים
+          לא נמצאו חנויות עם מידע על המוצרים המבוקשים
         </p>
       </Card>
     );
@@ -36,30 +51,6 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
   const mostExpensiveTotal = sortedComparisons[sortedComparisons.length - 1].total;
   const potentialSavings = mostExpensiveTotal - cheapestTotal;
   const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
-
-  // Group items by product name to compare prices across stores
-  const productComparisons: Record<string, Array<{
-    storeName: string;
-    storeId: string | null;
-    price: number;
-    matchedProduct: string;
-    quantity: number;
-  }>> = {};
-
-  sortedComparisons.forEach(store => {
-    store.items.forEach(item => {
-      if (!productComparisons[item.name]) {
-        productComparisons[item.name] = [];
-      }
-      productComparisons[item.name].push({
-        storeName: store.storeName,
-        storeId: store.storeId,
-        price: item.price,
-        matchedProduct: item.matchedProduct,
-        quantity: item.quantity
-      });
-    });
-  });
 
   return (
     <div className="space-y-6">
@@ -80,112 +71,81 @@ export const ShoppingListPriceComparison = ({ comparisons }: PriceComparisonProp
         </Card>
       )}
 
-      <div className="space-y-4">
-        {sortedComparisons.map((comparison, index) => {
-          const isLowestPrice = comparison.total === cheapestTotal;
-          const priceDiff = isLowestPrice ? 0 : ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1);
-          const progressValue = (comparison.total / mostExpensiveTotal) * 100;
-          
-          return (
-            <Card key={`${comparison.storeName}-${comparison.storeId}-${index}`} className={`p-4 ${isLowestPrice ? 'border-green-200' : ''}`}>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={isLowestPrice ? "default" : "secondary"}>
-                      <Store className="h-4 w-4 mr-1" />
-                      {comparison.storeName}
-                      {comparison.storeId && ` (סניף ${comparison.storeId})`}
-                    </Badge>
-                    {isLowestPrice && (
-                      <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
-                        המחיר הזול ביותר
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-lg font-bold">
-                    ₪{comparison.total.toFixed(2)}
-                    {!isLowestPrice && (
-                      <span className="text-sm text-muted-foreground mr-2">
-                        (+{priceDiff}%)
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <Progress value={progressValue} className="h-2" />
-
-                <div className="space-y-2">
-                  {comparison.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex justify-between text-sm">
+      <ScrollArea className="h-[600px] pr-4">
+        <div className="space-y-4">
+          {sortedComparisons.map((comparison, index) => {
+            const isLowestPrice = comparison.total === cheapestTotal;
+            const priceDiff = isLowestPrice ? 0 : ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1);
+            const progressValue = (comparison.total / mostExpensiveTotal) * 100;
+            const unavailableItems = comparison.items.filter(item => !item.isAvailable);
+            
+            return (
+              <Card 
+                key={`${comparison.storeName}-${comparison.storeId}-${index}`} 
+                className={`p-4 ${isLowestPrice ? 'border-green-200 bg-green-50/30' : ''}`}
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <span>
-                          {item.name} {item.quantity > 1 && `(x${item.quantity})`}
+                        <Badge variant={isLowestPrice ? "default" : "secondary"}>
+                          <Store className="h-4 w-4 mr-1" />
+                          {comparison.storeName}
+                          {comparison.storeId && ` (סניף ${comparison.storeId})`}
+                        </Badge>
+                        {isLowestPrice && (
+                          <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
+                            המחיר הזול ביותר
+                          </Badge>
+                        )}
+                      </div>
+                      {unavailableItems.length > 0 && (
+                        <div className="flex items-center gap-1 text-amber-600 text-sm">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>{unavailableItems.length} פריטים חסרים</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-lg font-bold">
+                      ₪{comparison.total.toFixed(2)}
+                      {!isLowestPrice && (
+                        <span className="text-sm text-muted-foreground mr-2">
+                          (+{priceDiff}%)
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.matchedProduct}
+                      )}
+                    </div>
+                  </div>
+
+                  <Progress value={progressValue} className="h-2" />
+
+                  <div className="space-y-2 divide-y">
+                    {comparison.items.map((item, itemIndex) => (
+                      <div 
+                        key={itemIndex} 
+                        className={`flex justify-between py-2 text-sm ${!item.isAvailable ? 'text-muted-foreground' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>
+                            {item.name} {item.quantity > 1 && `(x${item.quantity})`}
+                          </span>
+                          {!item.isAvailable && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                              לא במלאי
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="font-medium">
+                          {item.price ? `₪${(item.price * item.quantity).toFixed(2)}` : '-'}
                         </span>
                       </div>
-                      <span className="font-medium">₪{item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="detailed-comparison">
-          <AccordionTrigger className="text-sm text-muted-foreground">
-            השוואת מחירים מפורטת לפי מוצר
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-6 mt-4">
-              {Object.entries(productComparisons).map(([productName, stores]) => {
-                const sortedStores = [...stores].sort((a, b) => a.price - b.price);
-                const lowestPrice = sortedStores[0].price;
-                
-                return (
-                  <div key={productName} className="space-y-2">
-                    <h4 className="font-medium">{productName}</h4>
-                    <div className="space-y-1">
-                      {sortedStores.map((store, storeIndex) => {
-                        const priceDiff = ((store.price - lowestPrice) / lowestPrice * 100).toFixed(1);
-                        const isLowestPrice = store.price === lowestPrice;
-                        
-                        return (
-                          <div key={storeIndex} className="flex justify-between items-center text-sm">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={isLowestPrice ? "default" : "secondary"} className="text-xs">
-                                {store.storeName}
-                                {store.storeId && ` (${store.storeId})`}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {store.matchedProduct}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${isLowestPrice ? 'text-green-600' : ''}`}>
-                                ₪{store.price.toFixed(2)}
-                              </span>
-                              {!isLowestPrice && (
-                                <span className="text-xs text-muted-foreground">
-                                  (+{priceDiff}%)
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
