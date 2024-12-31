@@ -1,7 +1,12 @@
 import { DocumentAIResult } from './types.ts';
 
 interface DocumentAIResult {
-  items: Array<{ name: string; price: number; quantity?: number }>;
+  items: Array<{ 
+    name: string; 
+    price: number; 
+    quantity?: number;
+    product_code?: string;
+  }>;
   total: number;
   storeName: string;
 }
@@ -64,7 +69,12 @@ export async function processDocument(
   }
   if (!storeName) storeName = lines[0] || 'חנות לא ידועה';
 
-  const items: Array<{ name: string; price: number; quantity?: number }> = [];
+  const items: Array<{ 
+    name: string; 
+    price: number; 
+    quantity?: number;
+    product_code?: string;
+  }> = [];
   let total = 0;
 
   // ביטויים שמעידים על סכום סופי
@@ -83,6 +93,9 @@ export async function processDocument(
   
   // ביטוי רגולרי לזיהוי מחיר - מספר עם אופציה לנקודה עשרונית ואופציה לסימן מטבע
   const priceRegex = /([0-9,]+\.?\d*)\s*(?:₪|ש"ח|שח)?$/;
+  
+  // ביטוי רגולרי לזיהוי מק"ט - מספרים בתחילת השורה או אחרי המילה מק"ט/קוד
+  const productCodeRegex = /(?:^|\b(?:מק"ט|קוד)\s*)(\d{4,})/;
 
   let foundTotal = false;
   
@@ -111,10 +124,19 @@ export async function processDocument(
         const priceMatch = line.match(priceRegex);
         if (priceMatch) {
           const price = parseFloat(priceMatch[1].replace(/,/g, ''));
-          const name = line
+          let name = line
             .replace(priceMatch[0], '') // הסרת המחיר
             .replace(/^\d+\s*/, '') // הסרת מספרים בתחילת השורה (כמו מק"ט)
             .trim();
+
+          // חיפוש מק"ט
+          const productCodeMatch = line.match(productCodeRegex);
+          const product_code = productCodeMatch ? productCodeMatch[1] : undefined;
+          
+          // הסרת המק"ט מהשם אם נמצא
+          if (product_code) {
+            name = name.replace(productCodeMatch[0], '').trim();
+          }
 
           // וידוא שיש שם תקין לפריט ומחיר חיובי
           if (name && !isNaN(price) && price > 0) {
@@ -125,7 +147,8 @@ export async function processDocument(
             items.push({
               name,
               price,
-              quantity
+              quantity,
+              product_code
             });
           }
         }

@@ -18,7 +18,7 @@ interface ReceiptItemProps {
       price: number;
       quantity: number;
       refundable_amount: number;
-      product_code?: string; // Added product code field
+      product_code?: string;
     }[];
   };
   isExpanded: boolean;

@@ -3,6 +3,7 @@ export interface DocumentAIResult {
     name: string;
     price: number;
     quantity?: number;
+    product_code?: string;
   }>;
   total: number;
   storeName: string;
