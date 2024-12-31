@@ -16,6 +16,7 @@ interface StoreComparison {
     quantity: number;
     isAvailable: boolean;
   }[];
+  availableItemsCount: number;
 }
 
 interface PriceComparisonProps {
@@ -47,8 +48,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     );
   }
 
-  const cheapestTotal = comparisons[0].total;
-  const mostExpensiveTotal = comparisons[comparisons.length - 1].total;
+  const cheapestTotal = Math.min(...comparisons.map(c => c.total));
+  const mostExpensiveTotal = Math.max(...comparisons.map(c => c.total));
   const potentialSavings = mostExpensiveTotal - cheapestTotal;
   const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
 

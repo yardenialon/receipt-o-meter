@@ -18,7 +18,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // Get all store products that match any of our items from the store_products_import table
+      // Get all store products that match any of our items
       const { data: products, error } = await supabase
         .from('store_products_import')
         .select('*')
@@ -54,6 +54,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         
         console.log(`Processing ${chain} (Store ID: ${storeId}), found ${storeProducts.length} products`);
         
+        // Initialize store comparison with all items marked as unavailable
         const comparison = {
           storeName: chain,
           storeId: storeId === 'main' ? null : storeId,
@@ -68,7 +69,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           availableItemsCount: 0
         };
 
-        // Process items for this store
+        // Process each item for this store
         comparison.items.forEach((item, index) => {
           const matchingProducts = storeProducts.filter(p => 
             p.ItemName.toLowerCase().includes(item.name.toLowerCase()) ||
@@ -99,19 +100,15 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return comparison;
       });
 
-      // Include all stores in results, sorted by total price
-      const validComparisons = allStoreComparisons.sort((a, b) => a.total - b.total);
-
-      console.log('Final comparison results:', validComparisons);
-      return validComparisons;
+      // Sort comparisons by total price
+      const sortedComparisons = allStoreComparisons.sort((a, b) => a.total - b.total);
+      console.log('Final sorted comparisons:', sortedComparisons);
+      
+      return sortedComparisons;
     },
-    // Enable automatic updates when items change
     enabled: items.length > 0,
-    // Refresh data every minute to keep prices current
     refetchInterval: 60000,
-    // Retry up to 3 times on failure
     retry: 3,
-    // Show stale data while revalidating
     staleTime: 30000,
   });
 };
