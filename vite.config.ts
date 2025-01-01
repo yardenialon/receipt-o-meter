@@ -10,11 +10,11 @@ export default defineConfig(({ mode }) => ({
     headers: {
       "Content-Security-Policy": [
         "default-src 'self'",
-        "img-src 'self' data: blob: https://kthqkydgegsoheymesgc.supabase.co https://receipt-o-meter.lovable.app",
+        "img-src 'self' data: blob: https://*.supabase.co https://receipt-o-meter.lovable.app",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://kthqkydgegsoheymesgc.supabase.co",
-        "connect-src 'self' https://kthqkydgegsoheymesgc.supabase.co wss://kthqkydgegsoheymesgc.supabase.co https://prices.shufersal.co.il",
-        "frame-src 'self' https://kthqkydgegsoheymesgc.supabase.co",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://prices.shufersal.co.il https://receipt-o-meter.lovable.app",
+        "frame-src 'self' https://*.supabase.co",
         "font-src 'self' data: https://fonts.gstatic.com",
       ].join("; "),
       "Access-Control-Allow-Origin": "*",
