@@ -34,7 +34,7 @@ export const LoginHero = () => {
 
   return (
     <motion.div 
-      className="text-center mb-2 md:mb-8 px-3 md:px-0"
+      className="text-center mb-2 md:mb-8 px-1 md:px-2"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
@@ -51,14 +51,14 @@ export const LoginHero = () => {
         נהלו חכם. חסכו יותר.
       </h1>
       
-      <p className="text-base md:text-xl text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
+      <p className="text-base md:text-xl text-gray-600 mb-4 md:mb-6 max-w-3xl mx-auto">
         הדרך החכמה לחסוך בקניות ולשמור על המזון שלכם
       </p>
 
       <div className="mb-4 md:mb-6">
         <Button
           onClick={handleGoogleSignIn}
-          className="w-full max-w-sm mx-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 flex items-center justify-center gap-2 py-5 md:py-6"
+          className="w-full max-w-lg mx-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 flex items-center justify-center gap-2 py-5 md:py-6"
           variant="outline"
         >
           <svg className="size-5" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ export const LoginHero = () => {
         </Button>
       </div>
 
-      <div className="h-20 md:h-48 mb-4 md:mb-8">
+      <div className="h-20 md:h-48 mb-4 md:mb-8 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <Line type="monotone" dataKey="savings" stroke="#47d193" strokeWidth={isMobile ? 1 : 2} dot={false} />
