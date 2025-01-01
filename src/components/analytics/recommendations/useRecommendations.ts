@@ -19,10 +19,11 @@ export const useRecommendations = () => {
           price,
           quantity,
           category,
-          receipts!inner(created_at)
+          receipts (
+            created_at
+          )
         `)
-        .gte('receipts.created_at', threeMonthsAgo.toISOString())
-        .order('receipts.created_at', { ascending: false });
+        .gte('receipts.created_at', threeMonthsAgo.toISOString());
 
       if (error) throw error;
 
