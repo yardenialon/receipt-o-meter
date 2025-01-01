@@ -34,34 +34,34 @@ export const LoginHero = () => {
 
   return (
     <motion.div 
-      className="text-center mb-2 md:mb-8 px-1 md:px-2"
+      className="text-center mb-4 md:mb-8 px-1 md:px-2"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
       <motion.div 
-        className="flex justify-center mb-2 md:mb-4"
+        className="flex justify-center mb-4 md:mb-6"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         <BillBeLogo size={isMobile ? 100 : 180} className="mb-2 md:mb-4" />
       </motion.div>
       
-      <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
+      <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
         נהלו חכם. חסכו יותר.
       </h1>
       
-      <p className="text-base md:text-xl text-gray-600 mb-4 md:mb-6 max-w-3xl mx-auto">
+      <p className="text-xl md:text-xl text-gray-600 mb-6 md:mb-8 max-w-3xl mx-auto">
         הדרך החכמה לחסוך בקניות ולשמור על המזון שלכם
       </p>
 
-      <div className="mb-4 md:mb-6">
+      <div className="mb-6 md:mb-8">
         <Button
           onClick={handleGoogleSignIn}
-          className="w-full max-w-lg mx-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 flex items-center justify-center gap-2 py-5 md:py-6"
+          className="w-full max-w-lg mx-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 flex items-center justify-center gap-2 py-6 md:py-6 text-lg md:text-base"
           variant="outline"
         >
-          <svg className="size-5" viewBox="0 0 24 24">
+          <svg className="size-6 md:size-5" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -79,7 +79,7 @@ export const LoginHero = () => {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          הרשמה עם Google
+          <span className="text-lg md:text-base">הרשמה עם Google</span>
         </Button>
       </div>
 
