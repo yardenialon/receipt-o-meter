@@ -8,13 +8,13 @@ export const AuthSection = () => {
 
   return (
     <motion.div 
-      className="max-w-md mx-auto px-4 md:px-0"
+      className="max-w-md mx-auto px-4 md:px-0 mb-8"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.6 }}
     >
-      <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-400/5 via-blue-400/5 to-indigo-400/5 rounded-3xl" />
+      <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-4 md:p-8 shadow-2xl border border-white/20">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-400/5 via-blue-400/5 to-indigo-400/5 rounded-2xl" />
         <Auth
           supabaseClient={supabase}
           appearance={{
@@ -77,7 +77,7 @@ export const AuthSection = () => {
             }
           }}
         />
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-xs md:text-sm text-gray-500 mt-4">
           2 דקות להתחברות, שנים של חיסכון
         </p>
       </div>

@@ -18,28 +18,28 @@ export const LoginHero = () => {
 
   return (
     <motion.div 
-      className="text-center mb-8 md:mb-16"
+      className="text-center mb-6 md:mb-12 px-4 md:px-0"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
       <motion.div 
-        className="flex justify-center mb-6 md:mb-8"
+        className="flex justify-center mb-4 md:mb-8"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <BillBeLogo size={isMobile ? 150 : 200} showTagline={false} />
+        <BillBeLogo size={isMobile ? 120 : 180} showTagline={false} />
       </motion.div>
       
-      <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
+      <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
         נהלו חכם. חסכו יותר.
       </h1>
       
-      <p className="text-lg md:text-xl text-gray-600 mb-6 md:mb-8 px-4 md:px-0">
+      <p className="text-base md:text-xl text-gray-600 mb-4 md:mb-8">
         הדרך החכמה לחסוך בקניות ולשמור על המזון שלכם
       </p>
 
-      <div className="h-32 md:h-48 mb-8 md:mb-12">
+      <div className="h-24 md:h-48 mb-6 md:mb-12">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <Line type="monotone" dataKey="savings" stroke="#47d193" strokeWidth={2} dot={false} />
