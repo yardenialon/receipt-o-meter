@@ -10,12 +10,12 @@ export default defineConfig(({ mode }) => ({
     headers: {
       "Content-Security-Policy": [
         "default-src 'self'",
-        "img-src 'self' data: blob: https: *",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com *",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: *",
-        "connect-src 'self' https: wss: *",
-        "frame-src 'self' https: *",
-        "font-src 'self' data: https://fonts.gstatic.com *",
+        "img-src 'self' data: blob: https://kthqkydgegsoheymesgc.supabase.co https://receipt-o-meter.lovable.app",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://kthqkydgegsoheymesgc.supabase.co",
+        "connect-src 'self' https://kthqkydgegsoheymesgc.supabase.co wss://kthqkydgegsoheymesgc.supabase.co https://prices.shufersal.co.il",
+        "frame-src 'self' https://kthqkydgegsoheymesgc.supabase.co",
+        "font-src 'self' data: https://fonts.gstatic.com",
       ].join("; "),
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
