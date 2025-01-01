@@ -12,6 +12,7 @@ interface SearchResult {
   PriceUpdateDate?: string;
   store_chain?: string;
   store_id?: string;
+  store_address?: string;
   ManufacturerName?: string;
 }
 
@@ -51,6 +52,7 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
           store_id: item.store_id || null,
+          store_address: item.store_address || null,
           price: item.ItemPrice || 0,
           price_update_date: item.PriceUpdateDate || new Date().toISOString()
         }));
