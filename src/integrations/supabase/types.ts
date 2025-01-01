@@ -294,6 +294,7 @@ export type Database = {
           PriceUpdateDate: string | null
           QtyInPackage: number | null
           Quantity: number | null
+          store_address: string | null
           store_chain: string | null
           store_id: string | null
           UnitOfMeasure: string | null
@@ -314,6 +315,7 @@ export type Database = {
           PriceUpdateDate?: string | null
           QtyInPackage?: number | null
           Quantity?: number | null
+          store_address?: string | null
           store_chain?: string | null
           store_id?: string | null
           UnitOfMeasure?: string | null
@@ -334,6 +336,7 @@ export type Database = {
           PriceUpdateDate?: string | null
           QtyInPackage?: number | null
           Quantity?: number | null
+          store_address?: string | null
           store_chain?: string | null
           store_id?: string | null
           UnitOfMeasure?: string | null
