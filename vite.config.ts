@@ -10,12 +10,12 @@ export default defineConfig(({ mode }) => ({
     headers: {
       "Content-Security-Policy": [
         "default-src 'self'",
-        "img-src 'self' data: blob: https:",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev",
-        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://prices.shufersal.co.il ws: wss: http: https: https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev",
-        "frame-src 'self' https://*.supabase.co https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev",
-        "font-src 'self' data: https://fonts.gstatic.com",
+        "img-src 'self' data: blob: https: *",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com *",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev *",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://prices.shufersal.co.il ws: wss: http: https: https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev *",
+        "frame-src 'self' https://*.supabase.co https://*.lovable.app https://*.gptengineer.app https://*.lovable.dev *",
+        "font-src 'self' data: https://fonts.gstatic.com *",
       ].join("; "),
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
