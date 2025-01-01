@@ -42,6 +42,24 @@ export const useBarcodeDetection = ({ onScan }: UseBarcodeScannerProps) => {
     }
   };
 
+  const detectBarcodeWithNative = async (video: HTMLVideoElement): Promise<string | null> => {
+    try {
+      // Check if BarcodeDetector is supported
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new (window as any).BarcodeDetector();
+        const barcodes = await barcodeDetector.detect(video);
+        
+        if (barcodes.length > 0) {
+          return barcodes[0].rawValue;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error using native BarcodeDetector:', error);
+      return null;
+    }
+  };
+
   const detectBarcodeWithVision = async (imageBlob: Blob) => {
     try {
       const formData = new FormData();
@@ -75,6 +93,18 @@ export const useBarcodeDetection = ({ onScan }: UseBarcodeScannerProps) => {
   const captureAndAnalyzeFrame = async () => {
     if (!videoRef.current) return false;
     
+    // First try native BarcodeDetector
+    const nativeBarcode = await detectBarcodeWithNative(videoRef.current);
+    if (nativeBarcode) {
+      const product = await findProductByBarcode(nativeBarcode);
+      if (product) {
+        onScan(nativeBarcode);
+        toast.success('מוצר נמצא!');
+        return true;
+      }
+    }
+    
+    // If native detection fails, try Vision API
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
@@ -156,8 +186,7 @@ export const useBarcodeDetection = ({ onScan }: UseBarcodeScannerProps) => {
   };
 
   const openGoogleLens = () => {
-    const googleLensScannerUrl = 'https://lens.google.com';
-    window.open(googleLensScannerUrl, '_blank');
+    window.open('https://lens.google.com', '_blank');
     toast.info('נפתח סורק Google Lens בחלון חדש');
     setShowGoogleLens(false);
   };
