@@ -5,23 +5,22 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: true,
+    host: "::",
     port: 8080,
     headers: {
       "Content-Security-Policy": [
         "default-src 'self'",
-        "img-src 'self' data: blob: https: *",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com *",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: *",
-        "connect-src 'self' ws: wss: http: https: *",
-        "frame-src 'self' https: *",
-        "font-src 'self' data: https://fonts.gstatic.com *",
+        "img-src 'self' data: blob: https:",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://prices.shufersal.co.il",
+        "frame-src 'self' https://*.supabase.co",
+        "font-src 'self' data: https://fonts.gstatic.com",
       ].join("; "),
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Origin, Content-Type, Accept",
     },
-    cors: true,
   },
   plugins: [
     react(),
