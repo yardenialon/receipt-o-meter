@@ -14,7 +14,7 @@ function App() {
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <main className="flex-1">
+          <main className="flex-1 overflow-x-hidden">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
