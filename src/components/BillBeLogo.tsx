@@ -8,7 +8,7 @@ interface BillBeLogoProps {
 export const BillBeLogo: React.FC<BillBeLogoProps> = ({ size = 150, className = '' }) => {
   return (
     <img 
-      src="/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png"
+      src="/lovable-uploads/0b91faef-306a-433e-ab3e-ce812ecd1151.png"
       alt="Savvy Logo"
       style={{ 
         width: size,
