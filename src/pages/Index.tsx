@@ -30,8 +30,8 @@ const Index = () => {
   const username = user.email?.split('@')[0] || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-primary-50/90 to-primary-100/80">
-      <div className="container mx-auto px-1 md:px-2 py-6 md:py-8">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+      <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center mb-8">
           <div className="text-center">
             <div className="flex flex-col items-center justify-center gap-3 mb-4">
@@ -41,7 +41,7 @@ const Index = () => {
                   {isMobile ? 'קבלות' : 'ניהול קבלות'}
                 </h1>
                 <div className="flex flex-col gap-1">
-                  <p className="text-base font-medium text-gray-700">
+                  <p className="text-lg font-medium text-gray-700">
                     שלום {username}!
                   </p>
                   <p className="text-sm text-gray-500">
