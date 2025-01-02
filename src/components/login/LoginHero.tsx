@@ -40,11 +40,11 @@ export const LoginHero = () => {
       transition={{ duration: 0.6 }}
     >
       <motion.div 
-        className="flex justify-center mb-2 md:mb-4"
+        className="flex justify-center mb-4 md:mb-8"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <BillBeLogo size={isMobile ? 100 : 180} className="mb-2 md:mb-4" />
+        <BillBeLogo size={isMobile ? 200 : 300} className="mb-2 md:mb-4" />
       </motion.div>
       
       <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
