@@ -30,7 +30,7 @@ const Index = () => {
   const username = user.email?.split('@')[0] || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-primary-50/90 to-primary-100/80">
       <div className="container mx-auto px-1 md:px-2 py-6 md:py-8">
         <div className="flex justify-center items-center mb-8">
           <div className="text-center">
