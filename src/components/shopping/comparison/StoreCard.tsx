@@ -51,7 +51,6 @@ export const StoreCard = ({
                 <Badge variant={isCheapest ? "default" : "secondary"}>
                   <div className="flex items-center gap-2">
                     <StoreLogo storeName={comparison.storeName} className="ml-1" />
-                    <span>{comparison.storeName}</span>
                   </div>
                 </Badge>
                 {comparison.storeId && (
