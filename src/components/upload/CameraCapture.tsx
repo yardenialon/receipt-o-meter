@@ -111,19 +111,27 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
 
   if (showCamera) {
     return (
-      <div className="w-full max-w-xl mx-auto mt-8 space-y-4">
+      <div className="w-full max-w-xl mx-auto space-y-4">
         <video 
           ref={videoRef} 
           autoPlay 
           playsInline 
-          className="w-full rounded-xl border border-gray-200"
+          className="w-full rounded-2xl border border-primary-100 shadow-lg"
         />
         <canvas ref={canvasRef} className="hidden" />
         <div className="flex justify-center gap-4">
-          <Button onClick={stopCamera} variant="outline">
+          <Button 
+            onClick={stopCamera} 
+            variant="outline"
+            className="px-8 py-6 text-lg"
+          >
             ביטול
           </Button>
-          <Button onClick={capturePhoto} variant="default">
+          <Button 
+            onClick={capturePhoto} 
+            variant="default"
+            className="px-8 py-6 text-lg bg-primary hover:bg-primary-600"
+          >
             צלם תמונה
           </Button>
         </div>
@@ -143,11 +151,15 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
       />
       <Button
         onClick={startCamera}
-        variant="outline"
-        className="flex items-center gap-2"
+        size="lg"
+        className="relative overflow-hidden group bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl px-8 py-6 w-full md:w-auto animate-pulse"
       >
-        <Camera className="w-4 h-4" />
-        צלם קבלה
+        <div className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all duration-300" />
+        <div className="relative flex items-center justify-center gap-4">
+          <Camera className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
+          <span className="text-lg md:text-xl font-medium">צלם קבלה</span>
+        </div>
+        <div className="absolute inset-0 border border-white/20 rounded-2xl" />
       </Button>
     </>
   );

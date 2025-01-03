@@ -102,11 +102,10 @@ const UploadZone = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <DropZone onFileDrop={handleFile} isUploading={isUploading} />
-      
-      <div className="flex flex-col items-center gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col items-center gap-6">
         <CameraCapture onPhotoCapture={handleFile} />
+        <DropZone onFileDrop={handleFile} isUploading={isUploading} />
         <PaymentButtons />
       </div>
     </div>

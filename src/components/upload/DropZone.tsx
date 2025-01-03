@@ -27,31 +27,28 @@ const DropZone = ({ onFileDrop, isUploading }: DropZoneProps) => {
     <div
       {...getRootProps()}
       className={`
-        w-full max-w-xl mx-auto mt-8 p-8 border-2 border-dashed rounded-xl
-        transition-colors duration-200 ease-in-out cursor-pointer
-        ${isDragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300'}
+        w-full max-w-md mx-auto p-6 border-2 border-dashed rounded-xl
+        transition-all duration-200 ease-in-out cursor-pointer backdrop-blur-sm
+        ${isDragActive ? 'border-primary-400 bg-primary-50/50' : 'border-gray-200 hover:border-primary-200'}
         ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
       `}
     >
       <input {...getInputProps()} />
-      <div className="flex flex-col items-center justify-center space-y-4">
+      <div className="flex flex-col items-center justify-center space-y-2">
         {isUploading ? (
           <div className="animate-pulse">
-            <File className="w-12 h-12 text-primary-500" />
+            <File className="w-8 h-8 text-primary-500" />
           </div>
         ) : (
-          <Upload className="w-12 h-12 text-gray-400" />
+          <Upload className="w-8 h-8 text-gray-400" />
         )}
         <div className="text-center">
-          <p className="text-lg font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-600">
             {isDragActive
               ? "שחרר את הקבלה כאן"
-              : "גרור וזרוק את הקבלה כאן"}
+              : "או גרור קבלה לכאן"}
           </p>
-          <p className="text-sm text-gray-500 mt-1">
-            או לחץ לבחירת קובץ
-          </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 mt-1">
             קבצים נתמכים: JPG, PNG, PDF
           </p>
         </div>
