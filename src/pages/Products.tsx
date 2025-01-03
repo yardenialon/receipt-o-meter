@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
+import { PriceFileTest } from '@/components/products/PriceFileTest';
 import { toast } from 'sonner';
 
 const Products = () => {
@@ -20,7 +21,6 @@ const Products = () => {
 
     checkAuth();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         navigate('/login');
@@ -37,6 +37,7 @@ const Products = () => {
       <ProductsHeader />
       
       <div className="mt-8">
+        <PriceFileTest />
         <ProductsSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}

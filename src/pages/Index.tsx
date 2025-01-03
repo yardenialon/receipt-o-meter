@@ -1,10 +1,10 @@
-import { PriceFileTest } from '@/components/products/PriceFileTest';
+import ReceiptList from '@/components/ReceiptList';
 
 export default function Index() {
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">ברוכים הבאים</h1>
-      <PriceFileTest />
+      <h1 className="text-2xl font-bold mb-4">הקבלות שלי</h1>
+      <ReceiptList />
     </div>
   );
 }
