@@ -59,7 +59,10 @@ export const ReceiptItem = ({
       {isExpanded && (
         <div className="mt-4 border-t border-primary-100 pt-4 animate-slide-up">
           {validItems.length > 0 && (
-            <ReceiptItemsList items={validItems} />
+            <ReceiptItemsList 
+              items={validItems}
+              storeName={receipt.store_name}
+            />
           )}
           <PaymentButtons />
         </div>
