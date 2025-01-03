@@ -16,6 +16,10 @@ export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
     if (normalizedName.includes('shufersal') || normalizedName.includes('שופרסל')) {
       return '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png';
     }
+
+    if (normalizedName.includes('machsanei') || normalizedName.includes('מחסני השוק')) {
+      return '/lovable-uploads/b04d4ae7-290f-4bfb-a8b2-4a9da2b16011.png';
+    }
     
     return null;
   };
