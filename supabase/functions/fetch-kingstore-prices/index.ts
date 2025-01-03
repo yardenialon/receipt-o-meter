@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { format } from "https://deno.land/std@0.190.0/datetime/format.ts";
+import { gunzip } from "https://deno.land/x/compress@v0.4.5/gzip/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,39 +41,54 @@ serve(async (req) => {
       throw new Error('Failed to parse HTML document');
     }
 
-    // Find download link
-    console.log('Looking for download link...');
-    const downloadLink = doc.querySelector('a[href*=".xml"]');
-    if (!downloadLink) {
-      throw new Error('Download link not found on page');
+    // Get current date in DD/MM/YYYY format
+    const today = new Date();
+    const formattedDate = format(today, 'dd/MM/yyyy');
+    console.log('Looking for files with today\'s date:', formattedDate);
+
+    // Find all links in the table
+    const links = doc.querySelectorAll('a[href*=".gz"]');
+    let targetLink = null;
+
+    for (const link of links) {
+      const row = link.closest('tr');
+      if (!row) continue;
+
+      const cells = row.querySelectorAll('td');
+      if (cells.length < 4) continue;
+
+      const fileName = cells[0]?.textContent?.trim() || '';
+      const fileDate = cells[3]?.textContent?.trim() || '';
+
+      console.log('Checking file:', fileName, 'Date:', fileDate);
+
+      if (fileName.startsWith('PriceFull') && fileDate === formattedDate) {
+        targetLink = link.getAttribute('href');
+        console.log('Found matching file:', fileName);
+        break;
+      }
     }
 
-    const href = downloadLink.getAttribute('href');
-    if (!href) {
-      throw new Error('Download link href is empty');
+    if (!targetLink) {
+      throw new Error('No matching price file found for today');
     }
 
-    console.log('Found download link:', href);
-
-    // Get store ID from the page
-    const storeIdMatch = html.match(/סניף\s*(\d+)/);
-    const storeId = storeIdMatch ? storeIdMatch[1] : null;
-
-    if (!storeId) {
-      throw new Error('Store ID not found on page');
+    // Download the GZ file
+    console.log('Downloading GZ file...');
+    const gzResponse = await fetch(targetLink);
+    if (!gzResponse.ok) {
+      throw new Error(`Failed to download GZ file: ${gzResponse.status} ${gzResponse.statusText}`);
     }
 
-    console.log('Found store ID:', storeId);
+    // Get the GZ file content as ArrayBuffer
+    const gzBuffer = await gzResponse.arrayBuffer();
+    console.log('GZ file downloaded, size:', gzBuffer.byteLength);
 
-    // Download the XML file
-    console.log('Downloading XML file...');
-    const xmlResponse = await fetch(href);
-    if (!xmlResponse.ok) {
-      throw new Error(`Failed to download XML: ${xmlResponse.status} ${xmlResponse.statusText}`);
-    }
-
-    const xmlText = await xmlResponse.text();
-    console.log('XML file downloaded, length:', xmlText.length);
+    // Decompress GZ file
+    console.log('Decompressing GZ file...');
+    const decompressed = gunzip(new Uint8Array(gzBuffer));
+    const xmlText = new TextDecoder().decode(decompressed);
+    console.log('XML file extracted, length:', xmlText.length);
 
     // Parse XML
     console.log('Parsing XML...');
@@ -88,34 +105,45 @@ serve(async (req) => {
 
     console.log(`Found ${items.length} items in XML`);
 
-    // Helper function to safely get text content
-    const getElementText = (parent: Element, tagName: string): string => {
-      const element = parent.querySelector(tagName);
-      return element?.textContent?.trim() || '';
-    };
+    // Get store ID from the page
+    const storeIdMatch = html.match(/סניף\s*(\d+)/);
+    const storeId = storeIdMatch ? storeIdMatch[1] : null;
+
+    if (!storeId) {
+      throw new Error('Store ID not found on page');
+    }
+
+    console.log('Found store ID:', storeId);
 
     // Transform items to database format
     console.log('Processing items...');
-    const productsToImport = items.map(item => ({
-      store_chain: 'קינג סטור',
-      store_id: storeId,
-      PriceUpdateDate: getElementText(item, 'PriceUpdateDate') || new Date().toISOString(),
-      ItemCode: getElementText(item, 'ItemCode'),
-      ItemType: getElementText(item, 'ItemType'),
-      ItemName: getElementText(item, 'ItemName'),
-      ManufacturerName: getElementText(item, 'ManufacturerName'),
-      ManufactureCountry: getElementText(item, 'ManufactureCountry'),
-      ManufacturerItemDescription: getElementText(item, 'ManufacturerItemDescription'),
-      UnitQty: getElementText(item, 'UnitQty'),
-      Quantity: parseFloat(getElementText(item, 'Quantity')) || null,
-      UnitOfMeasure: getElementText(item, 'UnitOfMeasure'),
-      bIsWeighted: getElementText(item, 'bIsWeighted') === 'true',
-      QtyInPackage: parseFloat(getElementText(item, 'QtyInPackage')) || null,
-      ItemPrice: parseFloat(getElementText(item, 'ItemPrice')) || null,
-      UnitOfMeasurePrice: parseFloat(getElementText(item, 'UnitOfMeasurePrice')) || null,
-      AllowDiscount: getElementText(item, 'AllowDiscount') === 'true',
-      ItemStatus: getElementText(item, 'ItemStatus')
-    }));
+    const productsToImport = items.map(item => {
+      const getElementText = (tagName: string): string => {
+        const element = item.querySelector(tagName);
+        return element?.textContent?.trim() || '';
+      };
+
+      return {
+        store_chain: 'קינג סטור',
+        store_id: storeId,
+        PriceUpdateDate: getElementText('PriceUpdateDate') || new Date().toISOString(),
+        ItemCode: getElementText('ItemCode'),
+        ItemType: getElementText('ItemType'),
+        ItemName: getElementText('ItemName'),
+        ManufacturerName: getElementText('ManufacturerName'),
+        ManufactureCountry: getElementText('ManufactureCountry'),
+        ManufacturerItemDescription: getElementText('ManufacturerItemDescription'),
+        UnitQty: getElementText('UnitQty'),
+        Quantity: parseFloat(getElementText('Quantity')) || null,
+        bIsWeighted: getElementText('bIsWeighted') === 'true',
+        UnitOfMeasure: getElementText('UnitOfMeasure'),
+        QtyInPackage: parseFloat(getElementText('QtyInPackage')) || null,
+        ItemPrice: parseFloat(getElementText('ItemPrice')) || null,
+        UnitOfMeasurePrice: parseFloat(getElementText('UnitOfMeasurePrice')) || null,
+        AllowDiscount: getElementText('AllowDiscount') === 'true',
+        ItemStatus: getElementText('ItemStatus')
+      };
+    });
 
     // Insert data in batches
     const BATCH_SIZE = 500;
