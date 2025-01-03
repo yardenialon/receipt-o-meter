@@ -23,31 +23,52 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Launch browser
+    // Launch browser with additional options
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process'
+      ],
+      timeout: 30000 // 30 second timeout for browser launch
     });
 
-    console.log('Browser launched');
+    console.log('Browser launched successfully');
     
     try {
       const page = await browser.newPage();
       
-      // Navigate to the page
-      await page.goto('https://kingstore.binaprojects.com/Main.aspx');
-      console.log('Navigated to King Store page');
+      // Set navigation timeout
+      page.setDefaultNavigationTimeout(30000); // 30 seconds
+      
+      console.log('Navigating to King Store page...');
+      await page.goto('https://kingstore.binaprojects.com/Main.aspx', {
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+      console.log('Successfully loaded King Store page');
 
-      // Wait for and click the download link
-      const downloadLink = await page.waitForSelector('a:contains("להורדה לחץ כאן")');
+      // Wait for and click the download link with timeout
+      console.log('Looking for download link...');
+      const downloadLink = await page.waitForSelector('a:contains("להורדה לחץ כאן")', {
+        timeout: 10000
+      });
+      
       if (!downloadLink) {
-        throw new Error('Download link not found');
+        throw new Error('Download link not found on page');
       }
 
       // Get the href attribute
       const href = await downloadLink.evaluate(el => el.getAttribute('href'));
       if (!href) {
-        throw new Error('Download link href not found');
+        throw new Error('Download link href is empty');
       }
+
+      console.log('Found download link:', href);
 
       // Get the store ID from the branch name column
       const branchCell = await page.$('td:contains("סניף")');
@@ -58,33 +79,45 @@ serve(async (req) => {
       });
 
       if (!storeId) {
-        throw new Error('Store ID not found');
+        throw new Error('Store ID not found on page');
       }
 
       console.log('Found store ID:', storeId);
 
-      // Download the XML file
-      const response = await fetch(href);
-      const xmlText = await response.text();
+      // Download the XML file with timeout
+      console.log('Downloading XML file...');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
       
-      console.log('Downloaded XML file');
+      const response = await fetch(href, {
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download XML: ${response.status} ${response.statusText}`);
+      }
+
+      const xmlText = await response.text();
+      console.log('XML file downloaded, length:', xmlText.length);
 
       // Parse XML using DOMParser
+      console.log('Parsing XML...');
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       
       if (!xmlDoc) {
-        throw new Error('Failed to parse XML');
+        throw new Error('Failed to parse XML document');
       }
 
       // Get all Item elements
       const items = Array.from(xmlDoc.querySelectorAll('Items > Item'));
       
       if (!items || items.length === 0) {
-        throw new Error('No items found in XML');
+        throw new Error('No items found in XML document');
       }
 
-      console.log(`Processing ${items.length} items`);
+      console.log(`Found ${items.length} items in XML`);
 
       // Helper function to safely get text content
       const getElementText = (parent: Element, tagName: string): string => {
@@ -93,6 +126,7 @@ serve(async (req) => {
       };
 
       // Transform items to database format
+      console.log('Processing items...');
       const productsToImport = items.map(item => ({
         store_chain: 'קינג סטור',
         store_id: storeId,
@@ -114,29 +148,46 @@ serve(async (req) => {
         ItemStatus: getElementText(item, 'ItemStatus')
       }));
 
-      // Insert data in batches
-      const BATCH_SIZE = 1000;
+      console.log(`Processing ${productsToImport.length} products for import`);
+
+      // Insert data in smaller batches
+      const BATCH_SIZE = 500; // Reduced batch size
+      let successCount = 0;
+      let errorCount = 0;
+
       for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {
         const batch = productsToImport.slice(i, i + BATCH_SIZE);
-        const { error } = await supabase
-          .from('store_products_import')
-          .insert(batch);
+        try {
+          const { error } = await supabase
+            .from('store_products_import')
+            .insert(batch);
 
-        if (error) {
-          console.error(`Error inserting batch ${i / BATCH_SIZE + 1}:`, error);
-          throw error;
+          if (error) {
+            console.error(`Error inserting batch ${i / BATCH_SIZE + 1}:`, error);
+            errorCount++;
+          } else {
+            successCount++;
+            console.log(`Successfully inserted batch ${i / BATCH_SIZE + 1} of ${Math.ceil(productsToImport.length / BATCH_SIZE)}`);
+          }
+        } catch (error) {
+          console.error(`Failed to insert batch ${i / BATCH_SIZE + 1}:`, error);
+          errorCount++;
         }
-
-        console.log(`Inserted batch ${i / BATCH_SIZE + 1} of ${Math.ceil(productsToImport.length / BATCH_SIZE)}`);
       }
 
-      console.log('Data import completed successfully');
+      console.log('Data import completed:', {
+        totalBatches: Math.ceil(productsToImport.length / BATCH_SIZE),
+        successfulBatches: successCount,
+        failedBatches: errorCount
+      });
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Price data imported successfully',
-          itemsProcessed: productsToImport.length 
+          itemsProcessed: productsToImport.length,
+          successfulBatches: successCount,
+          failedBatches: errorCount
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -144,17 +195,22 @@ serve(async (req) => {
         }
       );
 
+    } catch (error) {
+      console.error('Error during processing:', error);
+      throw error;
     } finally {
+      console.log('Closing browser...');
       await browser.close();
+      console.log('Browser closed');
     }
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Fatal error:', error);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'An unknown error occurred'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
