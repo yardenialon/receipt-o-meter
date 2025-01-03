@@ -46,7 +46,7 @@ serve(async (req) => {
       if (cells.length < 4) continue;
 
       const fileNameCell = cells[0]?.textContent?.trim() || '';
-      const fileDateCell = cells[3]?.textContent?.trim() || '';
+      const fileDateCell = cells[1]?.textContent?.trim() || '';
       const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
       if (fileDateCell) {
@@ -54,16 +54,10 @@ serve(async (req) => {
       }
 
       // Extract just the date part from the cell (removing time)
-      const [time, date] = fileDateCell.split(' ');
-      console.log(`Processing file: ${fileNameCell}, full date: ${fileDateCell}, extracted date: ${date}, looking for: ${formattedDate}`);
+      const [date, time] = fileDateCell.split(' ');
+      console.log(`Processing file: ${fileNameCell}, date: ${date}, time: ${time}`);
 
-      // Normalize both dates for comparison by removing any leading zeros
-      const normalizedFileDate = date?.replace(/^0+/, '') || '';
-      const normalizedTargetDate = formattedDate.replace(/^0+/, '');
-      
-      console.log(`Comparing normalized dates - File: ${normalizedFileDate}, Target: ${normalizedTargetDate}`);
-
-      if (fileNameCell.startsWith('PriceFull') && normalizedFileDate === normalizedTargetDate && link) {
+      if (fileNameCell.startsWith('PriceFull') && date === formattedDate && link) {
         targetLink = link;
         fileName = fileNameCell;
         console.log('Found matching file:', fileName);
