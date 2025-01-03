@@ -39,6 +39,7 @@ serve(async (req) => {
     const rows = doc.querySelectorAll('tr');
     let targetLink = null;
     let fileName = '';
+    const availableDates = [];
 
     for (const row of rows) {
       const cells = row.querySelectorAll('td');
@@ -48,11 +49,15 @@ serve(async (req) => {
       const fileDateCell = cells[3]?.textContent?.trim() || '';
       const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
-      // Extract just the date part from the cell (removing time)
-      const dateOnly = fileDateCell.split(' ')[1]; // Split by space and take the second part
-      console.log(`Found file: ${fileNameCell}, date: ${fileDateCell} (date only: ${dateOnly}), link: ${link || 'no link'}`);
+      if (fileDateCell) {
+        availableDates.push(fileDateCell);
+      }
 
-      if (fileNameCell.startsWith('PriceFull') && dateOnly === formattedDate && link) {
+      // Extract just the date part from the cell (removing time)
+      const [time, date] = fileDateCell.split(' ');
+      console.log(`Processing file: ${fileNameCell}, full date: ${fileDateCell}, extracted date: ${date}`);
+
+      if (fileNameCell.startsWith('PriceFull') && date === formattedDate && link) {
         targetLink = link;
         fileName = fileNameCell;
         console.log('Found matching file:', fileName);
@@ -61,16 +66,8 @@ serve(async (req) => {
     }
 
     if (!targetLink) {
-      console.log('No matching files found. Available dates:', 
-        Array.from(rows)
-          .map(row => {
-            const dateCell = row.querySelectorAll('td')[3]?.textContent?.trim();
-            return dateCell ? `"${dateCell}"` : null;
-          })
-          .filter(Boolean)
-          .join(', ')
-      );
-      throw new Error(`No matching price file found for today (${formattedDate})`);
+      console.log('Available dates in the table:', availableDates.join(', '));
+      throw new Error(`No matching price file found for today (${formattedDate}). Available dates: ${availableDates.join(', ')}`);
     }
 
     // Download and process the GZ file
