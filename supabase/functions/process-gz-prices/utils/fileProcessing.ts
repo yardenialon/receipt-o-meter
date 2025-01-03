@@ -14,22 +14,28 @@ export const processFileContent = async (file: File) => {
   if (file.name.toLowerCase().endsWith('.gz')) {
     try {
       console.log('Attempting to decompress GZ file...');
+      const fileBytes = new Uint8Array(fileContent);
+      
       // Check if the file starts with the GZ magic number (1f 8b)
-      const header = new Uint8Array(fileContent.slice(0, 2));
-      if (header[0] !== 0x1f || header[1] !== 0x8b) {
-        console.error('Invalid GZ file header:', header);
+      if (fileBytes.length < 2 || fileBytes[0] !== 0x1f || fileBytes[1] !== 0x8b) {
+        console.error('Invalid GZ file header:', {
+          length: fileBytes.length,
+          firstBytes: fileBytes.slice(0, 2)
+        });
         throw new Error('הקובץ אינו בפורמט GZ תקין');
       }
 
-      const decompressed = gunzip(new Uint8Array(fileContent));
-      xmlContent = new TextDecoder().decode(decompressed);
-      console.log('Successfully decompressed GZ file, content length:', xmlContent.length);
-    } catch (error) {
-      console.error('Error decompressing GZ file:', error);
-      if (error.message.includes('magic number')) {
-        throw new Error('הקובץ אינו בפורמט GZ תקין');
+      try {
+        const decompressed = gunzip(fileBytes);
+        xmlContent = new TextDecoder().decode(decompressed);
+        console.log('Successfully decompressed GZ file, content length:', xmlContent.length);
+      } catch (decompressError) {
+        console.error('Error during GZ decompression:', decompressError);
+        throw new Error('שגיאה בפענוח קובץ ה-GZ: הקובץ פגום או לא תקין');
       }
-      throw new Error(`שגיאה בפענוח קובץ ה-GZ: ${error.message}`);
+    } catch (error) {
+      console.error('Error processing GZ file:', error);
+      throw error instanceof Error ? error : new Error('שגיאה לא ידועה בעיבוד קובץ ה-GZ');
     }
   } else if (file.name.toLowerCase().endsWith('.xml')) {
     console.log('Processing XML file directly...');
