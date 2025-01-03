@@ -9,7 +9,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BATCH_SIZE = 500; // Process 500 items at a time
+const BATCH_SIZE = 500;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,7 +19,6 @@ serve(async (req) => {
   try {
     console.log('Starting King Store price fetch...');
 
-    // Fetch the King Store page
     const response = await fetch('https://kingstore.binaprojects.com/Main.aspx');
     if (!response.ok) {
       throw new Error(`Failed to fetch King Store page: ${response.status}`);
@@ -37,7 +36,6 @@ serve(async (req) => {
     const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
     console.log('Looking for files with today\'s date:', formattedDate);
 
-    // Find all links and their associated dates
     const rows = doc.querySelectorAll('tr');
     let targetLink = null;
     let fileName = '';
@@ -50,9 +48,11 @@ serve(async (req) => {
       const fileDateCell = cells[3]?.textContent?.trim() || '';
       const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
-      console.log(`Found file: ${fileNameCell}, date: ${fileDateCell}, link: ${link || 'no link'}`);
+      // Extract just the date part from the cell (removing time)
+      const dateOnly = fileDateCell.split(' ')[1]; // Split by space and take the second part
+      console.log(`Found file: ${fileNameCell}, date: ${fileDateCell} (date only: ${dateOnly}), link: ${link || 'no link'}`);
 
-      if (fileNameCell.startsWith('PriceFull') && fileDateCell === formattedDate && link) {
+      if (fileNameCell.startsWith('PriceFull') && dateOnly === formattedDate && link) {
         targetLink = link;
         fileName = fileNameCell;
         console.log('Found matching file:', fileName);
@@ -63,7 +63,10 @@ serve(async (req) => {
     if (!targetLink) {
       console.log('No matching files found. Available dates:', 
         Array.from(rows)
-          .map(row => row.querySelectorAll('td')[3]?.textContent?.trim())
+          .map(row => {
+            const dateCell = row.querySelectorAll('td')[3]?.textContent?.trim();
+            return dateCell ? `"${dateCell}"` : null;
+          })
           .filter(Boolean)
           .join(', ')
       );
