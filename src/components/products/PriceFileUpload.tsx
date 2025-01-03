@@ -17,6 +17,7 @@ export const PriceFileUpload = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [networkName, setNetworkName] = useState('');
   const [branchName, setBranchName] = useState('');
+  const [storeAddress, setStoreAddress] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const handleDrop = async (acceptedFiles: File[]) => {
@@ -44,8 +45,8 @@ export const PriceFileUpload = () => {
   };
 
   const handleConfirm = async () => {
-    if (!networkName || !branchName) {
-      toast.error('אנא הזן שם רשת ושם סניף');
+    if (!networkName || !branchName || !storeAddress) {
+      toast.error('אנא הזן את כל פרטי החנות');
       return;
     }
 
@@ -55,6 +56,7 @@ export const PriceFileUpload = () => {
         formData.append('file', pendingFile);
         formData.append('networkName', networkName);
         formData.append('branchName', branchName);
+        formData.append('storeAddress', storeAddress);
 
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.access_token) {
@@ -64,7 +66,10 @@ export const PriceFileUpload = () => {
         console.log('Processing file:', {
           name: pendingFile.name,
           type: pendingFile.type,
-          size: pendingFile.size
+          size: pendingFile.size,
+          networkName,
+          branchName,
+          storeAddress
         });
 
         const { data, error } = await supabase.functions.invoke(
@@ -85,6 +90,7 @@ export const PriceFileUpload = () => {
         setPendingFile(null);
         setNetworkName('');
         setBranchName('');
+        setStoreAddress('');
       } catch (error) {
         console.error('Processing error:', error);
         toast.error(error instanceof Error ? error.message : 'שגיאה בעיבוד הקובץ');
@@ -114,9 +120,9 @@ export const PriceFileUpload = () => {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>פרטי הרשת והסניף</DialogTitle>
+            <DialogTitle>פרטי החנות</DialogTitle>
             <DialogDescription>
-              אנא הזן את שם הרשת ושם הסניף עבור הקובץ
+              אנא הזן את פרטי החנות עבור הקובץ
               {pendingFile && (
                 <div className="mt-2 text-sm text-gray-500">
                   שם הקובץ: {pendingFile.name}
@@ -143,11 +149,20 @@ export const PriceFileUpload = () => {
                 placeholder="לדוגמה: סניף רמת אביב"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="storeAddress">כתובת הסניף</Label>
+              <Input
+                id="storeAddress"
+                value={storeAddress}
+                onChange={(e) => setStoreAddress(e.target.value)}
+                placeholder="לדוגמה: אבן גבירול 20, תל אביב"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
               onClick={handleConfirm}
-              disabled={!networkName || !branchName || isUploading}
+              disabled={!networkName || !branchName || !storeAddress || isUploading}
             >
               {isUploading ? 'מעלה...' : 'אישור'}
             </Button>

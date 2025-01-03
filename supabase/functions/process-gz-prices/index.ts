@@ -19,15 +19,17 @@ serve(async (req) => {
     const file = formData.get('file');
     const networkName = formData.get('networkName');
     const branchName = formData.get('branchName');
+    const storeAddress = formData.get('storeAddress');
 
-    if (!file || !networkName || !branchName) {
-      throw new Error('Missing required fields: file, networkName, or branchName');
+    if (!file || !networkName || !branchName || !storeAddress) {
+      throw new Error('Missing required fields: file, networkName, branchName, or storeAddress');
     }
 
     console.log('Received data:', {
       hasFile: !!file,
       networkName,
       branchName,
+      storeAddress,
       fileName: file?.name,
       fileSize: file?.size
     });
@@ -81,6 +83,7 @@ serve(async (req) => {
       const products = batch.map(item => ({
         store_chain: networkName,
         store_id: branchName,
+        store_address: storeAddress,
         ItemCode: item.ItemCode?._text,
         ItemType: item.ItemType?._text,
         ItemName: item.ItemName?._text,
