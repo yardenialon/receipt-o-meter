@@ -21,7 +21,9 @@ export const UploadZone = ({ isUploading, onDrop }: UploadZoneProps) => {
     disabled: isUploading,
     accept: {
       'text/xml': ['.xml'],
-      'application/xml': ['.xml']
+      'application/xml': ['.xml'],
+      'application/gzip': ['.gz'],
+      'application/x-gzip': ['.gz']
     }
   });
 
@@ -48,13 +50,13 @@ export const UploadZone = ({ isUploading, onDrop }: UploadZoneProps) => {
           <p className="text-lg font-medium text-gray-700">
             {isDragActive
               ? "שחרר את הקובץ כאן"
-              : "גרור וזרוק את קובץ ה-XML כאן"}
+              : "גרור וזרוק את קובץ ה-XML או GZ כאן"}
           </p>
           <p className="text-sm text-gray-500 mt-1">
             או לחץ לבחירת קובץ
           </p>
           <p className="text-xs text-gray-400 mt-2">
-            קבצי XML עד 100MB
+            קבצי XML או GZ עד 100MB
           </p>
         </div>
       </div>
