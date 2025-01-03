@@ -15,13 +15,15 @@ function App() {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <main className="flex-1 overflow-x-hidden">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/shopping-list" element={<ShoppingList />} />
-            </Routes>
+            <div className="md:pb-0 pb-[55px]">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/shopping-list" element={<ShoppingList />} />
+              </Routes>
+            </div>
           </main>
         </div>
         <Toaster />
