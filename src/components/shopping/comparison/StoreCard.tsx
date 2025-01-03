@@ -4,6 +4,7 @@ import { Store, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { ComparisonItem } from "./ComparisonItem";
+import { StoreLogo } from "./StoreLogo";
 
 interface StoreCardProps {
   comparison: {
@@ -48,10 +49,16 @@ export const StoreCard = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant={isCheapest ? "default" : "secondary"}>
-                  <Store className="h-4 w-4 mr-1" />
-                  {comparison.storeName}
-                  {comparison.storeId && ` (סניף ${comparison.storeId})`}
+                  <div className="flex items-center gap-2">
+                    <StoreLogo storeName={comparison.storeName} className="ml-1" />
+                    <span>{comparison.storeName}</span>
+                  </div>
                 </Badge>
+                {comparison.storeId && (
+                  <Badge variant="outline">
+                    סניף {comparison.storeId}
+                  </Badge>
+                )}
                 {isCheapest && (
                   <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
                     המחיר הזול ביותר
