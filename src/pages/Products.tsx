@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
-import { PriceFileTest } from '@/components/products/PriceFileTest';
+import { PriceFileUpload } from '@/components/products/PriceFileUpload';
 import { toast } from 'sonner';
 
 const Products = () => {
@@ -36,8 +36,8 @@ const Products = () => {
     <div className="container mx-auto py-8">
       <ProductsHeader />
       
-      <div className="mt-8">
-        <PriceFileTest />
+      <div className="mt-8 space-y-8">
+        <PriceFileUpload />
         <ProductsSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
