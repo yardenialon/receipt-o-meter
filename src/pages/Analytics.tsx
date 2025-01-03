@@ -4,6 +4,7 @@ import { MonthlyTrends } from '@/components/analytics/MonthlyTrends';
 import { SpendingByCategory } from '@/components/analytics/SpendingByCategory';
 import { TopStores } from '@/components/analytics/TopStores';
 import { ProductRecommendations } from '@/components/analytics/ProductRecommendations';
+import { ConsumptionHabits } from '@/components/analytics/ConsumptionHabits';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -58,6 +59,7 @@ const Analytics = () => {
           <div className="col-span-full lg:col-span-2 space-y-6 sm:space-y-8">
             <MonthlyTrends />
             <TopStores />
+            <ConsumptionHabits />
           </div>
           <div className="col-span-full lg:col-span-1 space-y-6 sm:space-y-8">
             <SpendingByCategory />
