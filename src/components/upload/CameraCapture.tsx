@@ -149,18 +149,20 @@ const CameraCapture = ({ onPhotoCapture }: CameraCaptureProps) => {
         className="hidden"
         onChange={handleFileInput}
       />
-      <Button
-        onClick={startCamera}
-        size="lg"
-        className="relative overflow-hidden group bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl px-8 py-6 w-full md:w-auto"
-      >
-        <div className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all duration-300" />
-        <div className="relative flex items-center justify-center gap-4">
-          <Camera className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
-          <span className="text-lg md:text-xl font-medium">צלם קבלה</span>
-        </div>
-        <div className="absolute inset-0 border border-white/20 rounded-2xl" />
-      </Button>
+      <div className="mt-[50px]">
+        <Button
+          onClick={startCamera}
+          size="lg"
+          className="relative overflow-hidden group bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl px-8 py-6 w-full md:w-auto"
+        >
+          <div className="absolute inset-0 bg-white/10 group-hover:bg-white/20 transition-all duration-300" />
+          <div className="relative flex items-center justify-center gap-4">
+            <Camera className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
+            <span className="text-lg md:text-xl font-medium">צלם קבלה</span>
+          </div>
+          <div className="absolute inset-0 border border-white/20 rounded-2xl" />
+        </Button>
+      </div>
     </>
   );
 };
