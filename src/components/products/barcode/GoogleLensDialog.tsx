@@ -21,6 +21,10 @@ export const GoogleLensDialog = ({ isOpen, onOpenChange, onOpenGoogleLens }: Goo
           <DialogTitle>סריקת ברקוד באמצעות Google Lens</DialogTitle>
           <DialogDescription>
             לא ניתן להשתמש בסורק המובנה. האם תרצה להשתמש ב-Google Lens לסריקת הברקוד?
+            <br />
+            <span className="text-sm text-muted-foreground mt-2 block">
+              שים לב: אם הסריקה נכשלת, נסה לצלם את הברקוד בתאורה טובה יותר או לנקות את עדשת המצלמה.
+            </span>
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-4">
