@@ -13,6 +13,10 @@ export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
       return '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png';
     }
     
+    if (normalizedName.includes('shufersal') || normalizedName.includes('שופרסל')) {
+      return '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png';
+    }
+    
     return null;
   };
 
