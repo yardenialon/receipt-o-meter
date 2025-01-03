@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { DOMParser } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
-import { xml2js } from "https://deno.land/x/xml2js@v0.5.2/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
@@ -70,36 +69,49 @@ serve(async (req) => {
       
       console.log('Downloaded XML file');
 
-      // Parse XML to JS object
-      const result = await xml2js(xmlText, { explicitArray: false });
+      // Parse XML using DOMParser
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
       
-      // Transform data for database
-      const items = Array.isArray(result.Root.Items.Item) 
-        ? result.Root.Items.Item 
-        : [result.Root.Items.Item];
+      if (!xmlDoc) {
+        throw new Error('Failed to parse XML');
+      }
+
+      // Get all Item elements
+      const items = Array.from(xmlDoc.querySelectorAll('Items > Item'));
+      
+      if (!items || items.length === 0) {
+        throw new Error('No items found in XML');
+      }
 
       console.log(`Processing ${items.length} items`);
 
-      // Prepare data for import
+      // Helper function to safely get text content
+      const getElementText = (parent: Element, tagName: string): string => {
+        const element = parent.querySelector(tagName);
+        return element?.textContent?.trim() || '';
+      };
+
+      // Transform items to database format
       const productsToImport = items.map(item => ({
         store_chain: 'קינג סטור',
         store_id: storeId,
-        PriceUpdateDate: item.PriceUpdateDate || new Date().toISOString(),
-        ItemCode: item.ItemCode,
-        ItemType: item.ItemType,
-        ItemName: item.ItemName,
-        ManufacturerName: item.ManufacturerName,
-        ManufactureCountry: item.ManufactureCountry,
-        ManufacturerItemDescription: item.ManufacturerItemDescription,
-        UnitQty: item.UnitQty,
-        Quantity: parseFloat(item.Quantity) || null,
-        UnitOfMeasure: item.UnitOfMeasure,
-        bIsWeighted: item.bIsWeighted === 'true',
-        QtyInPackage: parseFloat(item.QtyInPackage) || null,
-        ItemPrice: parseFloat(item.ItemPrice) || null,
-        UnitOfMeasurePrice: parseFloat(item.UnitOfMeasurePrice) || null,
-        AllowDiscount: item.AllowDiscount === 'true',
-        ItemStatus: item.ItemStatus
+        PriceUpdateDate: getElementText(item, 'PriceUpdateDate') || new Date().toISOString(),
+        ItemCode: getElementText(item, 'ItemCode'),
+        ItemType: getElementText(item, 'ItemType'),
+        ItemName: getElementText(item, 'ItemName'),
+        ManufacturerName: getElementText(item, 'ManufacturerName'),
+        ManufactureCountry: getElementText(item, 'ManufactureCountry'),
+        ManufacturerItemDescription: getElementText(item, 'ManufacturerItemDescription'),
+        UnitQty: getElementText(item, 'UnitQty'),
+        Quantity: parseFloat(getElementText(item, 'Quantity')) || null,
+        UnitOfMeasure: getElementText(item, 'UnitOfMeasure'),
+        bIsWeighted: getElementText(item, 'bIsWeighted') === 'true',
+        QtyInPackage: parseFloat(getElementText(item, 'QtyInPackage')) || null,
+        ItemPrice: parseFloat(getElementText(item, 'ItemPrice')) || null,
+        UnitOfMeasurePrice: parseFloat(getElementText(item, 'UnitOfMeasurePrice')) || null,
+        AllowDiscount: getElementText(item, 'AllowDiscount') === 'true',
+        ItemStatus: getElementText(item, 'ItemStatus')
       }));
 
       // Insert data in batches
