@@ -11,6 +11,19 @@ const corsHeaders = {
 
 const BATCH_SIZE = 500;
 
+function formatDateForComparison(dateStr: string): string {
+  // Try to extract date in format DD/MM/YYYY
+  const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!dateMatch) return '';
+  
+  // Pad day and month with leading zeros if needed
+  const day = dateMatch[1].padStart(2, '0');
+  const month = dateMatch[2].padStart(2, '0');
+  const year = dateMatch[3];
+  
+  return `${day}/${month}/${year}`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,7 +52,7 @@ serve(async (req) => {
     const rows = doc.querySelectorAll('tr');
     let targetLink = null;
     let fileName = '';
-    const availableDates = new Set();
+    const availableDates = new Set<string>();
 
     for (const row of rows) {
       const cells = row.querySelectorAll('td');
@@ -49,33 +62,23 @@ serve(async (req) => {
       const fileDateCell = cells[1]?.textContent?.trim() || '';
       const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
-      // Add all dates to our set for logging
-      if (fileDateCell) {
-        availableDates.add(fileDateCell);
-      }
-
-      console.log(`Found file: ${fileNameCell}`);
-      console.log(`Date from cell: ${fileDateCell}`);
+      console.log(`Processing row - File: ${fileNameCell}, Raw date: ${fileDateCell}`);
 
       // Only process PriceFull files
       if (!fileNameCell.startsWith('PriceFull')) {
         continue;
       }
 
-      // Extract just the date part from the cell (removing time if present)
-      const dateMatch = fileDateCell.match(/(\d{2}\/\d{2}\/\d{4})/);
-      if (!dateMatch) {
-        console.log(`Could not extract date from: ${fileDateCell}`);
-        continue;
+      const normalizedFileDate = formatDateForComparison(fileDateCell);
+      if (normalizedFileDate) {
+        availableDates.add(normalizedFileDate);
+        console.log(`Normalized date for comparison: ${normalizedFileDate}`);
       }
 
-      const extractedDate = dateMatch[1];
-      console.log(`Comparing dates - File: ${extractedDate}, Target: ${formattedDate}`);
-
-      if (extractedDate === formattedDate && link) {
+      if (normalizedFileDate === formattedDate && link) {
+        console.log(`Found matching file! Date matches: ${normalizedFileDate} = ${formattedDate}`);
         targetLink = link;
         fileName = fileNameCell;
-        console.log('Found matching file:', fileName);
         break;
       }
     }
