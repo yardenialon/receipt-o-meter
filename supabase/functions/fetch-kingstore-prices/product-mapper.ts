@@ -1,28 +1,22 @@
 export function mapXmlItemToProduct(item: Element) {
-  const getElementText = (tagName: string): string => {
-    const element = item.querySelector(tagName);
-    return element?.textContent?.trim() || '';
-  };
-
-  // Map XML fields to database columns
   return {
+    ItemCode: item.querySelector('ItemCode')?.textContent || null,
+    ItemType: item.querySelector('ItemType')?.textContent || null,
+    ItemName: item.querySelector('ItemName')?.textContent || null,
+    ManufacturerName: item.querySelector('ManufacturerName')?.textContent || null,
+    ManufactureCountry: item.querySelector('ManufactureCountry')?.textContent || null,
+    ManufacturerItemDescription: item.querySelector('ManufacturerItemDescription')?.textContent || null,
+    UnitQty: item.querySelector('UnitQty')?.textContent || null,
+    Quantity: parseFloat(item.querySelector('Quantity')?.textContent || '0') || null,
+    bIsWeighted: item.querySelector('bIsWeighted')?.textContent === 'true',
+    UnitOfMeasure: item.querySelector('UnitOfMeasure')?.textContent || null,
+    QtyInPackage: parseFloat(item.querySelector('QtyInPackage')?.textContent || '0') || null,
+    ItemPrice: parseFloat(item.querySelector('ItemPrice')?.textContent || '0') || null,
+    UnitOfMeasurePrice: parseFloat(item.querySelector('UnitOfMeasurePrice')?.textContent || '0') || null,
+    AllowDiscount: item.querySelector('AllowDiscount')?.textContent === 'true',
+    ItemStatus: item.querySelector('ItemStatus')?.textContent || null,
     store_chain: 'קינג סטור',
-    store_id: getElementText('StoreId'),
-    ItemCode: getElementText('ItemCode'),
-    ItemType: getElementText('ItemType'),
-    ItemName: getElementText('ItemName'),
-    ManufacturerName: getElementText('ManufacturerName'),
-    ManufactureCountry: getElementText('ManufactureCountry'),
-    ManufacturerItemDescription: getElementText('ManufacturerItemDescription'),
-    UnitQty: getElementText('UnitQty'),
-    Quantity: parseFloat(getElementText('Quantity')) || null,
-    bIsWeighted: getElementText('bIsWeighted') === 'true',
-    UnitOfMeasure: getElementText('UnitOfMeasure'),
-    QtyInPackage: parseFloat(getElementText('QtyInPackage')) || null,
-    ItemPrice: parseFloat(getElementText('ItemPrice')) || null,
-    UnitOfMeasurePrice: parseFloat(getElementText('UnitOfMeasurePrice')) || null,
-    AllowDiscount: getElementText('AllowDiscount') === 'true',
-    ItemStatus: getElementText('ItemStatus'),
+    store_id: '001', // Default store ID for King Store
     PriceUpdateDate: new Date().toISOString()
   };
 }

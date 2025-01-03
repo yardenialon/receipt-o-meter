@@ -1,53 +1,25 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function insertProducts(products: any[]) {
-  console.log(`Starting to insert ${products.length} products`);
-
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
-
-  const BATCH_SIZE = 500;
-  let successCount = 0;
+  if (products.length === 0) return 0;
 
   try {
-    for (let i = 0; i < products.length; i += BATCH_SIZE) {
-      const batch = products.slice(i, i + BATCH_SIZE);
-      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(products.length / BATCH_SIZE)}`);
+    const { error } = await supabase
+      .from('store_products_import')
+      .insert(products);
 
-      const { error } = await supabase
-        .from('store_products_import')
-        .insert(batch);
-
-      if (error) {
-        console.error('Error inserting batch:', error);
-        throw error;
-      }
-
-      successCount += batch.length;
-      console.log(`Successfully inserted ${successCount}/${products.length} products`);
+    if (error) {
+      console.error('Error inserting products:', error);
+      throw error;
     }
 
-    // After all products are inserted, call the processing function
-    const { error: procError } = await supabase
-      .rpc('process_imported_products');
-
-    if (procError) {
-      console.error('Error processing products:', procError);
-      throw procError;
-    }
-
-    console.log('Successfully processed all products');
-    return successCount;
-
+    return products.length;
   } catch (error) {
-    console.error('Error in insertProducts:', error);
+    console.error('Database operation failed:', error);
     throw error;
   }
 }

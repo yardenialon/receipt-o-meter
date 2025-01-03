@@ -9,6 +9,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const BATCH_SIZE = 500; // Process 500 items at a time
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,33 +37,41 @@ serve(async (req) => {
     const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
     console.log('Looking for files with today\'s date:', formattedDate);
 
-    // Find the correct price file link
-    const links = doc.querySelectorAll('a[href*=".gz"]');
+    // Find all links and their associated dates
+    const rows = doc.querySelectorAll('tr');
     let targetLink = null;
+    let fileName = '';
 
-    for (const link of links) {
-      const row = link.closest('tr');
-      if (!row) continue;
-
+    for (const row of rows) {
       const cells = row.querySelectorAll('td');
       if (cells.length < 4) continue;
 
-      const fileName = cells[0]?.textContent?.trim() || '';
-      const fileDate = cells[3]?.textContent?.trim() || '';
+      const fileNameCell = cells[0]?.textContent?.trim() || '';
+      const fileDateCell = cells[3]?.textContent?.trim() || '';
+      const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
-      if (fileName.startsWith('PriceFull') && fileDate === formattedDate) {
-        targetLink = link.getAttribute('href');
+      console.log(`Found file: ${fileNameCell}, date: ${fileDateCell}, link: ${link || 'no link'}`);
+
+      if (fileNameCell.startsWith('PriceFull') && fileDateCell === formattedDate && link) {
+        targetLink = link;
+        fileName = fileNameCell;
         console.log('Found matching file:', fileName);
         break;
       }
     }
 
     if (!targetLink) {
-      throw new Error('No matching price file found for today');
+      console.log('No matching files found. Available dates:', 
+        Array.from(rows)
+          .map(row => row.querySelectorAll('td')[3]?.textContent?.trim())
+          .filter(Boolean)
+          .join(', ')
+      );
+      throw new Error(`No matching price file found for today (${formattedDate})`);
     }
 
     // Download and process the GZ file
-    console.log('Downloading GZ file from:', targetLink);
+    console.log('Downloading GZ file:', targetLink);
     const gzResponse = await fetch(targetLink);
     if (!gzResponse.ok) {
       throw new Error(`Failed to download GZ file: ${gzResponse.status}`);
@@ -87,15 +97,28 @@ serve(async (req) => {
       throw new Error('No items found in XML');
     }
 
-    // Map items to products and insert them
-    const products = Array.from(items).map(mapXmlItemToProduct);
-    const insertedCount = await insertProducts(products);
+    // Process items in batches
+    const allItems = Array.from(items);
+    let processedCount = 0;
+    const totalBatches = Math.ceil(allItems.length / BATCH_SIZE);
+
+    for (let i = 0; i < allItems.length; i += BATCH_SIZE) {
+      const batch = allItems.slice(i, i + BATCH_SIZE);
+      const batchProducts = batch.map(mapXmlItemToProduct);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      
+      console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} items)`);
+      const insertedCount = await insertProducts(batchProducts);
+      processedCount += insertedCount;
+      
+      console.log(`Batch ${batchNumber} complete: ${insertedCount} items processed`);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully processed ${insertedCount} products`,
-        itemsProcessed: insertedCount
+        message: `Successfully processed ${processedCount} products from ${fileName}`,
+        itemsProcessed: processedCount
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
