@@ -39,7 +39,7 @@ serve(async (req) => {
     const rows = doc.querySelectorAll('tr');
     let targetLink = null;
     let fileName = '';
-    const availableDates = [];
+    const availableDates = new Set();
 
     for (const row of rows) {
       const cells = row.querySelectorAll('td');
@@ -49,15 +49,30 @@ serve(async (req) => {
       const fileDateCell = cells[1]?.textContent?.trim() || '';
       const link = row.querySelector('a[href*=".gz"]')?.getAttribute('href');
 
+      // Add all dates to our set for logging
       if (fileDateCell) {
-        availableDates.push(fileDateCell);
+        availableDates.add(fileDateCell);
       }
 
-      // Extract just the date part from the cell (removing time)
-      const [date, time] = fileDateCell.split(' ');
-      console.log(`Processing file: ${fileNameCell}, date: ${date}, time: ${time}`);
+      console.log(`Found file: ${fileNameCell}`);
+      console.log(`Date from cell: ${fileDateCell}`);
 
-      if (fileNameCell.startsWith('PriceFull') && date === formattedDate && link) {
+      // Only process PriceFull files
+      if (!fileNameCell.startsWith('PriceFull')) {
+        continue;
+      }
+
+      // Extract just the date part from the cell (removing time if present)
+      const dateMatch = fileDateCell.match(/(\d{2}\/\d{2}\/\d{4})/);
+      if (!dateMatch) {
+        console.log(`Could not extract date from: ${fileDateCell}`);
+        continue;
+      }
+
+      const extractedDate = dateMatch[1];
+      console.log(`Comparing dates - File: ${extractedDate}, Target: ${formattedDate}`);
+
+      if (extractedDate === formattedDate && link) {
         targetLink = link;
         fileName = fileNameCell;
         console.log('Found matching file:', fileName);
@@ -66,8 +81,9 @@ serve(async (req) => {
     }
 
     if (!targetLink) {
-      console.log('Available dates in the table:', availableDates.join(', '));
-      throw new Error(`No matching price file found for today (${formattedDate}). Available dates: ${availableDates.join(', ')}`);
+      const availableDatesStr = Array.from(availableDates).join(', ');
+      console.log('Available dates:', availableDatesStr);
+      throw new Error(`No matching price file found for today (${formattedDate}). Available dates: ${availableDatesStr}`);
     }
 
     // Download and process the GZ file
