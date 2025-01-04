@@ -10,75 +10,72 @@ interface DockerConfig {
 export const fetchPricesFromDocker = async () => {
   console.log('Starting Docker price fetch operation...');
 
+  // נגדיר את התצורה הבסיסית
   const config: DockerConfig = {
     enabledScrapers: ['SHUFERSAL', 'YAYNO_BITAN', 'BAREKET'],
     enabledFileTypes: ['STORE_FILE'],
-    limit: 1, // Start with a small limit for testing
+    limit: 1, // נתחיל עם מגבלה קטנה לבדיקה
   };
 
   try {
-    // Create Docker container
-    const createResponse = await fetch('http://localhost:2375/containers/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        Image: 'erlichsefi/israeli-supermarket-scarpers:latest',
-        Env: [
-          `ENABLED_SCRAPERS=${config.enabledScrapers.join(',')}`,
-          `ENABLED_FILE_TYPES=${config.enabledFileTypes.join(',')}`,
-          `LIMIT=${config.limit}`,
-          config.date ? `TODAY=${config.date}` : '',
-        ].filter(Boolean),
-        HostConfig: {
-          Binds: ['./dumps:/usr/src/app/dumps'],
-        },
-      }),
+    // יצירת תיקיית dumps זמנית
+    const dumpsDir = await Deno.makeTempDir({ prefix: 'supermarket-dumps-' });
+    console.log('Created temporary dumps directory:', dumpsDir);
+
+    // הגדרת פקודת הדוקר
+    const dockerCommand = [
+      'docker',
+      'run',
+      '--rm', // מחיקה אוטומטית של הקונטיינר לאחר סיום
+      '-v',
+      `${dumpsDir}:/usr/src/app/dumps`,
+      '-e',
+      `ENABLED_SCRAPERS=${config.enabledScrapers.join(',')}`,
+      '-e',
+      `ENABLED_FILE_TYPES=${config.enabledFileTypes.join(',')}`,
+      '-e',
+      `LIMIT=${config.limit}`,
+      'erlichsefi/israeli-supermarket-scarpers:latest'
+    ];
+
+    if (config.date) {
+      dockerCommand.push('-e', `TODAY=${config.date}`);
+    }
+
+    // הפעלת הדוקר
+    const process = new Deno.Command(dockerCommand[0], {
+      args: dockerCommand.slice(1),
+      stdout: 'piped',
+      stderr: 'piped',
     });
 
-    if (!createResponse.ok) {
-      throw new Error(`Failed to create Docker container: ${createResponse.statusText}`);
-    }
+    console.log('Running Docker command:', dockerCommand.join(' '));
+    const { code, stdout, stderr } = await process.output();
 
-    const container = await createResponse.json();
-    console.log('Created Docker container:', container.Id);
-
-    // Start container
-    const startResponse = await fetch(`http://localhost:2375/containers/${container.Id}/start`, {
-      method: 'POST',
-    });
-
-    if (!startResponse.ok) {
-      throw new Error(`Failed to start Docker container: ${startResponse.statusText}`);
-    }
-
-    console.log('Started Docker container');
-
-    // Wait for container to finish
-    const waitResponse = await fetch(`http://localhost:2375/containers/${container.Id}/wait`);
-    const waitResult = await waitResponse.json();
-
-    if (waitResult.StatusCode !== 0) {
-      throw new Error(`Docker container exited with status ${waitResult.StatusCode}`);
-    }
-
-    // Get container logs
-    const logsResponse = await fetch(`http://localhost:2375/containers/${container.Id}/logs?stdout=1&stderr=1`);
-    const logs = await logsResponse.text();
-    console.log('Container logs:', logs);
-
-    // Process the dumps directory
-    // This is a placeholder - we'll need to implement the actual file processing
-    const prices = []; // This should be populated with the actual price data
+    const outStr = new TextDecoder().decode(stdout);
+    const errStr = new TextDecoder().decode(stderr);
     
-    // Cleanup container
-    await fetch(`http://localhost:2375/containers/${container.Id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    console.log('Docker output:', outStr);
+    if (errStr) console.error('Docker errors:', errStr);
+
+    if (code !== 0) {
+      throw new Error(`Docker process failed with code ${code}`);
+    }
+
+    // קריאת הקבצים מתיקיית ה-dumps
+    const prices = [];
+    for await (const entry of Deno.readDir(dumpsDir)) {
+      if (entry.isFile && entry.name.endsWith('.xml')) {
+        const content = await Deno.readTextFile(`${dumpsDir}/${entry.name}`);
+        console.log(`Processing file: ${entry.name}`);
+        // כאן נוסיף את הלוגיקה לעיבוד קבצי XML
+        // TODO: להוסיף פרסור של ה-XML והמרה למבנה הנתונים הרצוי
+      }
+    }
+
+    // ניקוי התיקייה הזמנית
+    await Deno.remove(dumpsDir, { recursive: true });
+    console.log('Cleaned up temporary directory');
 
     return prices;
   } catch (error) {
