@@ -8,12 +8,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    console.log('Starting CSV processing...')
+    
+    // Get the FormData from the request
     const formData = await req.formData()
     const file = formData.get('file')
 
