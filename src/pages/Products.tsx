@@ -1,50 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { PriceFileUpload } from '@/components/products/PriceFileUpload';
-import { toast } from 'sonner';
 
-const Products = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('יש להתחבר כדי לצפות בעמוד זה');
-        navigate('/login');
-      }
-    };
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
-
+export default function Products() {
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto p-4 space-y-8">
       <ProductsHeader />
-      
-      <div className="mt-8 space-y-8">
+      <ProductsStats />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <ProductsSearch />
         <PriceFileUpload />
-        <ProductsSearch
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
       </div>
     </div>
   );
-};
-
-export default Products;
+}
