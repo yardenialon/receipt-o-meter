@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -21,6 +22,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         store_id: store_id,
@@ -28,15 +30,21 @@ serve(async (req) => {
       }),
     })
 
-    console.log('Got response from Rami Levy API')
+    console.log('Got response from Rami Levy API:', response.status, response.statusText)
 
     if (!response.ok) {
-      console.error('Error from Rami Levy API:', response.status, response.statusText)
-      throw new Error(`Failed to fetch prices: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error('Error response from Rami Levy:', errorText)
+      throw new Error(`Failed to fetch prices: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
     console.log(`Fetched ${data.length || 0} products from API`)
+
+    if (!data || !Array.isArray(data)) {
+      console.error('Invalid data format received:', data)
+      throw new Error('Invalid data format received from API')
+    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
@@ -46,8 +54,8 @@ serve(async (req) => {
       throw new Error('Missing Supabase environment variables')
     }
 
+    console.log('Initializing Supabase client...')
     const supabase = createClient(supabaseUrl, supabaseKey)
-    console.log('Supabase client initialized')
 
     // Transform and insert data
     const products = data.map((item: any) => ({
@@ -67,21 +75,32 @@ serve(async (req) => {
 
     console.log(`Prepared ${products.length} products for insertion`)
 
-    const { error: insertError } = await supabase
-      .from('store_products_import')
-      .upsert(products)
+    // Insert in batches to avoid timeout
+    const batchSize = 100
+    let successCount = 0
 
-    if (insertError) {
-      console.error('Error inserting products:', insertError)
-      throw new Error(`Failed to insert products: ${insertError.message}`)
+    for (let i = 0; i < products.length; i += batchSize) {
+      const batch = products.slice(i, Math.min(i + batchSize, products.length))
+      console.log(`Inserting batch ${i / batchSize + 1} of ${Math.ceil(products.length / batchSize)}`)
+      
+      const { error: insertError } = await supabase
+        .from('store_products_import')
+        .upsert(batch)
+
+      if (insertError) {
+        console.error(`Error inserting batch ${i / batchSize + 1}:`, insertError)
+      } else {
+        successCount += batch.length
+        console.log(`Successfully inserted batch ${i / batchSize + 1}`)
+      }
     }
 
-    console.log('Successfully inserted products')
+    console.log(`Operation completed. Inserted ${successCount} out of ${products.length} products`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Imported ${products.length} products`,
+        message: `Imported ${successCount} products`,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
