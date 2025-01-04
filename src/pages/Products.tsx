@@ -87,6 +87,41 @@ export default function Products() {
     }
   };
 
+  const processLocalDumps = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "יש להתחבר למערכת",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('auto-process-dumps');
+
+      if (error) {
+        console.error('Error processing dumps:', error);
+        throw error;
+      }
+      
+      toast({
+        title: "עיבוד קבצים הושלם",
+        description: data.message,
+      });
+
+    } catch (error) {
+      console.error('Error processing dumps:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בעיבוד קבצים",
+        description: error instanceof Error ? error.message : 'אירעה שגיאה',
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-8">
       <ProductsHeader />
@@ -112,6 +147,13 @@ export default function Products() {
               className="flex-1"
             >
               בדיקת מחירים מברקת
+            </Button>
+            <Button 
+              onClick={processLocalDumps}
+              variant="outline"
+              className="flex-1"
+            >
+              עיבוד קבצים מקומיים
             </Button>
           </div>
         </div>
