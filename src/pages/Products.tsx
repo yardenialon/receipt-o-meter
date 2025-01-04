@@ -6,6 +6,7 @@ import { PriceFileUpload } from '@/components/products/PriceFileUpload';
 import { PriceFileTest } from '@/components/products/PriceFileTest';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,10 +14,24 @@ export default function Products() {
   
   const testRamiLevy = async () => {
     try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "יש להתחבר למערכת",
+        });
+        return;
+      }
+
       const response = await fetch('https://kthqkydgegsoheymesgc.supabase.co/functions/v1/fetch-rami-levy-prices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           store_id: '001',
