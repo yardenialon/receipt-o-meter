@@ -28,6 +28,11 @@ export const PriceFileUpload = () => {
     }
 
     try {
+      // Check if it's a dumps directory file
+      const isDumpsFile = file.name.toLowerCase().includes('bareket') || 
+                         file.name.toLowerCase().includes('shufersal') ||
+                         file.name.toLowerCase().includes('rami');
+
       if (file.name.endsWith('.gz')) {
         // For .gz files, we'll process them directly
         setPendingFile(file);
@@ -37,6 +42,12 @@ export const PriceFileUpload = () => {
         await validateXMLFile(file);
         setPendingFile(file);
         setShowDialog(true);
+
+        // If it's from dumps directory, try to extract store info from filename
+        if (isDumpsFile) {
+          const storeName = file.name.split('_')[0];
+          setNetworkName(storeName.charAt(0).toUpperCase() + storeName.slice(1));
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -52,6 +63,15 @@ export const PriceFileUpload = () => {
 
     if (pendingFile) {
       try {
+        console.log('Processing file:', {
+          name: pendingFile.name,
+          type: pendingFile.type,
+          size: pendingFile.size,
+          networkName,
+          branchName,
+          storeAddress
+        });
+
         const formData = new FormData();
         formData.append('file', pendingFile);
         formData.append('networkName', networkName);
@@ -62,15 +82,6 @@ export const PriceFileUpload = () => {
         if (!session?.access_token) {
           throw new Error('No session found');
         }
-
-        console.log('Processing file:', {
-          name: pendingFile.name,
-          type: pendingFile.type,
-          size: pendingFile.size,
-          networkName,
-          branchName,
-          storeAddress
-        });
 
         const { data, error } = await supabase.functions.invoke(
           pendingFile.name.endsWith('.gz') ? 'process-gz-prices' : 'fetch-xml-prices',
@@ -103,7 +114,7 @@ export const PriceFileUpload = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          ניתן להעלות קובץ XML או GZ בגודל של עד 100MB. המערכת תעבד את הקובץ ותשמור את המוצרים במסד הנתונים.
+          ניתן להעלות קובץ XML או GZ מתיקיית ה-dumps המקומית. המערכת תעבד את הקובץ ותשמור את המוצרים במסד הנתונים.
         </AlertDescription>
       </Alert>
 
@@ -137,7 +148,7 @@ export const PriceFileUpload = () => {
                 id="networkName"
                 value={networkName}
                 onChange={(e) => setNetworkName(e.target.value)}
-                placeholder="לדוגמה: שופרסל"
+                placeholder="לדוגמה: ברקת"
               />
             </div>
             <div className="space-y-2">
