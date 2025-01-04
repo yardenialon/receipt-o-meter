@@ -2,11 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import { gunzip } from "https://deno.land/x/compress@v0.4.5/gzip/mod.ts";
 import { parse } from 'https://deno.land/x/xml@2.1.1/mod.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from './utils/cors.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -103,22 +99,22 @@ serve(async (req) => {
           const products = items.map(item => ({
             store_chain: storeChain,
             store_id: item.StoreId?._text || '001',
-            ItemCode: item.ItemCode?._text,
-            ItemType: item.ItemType?._text,
-            ItemName: item.ItemName?._text,
-            ManufacturerName: item.ManufacturerName?._text,
-            ManufactureCountry: item.ManufactureCountry?._text,
-            ManufacturerItemDescription: item.ManufacturerItemDescription?._text,
-            UnitQty: item.UnitQty?._text,
-            Quantity: parseFloat(item.Quantity?._text || '0'),
-            bIsWeighted: item.bIsWeighted?._text === 'true',
-            UnitOfMeasure: item.UnitOfMeasure?._text,
-            QtyInPackage: parseFloat(item.QtyInPackage?._text || '0'),
-            ItemPrice: parseFloat(item.ItemPrice?._text || '0'),
-            UnitOfMeasurePrice: parseFloat(item.UnitOfMeasurePrice?._text || '0'),
-            AllowDiscount: item.AllowDiscount?._text === 'true',
-            ItemStatus: item.ItemStatus?._text,
-            PriceUpdateDate: new Date().toISOString()
+            product_code: item.ItemCode?._text,
+            product_name: item.ItemName?._text,
+            manufacturer: item.ManufacturerName?._text,
+            price: parseFloat(item.ItemPrice?._text || '0'),
+            unit_quantity: item.UnitQty?._text,
+            unit_of_measure: item.UnitOfMeasure?._text,
+            item_type: item.ItemType?._text,
+            manufacture_country: item.ManufactureCountry?._text,
+            manufacturer_item_description: item.ManufacturerItemDescription?._text,
+            quantity: parseFloat(item.Quantity?._text || '0'),
+            is_weighted: item.bIsWeighted?._text === 'true',
+            qty_in_package: parseFloat(item.QtyInPackage?._text || '0'),
+            unit_of_measure_price: parseFloat(item.UnitOfMeasurePrice?._text || '0'),
+            allow_discount: item.AllowDiscount?._text === 'true',
+            item_status: item.ItemStatus?._text,
+            price_update_date: new Date().toISOString()
           }));
 
           // Insert products in batches
@@ -126,8 +122,11 @@ serve(async (req) => {
           for (let i = 0; i < products.length; i += batchSize) {
             const batch = products.slice(i, i + batchSize);
             const { error: insertError } = await supabase
-              .from('store_products_import')
-              .insert(batch);
+              .from('store_products')
+              .upsert(batch, {
+                onConflict: 'product_code,store_chain',
+                ignoreDuplicates: false
+              });
 
             if (insertError) {
               throw new Error(`Failed to insert products batch: ${insertError.message}`);

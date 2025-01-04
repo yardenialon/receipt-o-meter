@@ -312,6 +312,75 @@ export type Database = {
         }
         Relationships: []
       }
+      store_products: {
+        Row: {
+          allow_discount: boolean | null
+          category: string | null
+          id: string
+          is_weighted: boolean | null
+          item_status: string | null
+          item_type: string | null
+          manufacture_country: string | null
+          manufacturer: string | null
+          manufacturer_item_description: string | null
+          price: number
+          price_update_date: string | null
+          product_code: string
+          product_name: string
+          qty_in_package: number | null
+          quantity: number | null
+          store_chain: string
+          store_id: string
+          unit_of_measure: string | null
+          unit_of_measure_price: number | null
+          unit_quantity: string | null
+        }
+        Insert: {
+          allow_discount?: boolean | null
+          category?: string | null
+          id?: string
+          is_weighted?: boolean | null
+          item_status?: string | null
+          item_type?: string | null
+          manufacture_country?: string | null
+          manufacturer?: string | null
+          manufacturer_item_description?: string | null
+          price: number
+          price_update_date?: string | null
+          product_code: string
+          product_name: string
+          qty_in_package?: number | null
+          quantity?: number | null
+          store_chain: string
+          store_id: string
+          unit_of_measure?: string | null
+          unit_of_measure_price?: number | null
+          unit_quantity?: string | null
+        }
+        Update: {
+          allow_discount?: boolean | null
+          category?: string | null
+          id?: string
+          is_weighted?: boolean | null
+          item_status?: string | null
+          item_type?: string | null
+          manufacture_country?: string | null
+          manufacturer?: string | null
+          manufacturer_item_description?: string | null
+          price?: number
+          price_update_date?: string | null
+          product_code?: string
+          product_name?: string
+          qty_in_package?: number | null
+          quantity?: number | null
+          store_chain?: string
+          store_id?: string
+          unit_of_measure?: string | null
+          unit_of_measure_price?: number | null
+          unit_quantity?: string | null
+        }
+        Relationships: []
+      }
       store_products_import: {
         Row: {
           AllowDiscount: boolean | null
