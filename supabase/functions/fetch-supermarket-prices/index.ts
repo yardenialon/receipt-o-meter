@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createSupabaseClient, createPriceUpdate, updateProgress, updateFinalStatus } from './db-operations.ts';
 import { fetchPricesFromDocker } from './docker-client.ts';
+import { validatePriceData } from './validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,15 +14,15 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting price fetch operation...');
+    console.log('Starting automated price fetch operation...');
     const supabase = createSupabaseClient();
     const updateRecord = await createPriceUpdate(supabase);
 
     try {
-      console.log('Fetching prices from Docker...');
+      console.log('Fetching prices from sources...');
       const prices = await fetchPricesFromDocker();
       
-      // Process prices in batches
+      // Process prices in batches with validation
       const batchSize = 1000;
       let processedCount = 0;
       let errorCount = 0;
@@ -30,25 +31,44 @@ serve(async (req) => {
       for (let i = 0; i < prices.length; i += batchSize) {
         const batch = prices.slice(i, Math.min(i + batchSize, prices.length));
         
-        const { error: insertError } = await supabase
-          .from('store_products_import')
-          .upsert(batch);
+        // Validate batch data
+        const validatedBatch = batch.filter(item => {
+          try {
+            return validatePriceData(item);
+          } catch (validationError) {
+            console.error(`Validation error for item:`, item, validationError);
+            errors.push({
+              type: 'validation',
+              item,
+              error: validationError.message
+            });
+            errorCount++;
+            return false;
+          }
+        });
 
-        if (insertError) {
-          console.error(`Error inserting batch ${i / batchSize}:`, insertError);
-          errorCount++;
-          errors.push(insertError);
+        if (validatedBatch.length > 0) {
+          const { error: insertError } = await supabase
+            .from('store_products_import')
+            .upsert(validatedBatch);
+
+          if (insertError) {
+            console.error(`Error inserting batch ${i / batchSize}:`, insertError);
+            errorCount++;
+            errors.push({
+              type: 'database',
+              batch: i / batchSize,
+              error: insertError
+            });
+          }
         }
 
         processedCount += batch.length;
         await updateProgress(supabase, updateRecord.id, processedCount, prices.length, errors);
       }
 
-      await updateFinalStatus(
-        supabase, 
-        updateRecord.id, 
-        errorCount > 0 ? 'completed_with_errors' : 'completed'
-      );
+      const status = errorCount > 0 ? 'completed_with_errors' : 'completed';
+      await updateFinalStatus(supabase, updateRecord.id, status);
 
       return new Response(
         JSON.stringify({
