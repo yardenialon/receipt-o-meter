@@ -27,6 +27,48 @@ export type Database = {
         }
         Relationships: []
       }
+      keshet_products_import: {
+        Row: {
+          category: string | null
+          id: string
+          import_date: string | null
+          manufacturer: string | null
+          price: number | null
+          product_code: string | null
+          product_name: string | null
+          quantity: number | null
+          store_id: string | null
+          unit_price: number | null
+          unit_type: string | null
+        }
+        Insert: {
+          category?: string | null
+          id?: string
+          import_date?: string | null
+          manufacturer?: string | null
+          price?: number | null
+          product_code?: string | null
+          product_name?: string | null
+          quantity?: number | null
+          store_id?: string | null
+          unit_price?: number | null
+          unit_type?: string | null
+        }
+        Update: {
+          category?: string | null
+          id?: string
+          import_date?: string | null
+          manufacturer?: string | null
+          price?: number | null
+          product_code?: string | null
+          product_name?: string | null
+          quantity?: number | null
+          store_id?: string | null
+          unit_price?: number | null
+          unit_type?: string | null
+        }
+        Relationships: []
+      }
       price_file_uploads: {
         Row: {
           completed_at: string | null
@@ -683,6 +725,10 @@ export type Database = {
     }
     Functions: {
       process_imported_products: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_keshet_products: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
