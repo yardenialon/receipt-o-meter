@@ -29,43 +29,73 @@ export type Database = {
       }
       keshet_products_import: {
         Row: {
-          category: string | null
-          id: string
-          import_date: string | null
-          manufacturer: string | null
-          price: number | null
-          product_code: string | null
-          product_name: string | null
+          allowdiscount: boolean | null
+          bikoretno: string | null
+          bisweighted: boolean | null
+          chainid: string | null
+          itemcode: string | null
+          itemid: string | null
+          itemname: string | null
+          itemprice: number | null
+          itemstatus: string | null
+          itemtype: string | null
+          manufacturecountry: string | null
+          manufactureritemdescription: string | null
+          manufacturername: string | null
+          priceupdatedate: string | null
+          qtyinpackage: number | null
           quantity: number | null
-          store_id: string | null
-          unit_price: number | null
-          unit_type: string | null
+          storeid: string | null
+          subchainid: string | null
+          unitofmeasure: string | null
+          unitofmeasureprice: number | null
+          unitqty: string | null
         }
         Insert: {
-          category?: string | null
-          id?: string
-          import_date?: string | null
-          manufacturer?: string | null
-          price?: number | null
-          product_code?: string | null
-          product_name?: string | null
+          allowdiscount?: boolean | null
+          bikoretno?: string | null
+          bisweighted?: boolean | null
+          chainid?: string | null
+          itemcode?: string | null
+          itemid?: string | null
+          itemname?: string | null
+          itemprice?: number | null
+          itemstatus?: string | null
+          itemtype?: string | null
+          manufacturecountry?: string | null
+          manufactureritemdescription?: string | null
+          manufacturername?: string | null
+          priceupdatedate?: string | null
+          qtyinpackage?: number | null
           quantity?: number | null
-          store_id?: string | null
-          unit_price?: number | null
-          unit_type?: string | null
+          storeid?: string | null
+          subchainid?: string | null
+          unitofmeasure?: string | null
+          unitofmeasureprice?: number | null
+          unitqty?: string | null
         }
         Update: {
-          category?: string | null
-          id?: string
-          import_date?: string | null
-          manufacturer?: string | null
-          price?: number | null
-          product_code?: string | null
-          product_name?: string | null
+          allowdiscount?: boolean | null
+          bikoretno?: string | null
+          bisweighted?: boolean | null
+          chainid?: string | null
+          itemcode?: string | null
+          itemid?: string | null
+          itemname?: string | null
+          itemprice?: number | null
+          itemstatus?: string | null
+          itemtype?: string | null
+          manufacturecountry?: string | null
+          manufactureritemdescription?: string | null
+          manufacturername?: string | null
+          priceupdatedate?: string | null
+          qtyinpackage?: number | null
           quantity?: number | null
-          store_id?: string | null
-          unit_price?: number | null
-          unit_type?: string | null
+          storeid?: string | null
+          subchainid?: string | null
+          unitofmeasure?: string | null
+          unitofmeasureprice?: number | null
+          unitqty?: string | null
         }
         Relationships: []
       }

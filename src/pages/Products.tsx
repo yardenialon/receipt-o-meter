@@ -3,122 +3,54 @@ import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { PriceFileUpload } from '@/components/products/PriceFileUpload';
-import { PriceFileTest } from '@/components/products/PriceFileTest';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  
-  const testRamiLevy = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "יש להתחבר למערכת",
-        });
-        return;
-      }
+  const handleKeshetFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-      const { data, error } = await supabase.functions.invoke('fetch-rami-levy-prices', {
-        body: {
-          store_id: '001',
-          branch_id: '089'
-        }
-      });
-
-      if (error) {
-        console.error('Error fetching prices:', error);
-        throw error;
-      }
-      
-      toast({
-        title: "בדיקת מחירים הושלמה",
-        description: `יובאו ${data.message}`,
-      });
-
-    } catch (error) {
-      console.error('Error fetching prices:', error);
+    // Check if it's a CSV file
+    if (!file.name.toLowerCase().endsWith('.csv')) {
       toast({
         variant: "destructive",
-        title: "שגיאה בייבוא מחירים",
-        description: error instanceof Error ? error.message : 'אירעה שגיאה',
+        title: "שגיאה",
+        description: "יש להעלות קובץ CSV בלבד",
       });
+      return;
     }
-  };
 
-  const testBareket = async () => {
+    setIsUploading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
 
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "יש להתחבר למערכת",
-        });
-        return;
-      }
+      const { data, error } = await supabase.functions.invoke('process-keshet-csv', {
+        body: formData
+      });
 
-      const { data, error } = await supabase.functions.invoke('fetch-bareket-prices');
+      if (error) throw error;
 
-      if (error) {
-        console.error('Error fetching Bareket prices:', error);
-        throw error;
-      }
-      
       toast({
-        title: "בדיקת מחירים הושלמה",
+        title: "העלאה הצליחה",
         description: data.message,
       });
 
     } catch (error) {
-      console.error('Error fetching prices:', error);
+      console.error('Error uploading file:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה בייבוא מחירים",
+        title: "שגיאה בהעלאת הקובץ",
         description: error instanceof Error ? error.message : 'אירעה שגיאה',
       });
-    }
-  };
-
-  const processLocalDumps = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "יש להתחבר למערכת",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('auto-process-dumps');
-
-      if (error) {
-        console.error('Error processing dumps:', error);
-        throw error;
-      }
-      
-      toast({
-        title: "עיבוד קבצים הושלם",
-        description: data.message,
-      });
-
-    } catch (error) {
-      console.error('Error processing dumps:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בעיבוד קבצים",
-        description: error instanceof Error ? error.message : 'אירעה שגיאה',
-      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -133,32 +65,30 @@ export default function Products() {
         />
         <div className="space-y-4">
           <PriceFileUpload />
-          <div className="flex gap-4">
-            <Button 
-              onClick={testRamiLevy}
-              variant="outline"
-              className="flex-1"
-            >
-              בדיקת מחירים מרמי לוי
-            </Button>
-            <Button 
-              onClick={testBareket}
-              variant="outline"
-              className="flex-1"
-            >
-              בדיקת מחירים מברקת
-            </Button>
-            <Button 
-              onClick={processLocalDumps}
-              variant="outline"
-              className="flex-1"
-            >
-              עיבוד קבצים מקומיים
-            </Button>
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <h3 className="text-lg font-semibold mb-4">העלאת מוצרי רשת קשת</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              העלה קובץ CSV המכיל את מוצרי רשת קשת. המערכת תעבד את הקובץ ותעדכן את מחירי המוצרים באופן אוטומטי.
+            </p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                className="relative"
+                disabled={isUploading}
+              >
+                {isUploading ? 'מעלה...' : 'העלה קובץ CSV'}
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleKeshetFileUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isUploading}
+                />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-      <PriceFileTest />
     </div>
   );
 }
