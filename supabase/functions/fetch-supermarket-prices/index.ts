@@ -18,6 +18,7 @@ serve(async (req) => {
     const updateRecord = await createPriceUpdate(supabase);
 
     try {
+      console.log('Fetching prices from Docker...');
       const prices = await fetchPricesFromDocker();
       
       // Process prices in batches
