@@ -14,9 +14,7 @@ export default function Products() {
   
   const testRamiLevy = async () => {
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
         toast({
@@ -27,23 +25,17 @@ export default function Products() {
         return;
       }
 
-      const response = await fetch('https://kthqkydgegsoheymesgc.supabase.co/functions/v1/fetch-rami-levy-prices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('fetch-rami-levy-prices', {
+        body: {
           store_id: '001',
           branch_id: '089'
-        })
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch prices');
+      if (error) {
+        console.error('Error fetching prices:', error);
+        throw error;
       }
-
-      const data = await response.json();
       
       toast({
         title: "בדיקת מחירים הושלמה",
