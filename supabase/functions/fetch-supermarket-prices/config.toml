@@ -1,4 +1,4 @@
 project_id = "kthqkydgegsoheymesgc"
 name = "fetch-supermarket-prices"
 entrypoint = "/index.ts"
-verify_jwt = true
+verify_jwt = false
