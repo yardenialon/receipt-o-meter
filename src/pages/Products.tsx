@@ -3,6 +3,7 @@ import { ProductsStats } from '@/components/products/ProductsStats';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { PriceFileUpload } from '@/components/products/PriceFileUpload';
+import { PriceFileTest } from '@/components/products/PriceFileTest';
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,6 +19,7 @@ export default function Products() {
         />
         <PriceFileUpload />
       </div>
+      <PriceFileTest />
     </div>
   );
 }
