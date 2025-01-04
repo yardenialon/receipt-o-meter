@@ -52,20 +52,29 @@ serve(async (req) => {
       .single()
 
     if (updateError) {
+      console.error('Error creating price update record:', updateError)
       throw updateError
     }
+
+    console.log('Created price update record:', updateRecord)
 
     // Fetch prices from the API with proper headers and timeout
     console.log('Fetching prices from API...')
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
     try {
       const response = await fetch('https://api.supermarket-prices.co.il/prices', {
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (compatible; SupabaseFunction/1.0)',
-          'Connection': 'keep-alive'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Pragma': 'no-cache',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'cross-site'
         },
         signal: controller.signal
       })
@@ -119,7 +128,7 @@ serve(async (req) => {
         processedCount += batch.length
         
         // Update progress
-        await supabase
+        const { error: progressError } = await supabase
           .from('price_updates')
           .update({
             processed_products: processedCount,
@@ -127,16 +136,24 @@ serve(async (req) => {
             error_log: errors.length ? { errors } : null,
           })
           .eq('id', updateRecord.id)
+
+        if (progressError) {
+          console.error('Error updating progress:', progressError)
+        }
       }
 
       // Update final status
-      await supabase
+      const { error: finalUpdateError } = await supabase
         .from('price_updates')
         .update({
           status: errorCount > 0 ? 'completed_with_errors' : 'completed',
           completed_at: new Date().toISOString(),
         })
         .eq('id', updateRecord.id)
+
+      if (finalUpdateError) {
+        console.error('Error updating final status:', finalUpdateError)
+      }
 
       return new Response(
         JSON.stringify({
@@ -154,7 +171,7 @@ serve(async (req) => {
       console.error('Fetch operation failed:', fetchError)
       
       // Update the price update record with the error
-      await supabase
+      const { error: errorUpdateError } = await supabase
         .from('price_updates')
         .update({
           status: 'failed',
@@ -162,6 +179,10 @@ serve(async (req) => {
           error_log: { error: fetchError.message },
         })
         .eq('id', updateRecord.id)
+
+      if (errorUpdateError) {
+        console.error('Error updating error status:', errorUpdateError)
+      }
 
       throw fetchError
     }
