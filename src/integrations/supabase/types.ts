@@ -69,6 +69,63 @@ export type Database = {
         }
         Relationships: []
       }
+      price_history: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          id: string
+          is_promotion: boolean | null
+          price: number
+          product_id: string
+          promotion_description: string | null
+          quantity: number | null
+          unit_price: number | null
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          id?: string
+          is_promotion?: boolean | null
+          price: number
+          product_id: string
+          promotion_description?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          id?: string
+          is_promotion?: boolean | null
+          price?: number
+          product_id?: string
+          promotion_description?: string | null
+          quantity?: number | null
+          unit_price?: number | null
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "store_branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_updates: {
         Row: {
           completed_at: string | null
@@ -178,6 +235,82 @@ export type Database = {
           product_name?: string
         }
         Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_weighted: boolean | null
+          manufacturer: string | null
+          name: string
+          unit_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_weighted?: boolean | null
+          manufacturer?: string | null
+          name: string
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_weighted?: boolean | null
+          manufacturer?: string | null
+          name?: string
+          unit_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       receipt_items: {
         Row: {
@@ -309,6 +442,83 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      store_branches: {
+        Row: {
+          address: string | null
+          branch_id: string
+          chain_id: string
+          city: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          location_lat: number | null
+          location_lon: number | null
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id: string
+          chain_id: string
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_lat?: number | null
+          location_lon?: number | null
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string
+          chain_id?: string
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_lat?: number | null
+          location_lon?: number | null
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_branches_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "store_chains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_chains: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -449,7 +659,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      latest_prices: {
+        Row: {
+          branch_address: string | null
+          branch_city: string | null
+          branch_name: string | null
+          category_name: string | null
+          chain_name: string | null
+          id: string | null
+          is_promotion: boolean | null
+          manufacturer: string | null
+          price: number | null
+          product_code: string | null
+          product_name: string | null
+          promotion_description: string | null
+          quantity: number | null
+          unit_price: number | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       process_imported_products: {
