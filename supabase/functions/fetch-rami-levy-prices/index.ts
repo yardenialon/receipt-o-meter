@@ -1,27 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface RamiLevyProduct {
-  ItemCode: string;
-  ItemType: string;
-  ItemName: string;
-  ManufacturerName: string;
-  ManufactureCountry: string;
-  ManufacturerItemDescription: string;
-  UnitQty: string;
-  Quantity: number;
-  bIsWeighted: boolean;
-  UnitOfMeasure: string;
-  QtyInPackage: number;
-  ItemPrice: number;
-  UnitOfMeasurePrice: number;
-  AllowDiscount: boolean;
-  ItemStatus: string;
 }
 
 serve(async (req) => {
@@ -30,95 +12,76 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting price fetch from Rami Levy...')
+    console.log('Starting to fetch Rami Levy prices...')
+    
+    const { store_id = '001', branch_id = '089' } = await req.json()
+    console.log(`Fetching prices for store ${store_id}, branch ${branch_id}`)
 
-    // יצירת חיבור לסופאבייס
+    const response = await fetch(`https://www.rami-levy.co.il/api/catalog`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        store_id: store_id,
+        branch_id: branch_id,
+      }),
+    })
+
+    console.log('Got response from Rami Levy API')
+
+    if (!response.ok) {
+      console.error('Error from Rami Levy API:', response.status, response.statusText)
+      throw new Error(`Failed to fetch prices: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log(`Fetched ${data.length || 0} products from API`)
+
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing environment variables')
+      throw new Error('Missing Supabase environment variables')
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey)
+    console.log('Supabase client initialized')
 
-    // קבלת פרמטרים מה-request
-    const { store_id, branch_id } = await req.json()
+    // Transform and insert data
+    const products = data.map((item: any) => ({
+      store_chain: 'רמי לוי',
+      store_id: store_id,
+      store_address: `סניף ${branch_id}`,
+      ItemCode: item.code,
+      ItemType: item.type,
+      ItemName: item.name,
+      ManufacturerName: item.manufacturer,
+      ItemPrice: item.price,
+      PriceUpdateDate: new Date().toISOString(),
+      UnitQty: item.unit,
+      Quantity: item.quantity || 1,
+      UnitOfMeasure: item.measureUnit,
+    }))
 
-    if (!store_id || !branch_id) {
-      throw new Error('Missing store_id or branch_id')
-    }
+    console.log(`Prepared ${products.length} products for insertion`)
 
-    // הורדת הקובץ מרמי לוי
-    const url = `http://publishprice.rami-levy.co.il/published/stores/${store_id}/${branch_id}/PriceFull${store_id}${branch_id}.gz`
-    console.log('Fetching from URL:', url)
-
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch prices: ${response.statusText}`)
-    }
-
-    // פענוח הקובץ
-    const gzippedData = await response.arrayBuffer()
-    const decompressed = new TextDecoder().decode(
-      new Uint8Array(gzippedData)
-    )
-
-    // פרסור ה-XML
-    const parser = new DOMParser()
-    const xmlDoc = parser.parseFromString(decompressed, 'text/xml')
-    
-    // המרה למערך של מוצרים
-    const items = Array.from(xmlDoc.querySelectorAll('Item')).map(item => {
-      const getElementText = (tagName: string) => {
-        const element = item.querySelector(tagName)
-        return element?.textContent || ''
-      }
-
-      const product: RamiLevyProduct = {
-        ItemCode: getElementText('ItemCode'),
-        ItemType: getElementText('ItemType'),
-        ItemName: getElementText('ItemName'),
-        ManufacturerName: getElementText('ManufacturerName'),
-        ManufactureCountry: getElementText('ManufactureCountry'),
-        ManufacturerItemDescription: getElementText('ManufacturerItemDescription'),
-        UnitQty: getElementText('UnitQty'),
-        Quantity: parseFloat(getElementText('Quantity')) || 0,
-        bIsWeighted: getElementText('bIsWeighted') === 'true',
-        UnitOfMeasure: getElementText('UnitOfMeasure'),
-        QtyInPackage: parseFloat(getElementText('QtyInPackage')) || 0,
-        ItemPrice: parseFloat(getElementText('ItemPrice')) || 0,
-        UnitOfMeasurePrice: parseFloat(getElementText('UnitOfMeasurePrice')) || 0,
-        AllowDiscount: getElementText('AllowDiscount') === 'true',
-        ItemStatus: getElementText('ItemStatus')
-      }
-
-      return product
-    })
-
-    console.log(`Found ${items.length} products`)
-
-    // שמירה בדאטהבייס
     const { error: insertError } = await supabase
       .from('store_products_import')
-      .upsert(
-        items.map(item => ({
-          ...item,
-          store_chain: 'רמי לוי',
-          store_id: branch_id,
-          PriceUpdateDate: new Date().toISOString()
-        }))
-      )
+      .upsert(products)
 
     if (insertError) {
       console.error('Error inserting products:', insertError)
-      throw insertError
+      throw new Error(`Failed to insert products: ${insertError.message}`)
     }
+
+    console.log('Successfully inserted products')
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Successfully imported ${items.length} products`,
+        message: `Imported ${products.length} products`,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -126,7 +89,8 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in fetch-rami-levy-prices:', error)
+    
     return new Response(
       JSON.stringify({
         success: false,
