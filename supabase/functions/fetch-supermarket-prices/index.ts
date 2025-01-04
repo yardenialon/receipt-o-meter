@@ -21,16 +21,15 @@ interface PriceData {
   quantity?: number
   unitOfMeasure?: string
   priceUpdateDate: string
+  storeAddress?: string
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
@@ -54,9 +53,9 @@ serve(async (req) => {
       throw updateError
     }
 
-    // Fetch prices from the OpenIsraeliSupermarkets API
-    const apiUrl = 'https://api.supermarket-prices.co.il/prices'
-    const response = await fetch(apiUrl)
+    // Fetch prices from the API
+    console.log('Fetching prices from API...')
+    const response = await fetch('https://api.supermarket-prices.co.il/prices')
     
     if (!response.ok) {
       throw new Error(`API request failed: ${response.statusText}`)
@@ -79,6 +78,7 @@ serve(async (req) => {
         .upsert(batch.map(price => ({
           store_chain: price.chainName,
           store_id: price.storeId,
+          store_address: price.storeAddress,
           ItemCode: price.itemCode,
           ItemName: price.itemName,
           ItemPrice: price.itemPrice,
