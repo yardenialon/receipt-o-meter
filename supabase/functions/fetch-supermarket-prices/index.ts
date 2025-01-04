@@ -53,12 +53,23 @@ serve(async (req) => {
       throw updateError
     }
 
-    // Fetch prices from the API
+    // Fetch prices from the API with proper headers and timeout
     console.log('Fetching prices from API...')
-    const response = await fetch('https://api.supermarket-prices.co.il/prices')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+    const response = await fetch('https://api.supermarket-prices.co.il/prices', {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Supabase Edge Function'
+      },
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
     
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`)
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`)
     }
 
     const prices: PriceData[] = await response.json()
