@@ -49,29 +49,63 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Insert records into keshet_products_import table
-    const { error } = await supabase
-      .from('keshet_products_import')
-      .insert(records)
+    // Process records in smaller batches to avoid memory issues
+    const batchSize = 1000
+    let processedCount = 0
+    let errorCount = 0
+    const errors = []
 
-    if (error) {
-      console.error('Error inserting records:', error)
-      throw error
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, Math.min(i + batchSize, records.length))
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(records.length / batchSize)}`)
+
+      try {
+        const { error } = await supabase
+          .from('keshet_products_import')
+          .insert(batch)
+
+        if (error) {
+          console.error('Error inserting batch:', error)
+          errorCount++
+          errors.push({
+            batch: Math.floor(i / batchSize) + 1,
+            error: error.message
+          })
+        } else {
+          processedCount += batch.length
+        }
+      } catch (error) {
+        console.error('Error processing batch:', error)
+        errorCount++
+        errors.push({
+          batch: Math.floor(i / batchSize) + 1,
+          error: error.message
+        })
+      }
     }
 
-    // Process the imported records
-    const { error: processError } = await supabase
-      .rpc('process_keshet_products')
+    console.log('Finished processing all batches')
+    console.log(`Successfully processed ${processedCount} records`)
+    if (errorCount > 0) {
+      console.log(`Encountered ${errorCount} errors during processing`)
+    }
 
-    if (processError) {
-      console.error('Error processing records:', processError)
-      throw processError
+    // Process the imported records using the database function
+    if (processedCount > 0) {
+      const { error: processError } = await supabase
+        .rpc('process_keshet_products')
+
+      if (processError) {
+        console.error('Error processing records:', processError)
+        throw processError
+      }
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Successfully processed ${records.length} products` 
+        message: `Successfully processed ${processedCount} products`,
+        errors: errors.length > 0 ? errors : undefined
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -84,7 +118,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message,
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
