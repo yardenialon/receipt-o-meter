@@ -40,8 +40,9 @@ export const PriceFileTest = () => {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <Button onClick={handleFetchPrices} className="w-full">
+    <div className="p-4 space-y-4 bg-white rounded-lg shadow-sm border">
+      <h2 className="text-lg font-semibold mb-4">בדיקת מחירים</h2>
+      <Button onClick={handleFetchPrices} className="w-full bg-blue-500 hover:bg-blue-600">
         טען מחירים מרשתות השיווק
       </Button>
       <Button onClick={handleFetchKingstore} variant="outline" className="w-full">
