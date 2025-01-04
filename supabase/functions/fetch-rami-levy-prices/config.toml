@@ -1,4 +1,2 @@
 project_id = "kthqkydgegsoheymesgc"
-name = "fetch-rami-levy-prices"
-entrypoint = "/index.ts"
-verify_jwt = true
+allow_docker = true
