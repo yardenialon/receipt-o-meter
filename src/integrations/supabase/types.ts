@@ -69,6 +69,39 @@ export type Database = {
         }
         Relationships: []
       }
+      price_updates: {
+        Row: {
+          completed_at: string | null
+          created_by: string | null
+          error_log: Json | null
+          id: string
+          processed_products: number | null
+          started_at: string | null
+          status: string | null
+          total_products: number | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_by?: string | null
+          error_log?: Json | null
+          id?: string
+          processed_products?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_products?: number | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_by?: string | null
+          error_log?: Json | null
+          id?: string
+          processed_products?: number | null
+          started_at?: string | null
+          status?: string | null
+          total_products?: number | null
+        }
+        Relationships: []
+      }
       price_upload_chunks: {
         Row: {
           chunk_index: number
