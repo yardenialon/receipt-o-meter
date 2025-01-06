@@ -99,6 +99,81 @@ export type Database = {
         }
         Relationships: []
       }
+      Price_Bareket: {
+        Row: {
+          AllowDiscount: string | null
+          BikoretNo: string | null
+          bIsWeighted: string | null
+          ChainId: string | null
+          file_name: string | null
+          found_folder: string | null
+          ItemCode: number | null
+          ItemNm: string | null
+          ItemPrice: string | null
+          ItemStatus: string | null
+          ItemType: string | null
+          ManufactureCountry: string | null
+          ManufacturerItemDescription: string | null
+          ManufacturerName: string | null
+          PriceUpdateDate: string | null
+          QtyInPackage: string | null
+          Quantity: string | null
+          StoreId: string | null
+          SubChainId: string | null
+          UnitOfMeasure: string | null
+          UnitOfMeasurePrice: string | null
+          UnitQty: string | null
+        }
+        Insert: {
+          AllowDiscount?: string | null
+          BikoretNo?: string | null
+          bIsWeighted?: string | null
+          ChainId?: string | null
+          file_name?: string | null
+          found_folder?: string | null
+          ItemCode?: number | null
+          ItemNm?: string | null
+          ItemPrice?: string | null
+          ItemStatus?: string | null
+          ItemType?: string | null
+          ManufactureCountry?: string | null
+          ManufacturerItemDescription?: string | null
+          ManufacturerName?: string | null
+          PriceUpdateDate?: string | null
+          QtyInPackage?: string | null
+          Quantity?: string | null
+          StoreId?: string | null
+          SubChainId?: string | null
+          UnitOfMeasure?: string | null
+          UnitOfMeasurePrice?: string | null
+          UnitQty?: string | null
+        }
+        Update: {
+          AllowDiscount?: string | null
+          BikoretNo?: string | null
+          bIsWeighted?: string | null
+          ChainId?: string | null
+          file_name?: string | null
+          found_folder?: string | null
+          ItemCode?: number | null
+          ItemNm?: string | null
+          ItemPrice?: string | null
+          ItemStatus?: string | null
+          ItemType?: string | null
+          ManufactureCountry?: string | null
+          ManufacturerItemDescription?: string | null
+          ManufacturerName?: string | null
+          PriceUpdateDate?: string | null
+          QtyInPackage?: string | null
+          Quantity?: string | null
+          StoreId?: string | null
+          SubChainId?: string | null
+          UnitOfMeasure?: string | null
+          UnitOfMeasurePrice?: string | null
+          UnitQty?: string | null
+        }
+        Relationships: []
+      }
       price_file_uploads: {
         Row: {
           completed_at: string | null
