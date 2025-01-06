@@ -5,7 +5,7 @@ interface BillBeLogoProps {
   className?: string;
 }
 
-export const BillBeLogo: React.FC<BillBeLogoProps> = ({ size = 150, className = '' }) => {
+export const SavvyLogo: React.FC<BillBeLogoProps> = ({ size = 150, className = '' }) => {
   return (
     <img 
       src="/lovable-uploads/0b91faef-306a-433e-ab3e-ce812ecd1151.png"

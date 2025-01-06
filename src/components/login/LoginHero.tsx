@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BillBeLogo } from '@/components/BillBeLogo';
+import { SavvyLogo } from '@/components/SavvyLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ export const LoginHero = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <BillBeLogo size={isMobile ? 200 : 300} className="mb-2 md:mb-4" />
+        <SavvyLogo size={isMobile ? 200 : 300} className="mb-2 md:mb-4" />
       </motion.div>
       
       <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3 bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">
