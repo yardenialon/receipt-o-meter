@@ -492,10 +492,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
-          location_lat: number | null
-          location_lon: number | null
           name: string
-          phone: string | null
           updated_at: string | null
         }
         Insert: {
@@ -506,10 +503,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          location_lat?: number | null
-          location_lon?: number | null
           name: string
-          phone?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -520,10 +514,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
-          location_lat?: number | null
-          location_lon?: number | null
           name?: string
-          phone?: string | null
           updated_at?: string | null
         }
         Relationships: [
