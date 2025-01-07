@@ -9,44 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      chain_mappings: {
-        Row: {
-          created_at: string | null
-          id: string
-          mapping_status: string | null
-          our_chain_id: string
-          source_chain_id: string
-          source_chain_name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          mapping_status?: string | null
-          our_chain_id: string
-          source_chain_id: string
-          source_chain_name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          mapping_status?: string | null
-          our_chain_id?: string
-          source_chain_id?: string
-          source_chain_name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chain_mappings_our_chain_id_fkey"
-            columns: ["our_chain_id"]
-            isOneToOne: false
-            referencedRelation: "store_chains"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       feedback: {
         Row: {
           contant: string | null
