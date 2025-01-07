@@ -149,13 +149,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "price_history_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "store_branches"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "price_history_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -688,27 +681,7 @@ export type Database = {
       }
     }
     Views: {
-      latest_prices: {
-        Row: {
-          branch_address: string | null
-          branch_city: string | null
-          branch_name: string | null
-          category_name: string | null
-          chain_name: string | null
-          id: string | null
-          is_promotion: boolean | null
-          manufacturer: string | null
-          price: number | null
-          product_code: string | null
-          product_name: string | null
-          promotion_description: string | null
-          quantity: number | null
-          unit_price: number | null
-          valid_from: string | null
-          valid_to: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       process_imported_products: {
