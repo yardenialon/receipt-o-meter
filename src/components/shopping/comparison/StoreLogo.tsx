@@ -10,7 +10,7 @@ export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
     const normalizedName = name.toLowerCase().trim();
     
     if (normalizedName.includes('רמי לוי') || normalizedName.includes('rami levy')) {
-      return '/lovable-uploads/eda801fa-c289-472c-9c6b-c584f4252e83.png';
+      return '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png';
     }
     
     if (normalizedName.includes('carrefour') || normalizedName.includes('קרפור')) {

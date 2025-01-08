@@ -38,15 +38,20 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
       console.log('Found product codes:', productCodes);
 
-      // Get all store products with these product codes, joining with branch_mappings
+      // Get all store products with these product codes, joining with branch_mappings and store_branches
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
           *,
-          branch_mappings (
+          branch_mappings!inner (
             source_chain,
             source_branch_id,
-            source_branch_name
+            source_branch_name,
+            branch_id
+          ),
+          branch_mappings!inner.store_branches!inner (
+            name,
+            address
           )
         `)
         .in('product_code', productCodes);
@@ -74,6 +79,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             storeName: product.branch_mappings.source_chain,
             storeId: product.branch_mappings.source_branch_id,
             branchName: product.branch_mappings.source_branch_name,
+            branchAddress: product.branch_mappings.store_branches?.address,
             products: []
           };
         }
@@ -83,6 +89,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         storeName: string; 
         storeId: string; 
         branchName: string | null;
+        branchAddress: string | null;
         products: typeof products 
       }>);
 
@@ -92,6 +99,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           storeName: store.storeName,
           storeId: store.storeId,
           branchName: store.branchName,
+          branchAddress: store.branchAddress,
           items: activeItems.map(item => ({
             name: item.name,
             price: null,
