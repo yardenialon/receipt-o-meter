@@ -48,7 +48,12 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
 
   const handleProductSelect = (product: any) => {
     if (onProductSelect) {
-      onProductSelect(product);
+      // התאמת שם המוצר לפורמט הנכון
+      const formattedProduct = {
+        ItemName: product.product_name,
+        // הוספת שדות נוספים אם נדרש
+      };
+      onProductSelect(formattedProduct);
     }
   };
 

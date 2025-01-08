@@ -50,7 +50,8 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         // Format price data for comparison
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
-          store_id: item.store_id || null,
+          store_id: item.store_id || '',
+          store_address: null, // Add this line to match StorePrice interface
           price: item.price || 0,
           price_update_date: item.price_update_date || new Date().toISOString()
         }));
