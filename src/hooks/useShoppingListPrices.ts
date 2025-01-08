@@ -38,18 +38,18 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
       console.log('Found product codes:', productCodes);
 
-      // Get all store products with these product codes, joining with branch_mappings and store_branches
+      // Get all store products with these product codes
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
           product_code,
           product_name,
           price,
-          branch_mappings!inner (
+          branch_mappings (
             source_chain,
             source_branch_id,
             source_branch_name,
-            store_branches!inner (
+            store_branches (
               name,
               address
             )
