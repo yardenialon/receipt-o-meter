@@ -49,7 +49,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             source_chain,
             source_branch_id,
             source_branch_name,
-            store_branches (
+            branch_id,
+            store_branches:store_branches!branch_id(
               name,
               address
             )
@@ -80,7 +81,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             storeName: product.branch_mappings.source_chain,
             storeId: product.branch_mappings.source_branch_id,
             branchName: product.branch_mappings.source_branch_name,
-            branchAddress: product.branch_mappings.store_branches?.address,
+            branchAddress: product.branch_mappings.store_branches?.[0]?.address,
             products: []
           };
         }
