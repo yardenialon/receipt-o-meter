@@ -15,6 +15,7 @@ export type Database = {
           created_at: string | null
           id: string
           source_branch_id: string
+          source_branch_name: string | null
           source_chain: string
           updated_at: string | null
         }
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           source_branch_id: string
+          source_branch_name?: string | null
           source_chain: string
           updated_at?: string | null
         }
@@ -31,6 +33,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           source_branch_id?: string
+          source_branch_name?: string | null
           source_chain?: string
           updated_at?: string | null
         }
