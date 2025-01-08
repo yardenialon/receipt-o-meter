@@ -47,7 +47,6 @@ export const ProductsSearch = ({ onProductSelect }: ProductsSearchProps) => {
       onProductSelect({
         name: product.product_name,
         product_code: product.product_code,
-        // שמירת שדות נוספים אם נדרש
       });
     }
   };

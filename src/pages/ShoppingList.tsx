@@ -14,7 +14,6 @@ import { useState } from 'react';
 export default function ShoppingList() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
 
   const { data: lists, isLoading } = useQuery({
     queryKey: ['shopping-lists'],
@@ -130,9 +129,8 @@ export default function ShoppingList() {
   const handleAddProductToList = (listId: string, product: any) => {
     addItem.mutate({
       listId,
-      name: product.ItemName
+      name: product.name
     });
-    setSearchTerm('');
   };
 
   if (isLoading) {
@@ -155,8 +153,6 @@ export default function ShoppingList() {
             <div key={list.id} className="space-y-4">
               <div className="relative">
                 <ProductsSearch
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
                   onProductSelect={(product) => handleAddProductToList(list.id, product)}
                 />
               </div>
