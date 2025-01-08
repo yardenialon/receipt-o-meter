@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, MapPin } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { ComparisonItem } from "./ComparisonItem";
@@ -24,6 +24,8 @@ interface StoreCardProps {
   priceDiff: string | null;
   progressValue: number;
   index: number;
+  branchName?: string;
+  branchAddress?: string;
 }
 
 export const StoreCard = ({ 
@@ -32,7 +34,9 @@ export const StoreCard = ({
   isCheapest, 
   priceDiff, 
   progressValue, 
-  index 
+  index,
+  branchName,
+  branchAddress
 }: StoreCardProps) => {
   const unavailableItems = comparison.items.filter(item => !item.isAvailable);
   const availableItems = comparison.items.filter(item => item.isAvailable);
@@ -47,6 +51,19 @@ export const StoreCard = ({
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 text-center">
             <StoreLogo storeName={comparison.storeName} className="h-8 w-auto mb-1" />
+            
+            {branchName && (
+              <div className="text-base font-medium text-gray-700">
+                {branchName}
+              </div>
+            )}
+            
+            {branchAddress && (
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <MapPin className="h-4 w-4" />
+                {branchAddress}
+              </div>
+            )}
             
             <div className="text-2xl font-bold">
               ₪{comparison.total.toFixed(2)}

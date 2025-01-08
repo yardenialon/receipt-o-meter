@@ -3,6 +3,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatePresence } from "framer-motion";
 import { SavingsCard } from "./comparison/SavingsCard";
 import { StoreCard } from "./comparison/StoreCard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 interface StoreComparison {
   storeName: string;
@@ -24,6 +26,25 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
+  // Fetch store branch information
+  const { data: branchInfo } = useQuery({
+    queryKey: ['store-branches', comparisons.map(c => c.storeId).join(',')],
+    queryFn: async () => {
+      if (!comparisons.length) return {};
+      
+      const { data: branches } = await supabase
+        .from('store_branches')
+        .select('branch_id, name, address')
+        .in('branch_id', comparisons.map(c => c.storeId || ''));
+      
+      return branches?.reduce((acc, branch) => {
+        acc[branch.branch_id] = branch;
+        return acc;
+      }, {} as Record<string, any>) || {};
+    },
+    enabled: comparisons.length > 0
+  });
+
   if (isLoading) {
     return (
       <Card className="p-6">
@@ -89,6 +110,9 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
               (comparison.total / mostExpensiveTotal) * 100 : 
               0;
             
+            // Get branch information
+            const branch = branchInfo?.[comparison.storeId || ''];
+            
             return (
               <StoreCard
                 key={`${comparison.storeName}-${comparison.storeId}-${index}`}
@@ -98,6 +122,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                 priceDiff={priceDiff}
                 progressValue={progressValue}
                 index={index}
+                branchName={branch?.name}
+                branchAddress={branch?.address}
               />
             );
           })}
