@@ -42,16 +42,17 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
-          *,
+          product_code,
+          product_name,
+          price,
           branch_mappings!inner (
             source_chain,
             source_branch_id,
             source_branch_name,
-            branch_id
-          ),
-          branch_mappings!inner.store_branches!inner (
-            name,
-            address
+            store_branches!inner (
+              name,
+              address
+            )
           )
         `)
         .in('product_code', productCodes);
