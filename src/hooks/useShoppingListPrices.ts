@@ -38,11 +38,20 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
       console.log('Found product codes:', productCodes);
 
-      // Get all store products with these product codes
+      // Get all store products with these product codes, joining with branch_mappings
       const { data: products, error } = await supabase
         .from('store_products')
-        .select('*')
-        .in('product_code', productCodes);
+        .select(`
+          *,
+          branch_mappings!inner(
+            source_branch_name,
+            source_chain,
+            source_branch_id
+          )
+        `)
+        .in('product_code', productCodes)
+        .eq('branch_mappings.source_chain', 'store_chain')
+        .eq('branch_mappings.source_branch_id', 'store_id');
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -54,27 +63,36 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      console.log('Found products:', products);
+      console.log('Found products with mappings:', products);
 
       // Group products by store
       const productsByStore = products.reduce((acc, product) => {
-        const storeKey = `${product.store_chain}-${product.store_id}`;
+        const mapping = product.branch_mappings;
+        const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
+        
         if (!acc[storeKey]) {
           acc[storeKey] = {
-            storeName: product.store_chain,
-            storeId: product.store_id,
+            storeName: mapping.source_chain,
+            storeId: mapping.source_branch_id,
+            branchName: mapping.source_branch_name,
             products: []
           };
         }
         acc[storeKey].products.push(product);
         return acc;
-      }, {} as Record<string, { storeName: string; storeId: string; products: typeof products }> );
+      }, {} as Record<string, { 
+        storeName: string; 
+        storeId: string; 
+        branchName: string | null;
+        products: typeof products 
+      }>);
 
       // Process each store's comparison
       const allStoreComparisons = Object.values(productsByStore).map(store => {
         const comparison = {
           storeName: store.storeName,
           storeId: store.storeId,
+          branchName: store.branchName,
           items: activeItems.map(item => ({
             name: item.name,
             price: null,

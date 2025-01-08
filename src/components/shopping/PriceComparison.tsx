@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 interface StoreComparison {
   storeName: string;
   storeId: string | null;
+  branchName?: string | null;
   total: number;
   items: {
     name: string;
@@ -110,9 +111,6 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
               (comparison.total / mostExpensiveTotal) * 100 : 
               0;
             
-            // Get branch information
-            const branch = branchInfo?.[comparison.storeId || ''];
-            
             return (
               <StoreCard
                 key={`${comparison.storeName}-${comparison.storeId}-${index}`}
@@ -122,8 +120,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                 priceDiff={priceDiff}
                 progressValue={progressValue}
                 index={index}
-                branchName={branch?.name}
-                branchAddress={branch?.address}
+                branchName={comparison.branchName}
+                branchAddress={branchInfo?.[comparison.storeId || '']?.address}
               />
             );
           })}
