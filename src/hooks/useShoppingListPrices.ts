@@ -18,11 +18,11 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // First, get the ItemCodes for our items by searching by name
+      // First, get the product codes for our items by searching by name
       const { data: productMatches, error: matchError } = await supabase
-        .from('store_products_import')
-        .select('ItemCode, ItemName')
-        .or(activeItems.map(item => `ItemName.ilike.%${item.name}%`).join(','));
+        .from('store_products')
+        .select('product_code, product_name')
+        .or(activeItems.map(item => `product_name.ilike.%${item.name}%`).join(','));
 
       if (matchError) {
         console.error('Error finding item matches:', matchError);
@@ -34,15 +34,15 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      // Get unique ItemCodes
-      const itemCodes = [...new Set(productMatches.map(match => match.ItemCode))];
-      console.log('Found ItemCodes:', itemCodes);
+      // Get unique product codes
+      const productCodes = [...new Set(productMatches.map(match => match.product_code))];
+      console.log('Found product codes:', productCodes);
 
-      // Get all store products with these ItemCodes
+      // Get all store products with these product codes
       const { data: products, error } = await supabase
-        .from('store_products_import')
+        .from('store_products')
         .select('*')
-        .in('ItemCode', itemCodes);
+        .in('product_code', productCodes);
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -86,32 +86,32 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           availableItemsCount: 0
         };
 
-        // For each item in our list, find matching products by ItemCode
+        // For each item in our list, find matching products by product code
         comparison.items.forEach((item, index) => {
           // Find matching products for this item
           const itemMatches = productMatches.filter(match => 
-            match.ItemName.toLowerCase().includes(item.name.toLowerCase())
+            match.product_name.toLowerCase().includes(item.name.toLowerCase())
           );
-          const matchingItemCodes = itemMatches.map(match => match.ItemCode);
+          const matchingProductCodes = itemMatches.map(match => match.product_code);
           
-          // Find all products in this store with matching ItemCodes
+          // Find all products in this store with matching product codes
           const matchingProducts = store.products.filter(p => 
-            matchingItemCodes.includes(p.ItemCode)
+            matchingProductCodes.includes(p.product_code)
           );
 
           if (matchingProducts.length > 0) {
             // If we have multiple matches, use the cheapest one
             const cheapestProduct = matchingProducts.reduce((min, p) => 
-              p.ItemPrice < min.ItemPrice ? p : min
+              p.price < min.price ? p : min
             , matchingProducts[0]);
 
             comparison.items[index] = {
               ...item,
-              price: cheapestProduct.ItemPrice,
-              matchedProduct: cheapestProduct.ItemName,
+              price: cheapestProduct.price,
+              matchedProduct: cheapestProduct.product_name,
               isAvailable: true
             };
-            comparison.total += cheapestProduct.ItemPrice * item.quantity;
+            comparison.total += cheapestProduct.price * item.quantity;
             comparison.availableItemsCount++;
           }
         });

@@ -24,9 +24,9 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
       console.log('Searching for:', debouncedTerm);
       
       const { data } = await supabase
-        .from('store_products_import')
-        .select('ItemCode,ItemName,ItemPrice,store_chain,store_id,ManufacturerName,PriceUpdateDate')
-        .or(`ItemName.ilike.%${debouncedTerm}%,ItemCode.ilike.%${debouncedTerm}%`)
+        .from('store_products')
+        .select('product_code,product_name,price,store_chain,store_id,manufacturer,price_update_date')
+        .or(`product_name.ilike.%${debouncedTerm}%,product_code.ilike.%${debouncedTerm}%`)
         .limit(50);
       
       console.log('Search results:', data);
@@ -55,7 +55,7 @@ export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: 
   const handleBarcodeScanned = (barcode: string) => {
     console.log('Barcode scanned:', barcode);
     onSearchChange(barcode);
-    setDebouncedTerm(barcode); // Trigger immediate search
+    setDebouncedTerm(barcode);
   };
 
   return (

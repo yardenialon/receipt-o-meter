@@ -6,14 +6,13 @@ import { PriceComparison } from './PriceComparison';
 import { Button } from '@/components/ui/button';
 
 interface SearchResult {
-  ItemCode?: string;
-  ItemName?: string;
-  ItemPrice?: number;
-  PriceUpdateDate?: string;
+  product_code?: string;
+  product_name?: string;
+  price?: number;
+  price_update_date?: string;
   store_chain?: string;
   store_id?: string;
-  store_address?: string;
-  ManufacturerName?: string;
+  manufacturer?: string;
 }
 
 interface SearchResultsProps {
@@ -23,13 +22,13 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
-  // Group results by ItemCode to show comparisons
+  // Group results by product_code to show comparisons
   const groupedResults = results.reduce((acc, result) => {
-    if (!result.ItemCode) return acc;
-    if (!acc[result.ItemCode]) {
-      acc[result.ItemCode] = [];
+    if (!result.product_code) return acc;
+    if (!acc[result.product_code]) {
+      acc[result.product_code] = [];
     }
-    acc[result.ItemCode].push(result);
+    acc[result.product_code].push(result);
     return acc;
   }, {} as Record<string, SearchResult[]>);
 
@@ -52,9 +51,8 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
           store_id: item.store_id || null,
-          store_address: item.store_address || null,
-          price: item.ItemPrice || 0,
-          price_update_date: item.PriceUpdateDate || new Date().toISOString()
+          price: item.price || 0,
+          price_update_date: item.price_update_date || new Date().toISOString()
         }));
 
         return (
@@ -64,18 +62,18 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
           >
             <div className="flex items-start justify-between mb-2">
               <div className="space-y-1">
-                <div className="font-medium">{mainItem.ItemName}</div>
-                {mainItem.PriceUpdateDate && (
+                <div className="font-medium">{mainItem.product_name}</div>
+                {mainItem.price_update_date && (
                   <div className="text-sm text-muted-foreground">
-                    עודכן: {format(new Date(mainItem.PriceUpdateDate), 'dd/MM/yyyy', { locale: he })}
+                    עודכן: {format(new Date(mainItem.price_update_date), 'dd/MM/yyyy', { locale: he })}
                   </div>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  מק״ט: {mainItem.ItemCode}
+                  מק״ט: {mainItem.product_code}
                 </div>
-                {mainItem.ManufacturerName && (
+                {mainItem.manufacturer && (
                   <div className="text-sm text-muted-foreground">
-                    יצרן: {mainItem.ManufacturerName}
+                    יצרן: {mainItem.manufacturer}
                   </div>
                 )}
               </div>
