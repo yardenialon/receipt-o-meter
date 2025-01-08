@@ -43,15 +43,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         .from('store_products')
         .select(`
           *,
-          branch_mappings!inner(
-            source_branch_name,
+          branch_mappings (
             source_chain,
-            source_branch_id
+            source_branch_id,
+            source_branch_name
           )
         `)
-        .in('product_code', productCodes)
-        .eq('branch_mappings.source_chain', 'store_chain')
-        .eq('branch_mappings.source_branch_id', 'store_id');
+        .in('product_code', productCodes);
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -67,14 +65,15 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // Group products by store
       const productsByStore = products.reduce((acc, product) => {
-        const mapping = product.branch_mappings;
-        const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
+        if (!product.branch_mappings) return acc;
+        
+        const storeKey = `${product.branch_mappings.source_chain}-${product.branch_mappings.source_branch_id}`;
         
         if (!acc[storeKey]) {
           acc[storeKey] = {
-            storeName: mapping.source_chain,
-            storeId: mapping.source_branch_id,
-            branchName: mapping.source_branch_name,
+            storeName: product.branch_mappings.source_chain,
+            storeId: product.branch_mappings.source_branch_id,
+            branchName: product.branch_mappings.source_branch_name,
             products: []
           };
         }

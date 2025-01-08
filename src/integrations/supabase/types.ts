@@ -577,6 +577,7 @@ export type Database = {
       store_products: {
         Row: {
           allow_discount: boolean | null
+          branch_mapping_id: string | null
           category: string | null
           id: string
           is_weighted: boolean | null
@@ -599,6 +600,7 @@ export type Database = {
         }
         Insert: {
           allow_discount?: boolean | null
+          branch_mapping_id?: string | null
           category?: string | null
           id?: string
           is_weighted?: boolean | null
@@ -621,6 +623,7 @@ export type Database = {
         }
         Update: {
           allow_discount?: boolean | null
+          branch_mapping_id?: string | null
           category?: string | null
           id?: string
           is_weighted?: boolean | null
@@ -641,7 +644,15 @@ export type Database = {
           unit_of_measure_price?: number | null
           unit_quantity?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "store_products_branch_mapping_id_fkey"
+            columns: ["branch_mapping_id"]
+            isOneToOne: false
+            referencedRelation: "branch_mappings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_products_import: {
         Row: {
