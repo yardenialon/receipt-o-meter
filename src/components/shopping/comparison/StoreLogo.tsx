@@ -9,6 +9,10 @@ export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
   const getLogo = (name: string) => {
     const normalizedName = name.toLowerCase().trim();
     
+    if (normalizedName.includes('רמי לוי') || normalizedName.includes('rami levy')) {
+      return '/lovable-uploads/eda801fa-c289-472c-9c6b-c584f4252e83.png';
+    }
+    
     if (normalizedName.includes('carrefour') || normalizedName.includes('קרפור')) {
       return '/lovable-uploads/d81dbda8-194c-49d2-93fe-4cfbe17c10db.png';
     }
