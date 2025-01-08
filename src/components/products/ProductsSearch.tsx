@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 
-interface ProductsSearchProps {
-  onProductSelect?: (product: any) => void;
+interface ProductSearchProps {
+  onProductSelect?: (product: { name: string; product_code: string }) => void;
 }
 
-export const ProductsSearch = ({ onProductSelect }: ProductsSearchProps) => {
+export const ProductsSearch = ({ onProductSelect }: ProductSearchProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
@@ -46,7 +46,7 @@ export const ProductsSearch = ({ onProductSelect }: ProductsSearchProps) => {
     if (onProductSelect) {
       onProductSelect({
         name: product.product_name,
-        product_code: product.product_code,
+        product_code: product.product_code
       });
     }
   };

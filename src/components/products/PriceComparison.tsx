@@ -10,7 +10,8 @@ import { useState, useMemo } from 'react';
 interface StorePrice {
   store_chain: string;
   store_id: string | null;
-  store_address: string | null; // Changed from required to optional
+  store_name?: string | null;
+  store_address: string | null;
   price: number;
   price_update_date: string;
 }
@@ -90,7 +91,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
           return (
             <div 
               key={`${price.store_chain}-${price.store_id}-${index}`}
-              className={`flex justify-between items-center p-2 rounded ${
+              className={`flex justify-between items-start p-2 rounded ${
                 isLowestPrice ? 'bg-green-50 border border-green-100' : 'bg-white border'
               }`}
             >
@@ -100,12 +101,13 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
                     <Store className="h-3 w-3 ml-1" />
                     {price.store_chain}
                   </Badge>
-                  {price.store_id && (
-                    <Badge variant="outline">
-                      סניף {price.store_id}
-                    </Badge>
-                  )}
                 </div>
+                
+                {price.store_name && (
+                  <div className="text-sm font-medium">
+                    {price.store_name}
+                  </div>
+                )}
                 
                 {price.store_address && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">

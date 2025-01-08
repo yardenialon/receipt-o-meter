@@ -4,6 +4,8 @@ import { Store, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PriceComparison } from './PriceComparison';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface SearchResult {
   product_code?: string;
@@ -12,6 +14,7 @@ interface SearchResult {
   price_update_date?: string;
   store_chain?: string;
   store_id?: string;
+  store_name?: string;
   store_address?: string;
   manufacturer?: string;
 }
@@ -23,13 +26,41 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
+  // Fetch store information for each result
+  const { data: storeInfo } = useQuery({
+    queryKey: ['store-branches', results.map(r => `${r.store_chain}-${r.store_id}`).join(',')],
+    queryFn: async () => {
+      if (!results.length) return {};
+      
+      const { data: branches } = await supabase
+        .from('store_branches')
+        .select('chain_id, branch_id, name, address')
+        .in('branch_id', results.map(r => r.store_id || ''));
+      
+      return branches?.reduce((acc, branch) => {
+        acc[branch.branch_id] = branch;
+        return acc;
+      }, {}) || {};
+    },
+    enabled: results.length > 0
+  });
+
   // Group results by product_code to show comparisons
   const groupedResults = results.reduce((acc, result) => {
     if (!result.product_code) return acc;
     if (!acc[result.product_code]) {
       acc[result.product_code] = [];
     }
-    acc[result.product_code].push(result);
+    
+    // Add store information to the result
+    const branchInfo = storeInfo?.[result.store_id || ''];
+    const enrichedResult = {
+      ...result,
+      store_name: branchInfo?.name || null,
+      store_address: branchInfo?.address || null
+    };
+    
+    acc[result.product_code].push(enrichedResult);
     return acc;
   }, {} as Record<string, SearchResult[]>);
 
@@ -52,6 +83,7 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
           store_id: item.store_id || '',
+          store_name: item.store_name || null,
           store_address: item.store_address || null,
           price: item.price || 0,
           price_update_date: item.price_update_date || new Date().toISOString()
