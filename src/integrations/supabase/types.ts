@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      branch_mappings: {
+        Row: {
+          branch_id: string
+          created_at: string | null
+          id: string
+          source_branch_id: string
+          source_chain: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string | null
+          id?: string
+          source_branch_id: string
+          source_chain: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string | null
+          id?: string
+          source_branch_id?: string
+          source_chain?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chain_mappings: {
         Row: {
           created_at: string | null
