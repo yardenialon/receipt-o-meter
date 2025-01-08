@@ -1,101 +1,72 @@
 import { useState } from 'react';
-import { Input } from "@/components/ui/input";
+import { Input } from '@/components/ui/input';
 import { SearchResults } from './SearchResults';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import debounce from 'lodash/debounce';
-import { Search } from 'lucide-react';
-import { BarcodeScanner } from './BarcodeScanner';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProductsSearchProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
   onProductSelect?: (product: any) => void;
 }
 
-export const ProductsSearch = ({ searchTerm, onSearchChange, onProductSelect }: ProductsSearchProps) => {
-  const [debouncedTerm, setDebouncedTerm] = useState(searchTerm);
+export const ProductsSearch = ({ onProductSelect }: ProductsSearchProps) => {
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
 
   const { data: results = [], isLoading } = useQuery({
-    queryKey: ['products-search', debouncedTerm],
+    queryKey: ['products-search', debouncedSearch],
     queryFn: async () => {
-      if (!debouncedTerm) return [];
+      if (!debouncedSearch) return [];
 
-      console.log('Searching for:', debouncedTerm);
-      
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('store_products')
-        .select('product_code,product_name,price,store_chain,store_id,manufacturer,price_update_date')
-        .or(`product_name.ilike.%${debouncedTerm}%,product_code.ilike.%${debouncedTerm}%`)
+        .select(`
+          product_code,
+          product_name,
+          price,
+          price_update_date,
+          store_chain,
+          store_id,
+          manufacturer
+        `)
+        .ilike('product_name', `%${debouncedSearch}%`)
         .limit(50);
-      
-      console.log('Search results:', data);
+
+      if (error) {
+        console.error('Error searching products:', error);
+        throw error;
+      }
+
       return data || [];
     },
-    enabled: debouncedTerm.length > 0
+    enabled: debouncedSearch.length > 1
   });
-
-  // Debounce the search to avoid too many requests
-  const debouncedSearch = debounce((term: string) => {
-    setDebouncedTerm(term);
-  }, 300);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    onSearchChange(value);
-    debouncedSearch(value);
-  };
 
   const handleProductSelect = (product: any) => {
     if (onProductSelect) {
-      // התאמת שם המוצר לפורמט הנכון
-      const formattedProduct = {
-        ItemName: product.product_name,
-        // הוספת שדות נוספים אם נדרש
-      };
-      onProductSelect(formattedProduct);
+      onProductSelect({
+        name: product.product_name,
+        product_code: product.product_code,
+        // שמירת שדות נוספים אם נדרש
+      });
     }
   };
 
-  const handleBarcodeScanned = (barcode: string) => {
-    console.log('Barcode scanned:', barcode);
-    onSearchChange(barcode);
-    setDebouncedTerm(barcode);
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
-          צור רשימת קניות חכמה
-        </h2>
-        <p className="text-muted-foreground">
-          מצא את הסל המשתלם ביותר בסביבתך
-        </p>
-      </div>
-      
-      <div className="relative space-y-3">
-        <div className="flex justify-center">
-          <BarcodeScanner onScan={handleBarcodeScanned} />
-        </div>
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          <Input
-            type="search"
-            placeholder="חפש מוצר לפי שם או ברקוד..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full pr-10 pl-4 h-12 text-lg bg-white dark:bg-gray-900 border-2 border-primary/20 focus:border-primary/40 transition-all rounded-xl shadow-sm hover:shadow-md"
-          />
-        </div>
-        {searchTerm && (
-          <SearchResults 
-            results={results} 
-            isLoading={isLoading} 
-            onSelect={handleProductSelect}
-          />
-        )}
-      </div>
+    <div className="relative">
+      <Input
+        type="search"
+        placeholder="חפש מוצר..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full"
+        dir="rtl"
+      />
+      <SearchResults
+        results={results}
+        isLoading={isLoading}
+        onSelect={handleProductSelect}
+      />
     </div>
   );
 };
