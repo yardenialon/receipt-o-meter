@@ -10,7 +10,7 @@ import { useState, useMemo } from 'react';
 interface StorePrice {
   store_chain: string;
   store_id: string | null;
-  store_address: string | null;
+  store_address: string | null; // Changed from required to optional
   price: number;
   price_update_date: string;
 }
