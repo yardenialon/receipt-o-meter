@@ -22,7 +22,7 @@ interface PriceComparisonProps {
 
 export const PriceComparison = ({ prices }: PriceComparisonProps) => {
   const { location } = useUserLocation();
-  const [maxDistance, setMaxDistance] = useState<number>(20); // 20km default radius
+  const [maxDistance, setMaxDistance] = useState<number>(20);
   
   const sortedPrices = useMemo(() => {
     if (!prices || prices.length === 0) {
@@ -45,14 +45,12 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       return { ...price, distance };
     });
 
-    // Filter by distance if location is available and maxDistance is set
     if (location) {
       pricesWithDistance = pricesWithDistance.filter(price => 
         !price.distance || price.distance <= maxDistance
       );
     }
 
-    // Sort by price first, then by distance if available
     return pricesWithDistance.sort((a, b) => {
       if (a.price !== b.price) return a.price - b.price;
       if (a.distance !== null && b.distance !== null) return a.distance - b.distance;

@@ -32,15 +32,15 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
     queryFn: async () => {
       if (!results.length) return {};
       
-      // First get branch mappings with their related store branches
+      // First get branch mappings
       const { data: mappings } = await supabase
         .from('branch_mappings')
         .select('id, source_chain, source_branch_id, source_branch_name, branch_id');
 
       if (!mappings) return {};
 
-      // Then get store branches with their chain information
-      const branchIds = mappings.map(m => m.branch_id);
+      // Then get store branches
+      const branchIds = mappings.map(m => m.branch_id).filter(Boolean);
       const { data: branches } = await supabase
         .from('store_branches')
         .select(`
@@ -55,7 +55,7 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         `)
         .in('id', branchIds);
 
-      // Create a lookup map using source_chain and source_branch_id as composite key
+      // Create a lookup map
       return mappings.reduce((acc, mapping) => {
         const key = `${mapping.source_chain}-${mapping.source_branch_id}`;
         const branch = branches?.find(b => b.id === mapping.branch_id);
@@ -71,14 +71,13 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
     enabled: results.length > 0
   });
 
-  // Group results by product_code to show comparisons
+  // Group results by product_code
   const groupedResults = results.reduce((acc, result) => {
     if (!result.product_code) return acc;
     if (!acc[result.product_code]) {
       acc[result.product_code] = [];
     }
     
-    // Add store information to the result using the composite key
     const lookupKey = `${result.store_chain}-${result.store_id}`;
     const storeDetails = branchInfo?.[lookupKey] || {
       branchName: result.store_name || '',
@@ -110,9 +109,8 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
   return (
     <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border shadow-lg max-h-96 overflow-auto" dir="rtl">
       {Object.entries(groupedResults).map(([itemCode, items]) => {
-        const mainItem = items[0]; // Use first item as the main display item
+        const mainItem = items[0];
         
-        // Format price data for comparison
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
           store_id: item.store_id || '',
