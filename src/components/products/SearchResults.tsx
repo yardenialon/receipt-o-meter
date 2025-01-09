@@ -28,19 +28,19 @@ interface SearchResultsProps {
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
   // Fetch store information for each result
   const { data: storeInfo } = useQuery({
-    queryKey: ['store-branches', results.map(r => `${r.store_chain}-${r.store_id}`).join(',')],
+    queryKey: ['store-branches', results.map(r => r.store_id).join(',')],
     queryFn: async () => {
       if (!results.length) return {};
       
       const { data: branches } = await supabase
         .from('store_branches')
-        .select('chain_id, branch_id, name, address')
+        .select('*')
         .in('branch_id', results.map(r => r.store_id || ''));
       
       return branches?.reduce((acc, branch) => {
         acc[branch.branch_id] = branch;
         return acc;
-      }, {}) || {};
+      }, {} as Record<string, any>) || {};
     },
     enabled: results.length > 0
   });
@@ -56,8 +56,8 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
     const branchInfo = storeInfo?.[result.store_id || ''];
     const enrichedResult = {
       ...result,
-      store_name: branchInfo?.name || null,
-      store_address: branchInfo?.address || null
+      store_name: branchInfo?.name || result.store_name,
+      store_address: branchInfo?.address || result.store_address
     };
     
     acc[result.product_code].push(enrichedResult);
@@ -83,8 +83,8 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         const prices = items.map(item => ({
           store_chain: item.store_chain || '',
           store_id: item.store_id || '',
-          store_name: item.store_name || null,
-          store_address: item.store_address || null,
+          store_name: item.store_name || '',
+          store_address: item.store_address || '',
           price: item.price || 0,
           price_update_date: item.price_update_date || new Date().toISOString()
         }));
