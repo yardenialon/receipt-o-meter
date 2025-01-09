@@ -68,7 +68,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             source_chain,
             source_branch_id,
             source_branch_name,
-            store_branches!inner (
+            store_branches (
               name,
               address
             )
@@ -99,7 +99,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         if (!product.branch_mappings) return acc;
 
         const mapping = product.branch_mappings;
-        const storeBranch = mapping.store_branches;
+        const storeBranch = mapping.store_branches || { name: null, address: null };
         const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
 
         if (!acc[storeKey]) {
