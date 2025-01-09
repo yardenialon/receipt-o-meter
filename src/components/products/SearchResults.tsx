@@ -38,6 +38,7 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         .in('branch_id', results.map(r => r.store_id || ''));
       
       return branches?.reduce((acc, branch) => {
+        // Use branch_id as the key for lookup
         acc[branch.branch_id] = branch;
         return acc;
       }, {} as Record<string, any>) || {};
