@@ -24,8 +24,10 @@ interface StoreCardProps {
   priceDiff: string | null;
   progressValue: number;
   index: number;
-  branchName?: string;
-  branchAddress?: string;
+  branchName?: string | null;
+  branchAddress?: string | null;
+  chainName?: string;
+  logoUrl?: string | null;
 }
 
 export const StoreCard = ({ 
@@ -36,23 +38,12 @@ export const StoreCard = ({
   progressValue, 
   index,
   branchName,
-  branchAddress
+  branchAddress,
+  chainName,
+  logoUrl
 }: StoreCardProps) => {
   const unavailableItems = comparison.items.filter(item => !item.isAvailable);
   const availableItems = comparison.items.filter(item => item.isAvailable);
-
-  // נורמליזציה של שם החנות לפורמט המוכר
-  const normalizeStoreName = (name: string) => {
-    const lowercaseName = name.toLowerCase();
-    if (lowercaseName.includes('רמי')) return 'רמי לוי';
-    if (lowercaseName.includes('שופרסל')) return 'shufersal';
-    if (lowercaseName.includes('victory')) return 'victory';
-    if (lowercaseName.includes('ויקטורי')) return 'victory';
-    if (lowercaseName.includes('מחסני השוק')) return 'machsanei hashuk';
-    if (lowercaseName.includes('carrefour')) return 'carrefour';
-    if (lowercaseName.includes('קרפור')) return 'carrefour';
-    return name;
-  };
 
   return (
     <motion.div
@@ -63,7 +54,11 @@ export const StoreCard = ({
       <Card className={`p-4 ${isCheapest ? 'border-green-200 bg-green-50/30' : ''}`}>
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 text-center">
-            <StoreLogo storeName={normalizeStoreName(comparison.storeName)} className="h-8 w-auto mb-1" />
+            <StoreLogo 
+              storeName={chainName || comparison.storeName} 
+              logoUrl={logoUrl}
+              className="h-8 w-auto mb-1" 
+            />
             
             {branchName && (
               <div className="text-base font-medium text-gray-700">

@@ -27,19 +27,42 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  // Fetch store branch information
+  // שיפור השאילתה לקבלת מידע מלא על הסניפים
   const { data: branchInfo } = useQuery({
-    queryKey: ['store-branches', comparisons.map(c => c.storeId).join(',')],
+    queryKey: ['store-branches-full', comparisons.map(c => c.storeId).join(',')],
     queryFn: async () => {
       if (!comparisons.length) return {};
       
       const { data: branches } = await supabase
         .from('store_branches')
-        .select('branch_id, name, address')
+        .select(`
+          branch_id,
+          name,
+          address,
+          chain_id,
+          store_chains (
+            name,
+            logo_url
+          ),
+          branch_mappings!inner (
+            source_chain,
+            source_branch_id,
+            source_branch_name
+          )
+        `)
         .in('branch_id', comparisons.map(c => c.storeId || ''));
       
+      // ארגון המידע לפי מזהה סניף
       return branches?.reduce((acc, branch) => {
-        acc[branch.branch_id] = branch;
+        if (branch.branch_mappings && branch.branch_mappings.length > 0) {
+          const mapping = branch.branch_mappings[0];
+          acc[mapping.source_branch_id] = {
+            name: mapping.source_branch_name || branch.name,
+            address: branch.address,
+            chainName: branch.store_chains?.name || mapping.source_chain,
+            logoUrl: branch.store_chains?.logo_url
+          };
+        }
         return acc;
       }, {} as Record<string, any>) || {};
     },
@@ -69,12 +92,12 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     );
   }
 
-  // Filter stores with all items available
+  // סינון סלים שלמים
   const completeBaskets = comparisons.filter(store => 
     store.items.every(item => item.isAvailable)
   );
 
-  // Calculate savings only if we have complete baskets
+  // חישוב חסכון רק אם יש סלים שלמים
   let cheapestTotal = 0;
   let mostExpensiveTotal = 0;
   let potentialSavings = 0;
@@ -111,6 +134,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
               (comparison.total / mostExpensiveTotal) * 100 : 
               0;
             
+            const branchData = branchInfo?.[comparison.storeId || ''] || {};
+            
             return (
               <StoreCard
                 key={`${comparison.storeName}-${comparison.storeId}-${index}`}
@@ -120,8 +145,10 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
                 priceDiff={priceDiff}
                 progressValue={progressValue}
                 index={index}
-                branchName={comparison.branchName}
-                branchAddress={branchInfo?.[comparison.storeId || '']?.address}
+                branchName={branchData.name || comparison.branchName}
+                branchAddress={branchData.address}
+                chainName={branchData.chainName || comparison.storeName}
+                logoUrl={branchData.logoUrl}
               />
             );
           })}
