@@ -25,6 +25,10 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
   const [maxDistance, setMaxDistance] = useState<number>(20); // 20km default radius
   
   const sortedPrices = useMemo(() => {
+    if (!prices || prices.length === 0) {
+      return [];
+    }
+
     let pricesWithDistance = prices.map(price => {
       let distance = null;
       if (location && price.store_address) {
@@ -41,10 +45,10 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       return { ...price, distance };
     });
 
-    // Filter by distance if location is available
+    // Filter by distance if location is available and maxDistance is set
     if (location) {
-      pricesWithDistance = pricesWithDistance.filter(
-        price => price.distance === null || price.distance <= maxDistance
+      pricesWithDistance = pricesWithDistance.filter(price => 
+        !price.distance || price.distance <= maxDistance
       );
     }
 
@@ -56,8 +60,16 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
     });
   }, [prices, location, maxDistance]);
 
-  const lowestPrice = sortedPrices[0]?.price;
+  const lowestPrice = sortedPrices.length > 0 ? sortedPrices[0].price : null;
   
+  if (!prices || prices.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground p-4">
+        לא נמצאו מחירים למוצר זה
+      </div>
+    );
+  }
+
   if (sortedPrices.length === 0) {
     return (
       <div className="text-center text-muted-foreground p-4">
@@ -86,7 +98,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       <div className="space-y-2">
         {sortedPrices.map((price, index) => {
           const isLowestPrice = price.price === lowestPrice;
-          const priceDiff = isLowestPrice ? 0 : ((price.price - lowestPrice) / lowestPrice * 100).toFixed(1);
+          const priceDiff = isLowestPrice ? 0 : ((price.price - lowestPrice!) / lowestPrice! * 100).toFixed(1);
           
           return (
             <div 
