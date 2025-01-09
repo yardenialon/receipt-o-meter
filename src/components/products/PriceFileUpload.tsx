@@ -18,6 +18,7 @@ export const PriceFileUpload = () => {
   const [networkName, setNetworkName] = useState('');
   const [branchName, setBranchName] = useState('');
   const [storeAddress, setStoreAddress] = useState('');
+  const [branchId, setBranchId] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const handleDrop = async (acceptedFiles: File[]) => {
@@ -56,7 +57,7 @@ export const PriceFileUpload = () => {
   };
 
   const handleConfirm = async () => {
-    if (!networkName || !branchName || !storeAddress) {
+    if (!networkName || !branchName || !storeAddress || !branchId) {
       toast.error('אנא הזן את כל פרטי החנות');
       return;
     }
@@ -69,6 +70,7 @@ export const PriceFileUpload = () => {
           size: pendingFile.size,
           networkName,
           branchName,
+          branchId,
           storeAddress
         });
 
@@ -76,6 +78,7 @@ export const PriceFileUpload = () => {
         formData.append('file', pendingFile);
         formData.append('networkName', networkName);
         formData.append('branchName', branchName);
+        formData.append('branchId', branchId);
         formData.append('storeAddress', storeAddress);
 
         const { data: { session } } = await supabase.auth.getSession();
@@ -101,6 +104,7 @@ export const PriceFileUpload = () => {
         setPendingFile(null);
         setNetworkName('');
         setBranchName('');
+        setBranchId('');
         setStoreAddress('');
       } catch (error) {
         console.error('Processing error:', error);
@@ -148,7 +152,16 @@ export const PriceFileUpload = () => {
                 id="networkName"
                 value={networkName}
                 onChange={(e) => setNetworkName(e.target.value)}
-                placeholder="לדוגמה: ברקת"
+                placeholder="לדוגמה: רמי לוי"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="branchId">מספר סניף</Label>
+              <Input
+                id="branchId"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                placeholder="לדוגמה: 001"
               />
             </div>
             <div className="space-y-2">
@@ -173,7 +186,7 @@ export const PriceFileUpload = () => {
           <DialogFooter>
             <Button
               onClick={handleConfirm}
-              disabled={!networkName || !branchName || !storeAddress || isUploading}
+              disabled={!networkName || !branchName || !storeAddress || !branchId || isUploading}
             >
               {isUploading ? 'מעלה...' : 'אישור'}
             </Button>
