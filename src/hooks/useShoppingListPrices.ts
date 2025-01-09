@@ -68,7 +68,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             source_chain,
             source_branch_id,
             source_branch_name,
-            store_branches (
+            store_branches!inner (
               name,
               address
             )
