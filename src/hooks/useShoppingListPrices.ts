@@ -16,10 +16,7 @@ interface BranchMapping {
   source_chain: string;
   source_branch_id: string;
   source_branch_name: string | null;
-  store_branches?: {
-    name: string | null;
-    address: string | null;
-  } | null;
+  store_branches?: StoreBranch | null;
 }
 
 interface Product {
@@ -109,8 +106,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           acc[storeKey] = {
             storeName: mapping.source_chain,
             storeId: mapping.source_branch_id,
-            branchName: mapping.source_branch_name || (storeBranch && 'name' in storeBranch ? storeBranch.name : null),
-            branchAddress: (storeBranch && 'address' in storeBranch ? storeBranch.address : null),
+            branchName: mapping.source_branch_name || (storeBranch && typeof storeBranch === 'object' && 'name' in storeBranch ? storeBranch.name : null),
+            branchAddress: (storeBranch && typeof storeBranch === 'object' && 'address' in storeBranch ? storeBranch.address : null),
             products: []
           };
         }
