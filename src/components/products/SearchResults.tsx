@@ -32,38 +32,38 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
     queryFn: async () => {
       if (!results.length) return {};
       
-      // First get branch mappings
+      // First get branch mappings with their related store branches
       const { data: mappings } = await supabase
         .from('branch_mappings')
-        .select(`
-          id,
-          source_chain,
-          source_branch_id,
-          source_branch_name,
-          branch_id,
-          store_branches!inner (
-            id,
-            name,
-            address,
-            chain_id,
-            store_chains!inner (
-              id,
-              name
-            )
-          )
-        `)
-        .in('source_chain', results.map(r => r.store_chain || ''))
-        .in('source_branch_id', results.map(r => r.store_id || ''));
+        .select('id, source_chain, source_branch_id, source_branch_name, branch_id');
 
       if (!mappings) return {};
+
+      // Then get store branches with their chain information
+      const branchIds = mappings.map(m => m.branch_id);
+      const { data: branches } = await supabase
+        .from('store_branches')
+        .select(`
+          id,
+          name,
+          address,
+          chain_id,
+          store_chains (
+            id,
+            name
+          )
+        `)
+        .in('id', branchIds);
 
       // Create a lookup map using source_chain and source_branch_id as composite key
       return mappings.reduce((acc, mapping) => {
         const key = `${mapping.source_chain}-${mapping.source_branch_id}`;
+        const branch = branches?.find(b => b.id === mapping.branch_id);
+        
         acc[key] = {
-          branchName: mapping.store_branches?.name || mapping.source_branch_name,
-          branchAddress: mapping.store_branches?.address || '',
-          chainName: mapping.store_branches?.store_chains?.name || mapping.source_chain
+          branchName: branch?.name || mapping.source_branch_name || '',
+          branchAddress: branch?.address || '',
+          chainName: branch?.store_chains?.name || mapping.source_chain
         };
         return acc;
       }, {} as Record<string, { branchName: string; branchAddress: string; chainName: string; }>);
