@@ -12,6 +12,20 @@ interface StoreBranch {
   name: string | null;
 }
 
+interface BranchMapping {
+  source_chain: string;
+  source_branch_id: string;
+  source_branch_name: string | null;
+  store_branches: StoreBranch;
+}
+
+interface Product {
+  branch_mappings: BranchMapping;
+  product_code: string;
+  product_name: string;
+  price: number;
+}
+
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
     queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}`).join(',')],

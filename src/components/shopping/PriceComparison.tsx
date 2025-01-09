@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatePresence } from "framer-motion";
 import { SavingsCard } from "./comparison/SavingsCard";
@@ -17,11 +16,11 @@ interface StoreBranch {
   name: string;
   address: string | null;
   chain_id: string;
-  store_chains?: {
+  store_chains: {
     name: string;
     logo_url: string | null;
-  };
-  branch_mappings?: BranchMapping[];
+  } | null;
+  branch_mappings: BranchMapping[];
 }
 
 interface StoreComparison {
@@ -61,7 +60,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
             name,
             logo_url
           ),
-          branch_mappings!inner (
+          branch_mappings (
             source_chain,
             source_branch_id,
             source_branch_name
@@ -71,17 +70,19 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       
       const branchData: Record<string, any> = {};
       
-      branches?.forEach((branch: StoreBranch) => {
-        if (branch.branch_mappings && branch.branch_mappings.length > 0) {
-          const mapping = branch.branch_mappings[0];
-          branchData[mapping.source_branch_id] = {
-            name: mapping.source_branch_name || branch.name,
-            address: branch.address,
-            chainName: branch.store_chains?.name || mapping.source_chain,
-            logoUrl: branch.store_chains?.logo_url
-          };
-        }
-      });
+      if (branches) {
+        branches.forEach((branch: any) => {
+          if (branch.branch_mappings && branch.branch_mappings.length > 0) {
+            const mapping = branch.branch_mappings[0];
+            branchData[mapping.source_branch_id] = {
+              name: mapping.source_branch_name || branch.name,
+              address: branch.address,
+              chainName: branch.store_chains?.name || mapping.source_chain,
+              logoUrl: branch.store_chains?.logo_url
+            };
+          }
+        });
+      }
       
       return branchData;
     },
@@ -90,24 +91,24 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
   if (isLoading) {
     return (
-      <Card className="p-6">
+      <div className="p-6">
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
         <p className="text-center text-muted-foreground mt-2">
           מחשב השוואת מחירים...
         </p>
-      </Card>
+      </div>
     );
   }
 
   if (!comparisons.length) {
     return (
-      <Card className="p-6">
+      <div className="p-6">
         <p className="text-center text-muted-foreground">
           לא נמצאו חנויות עם מידע על המוצרים המבוקשים
         </p>
-      </Card>
+      </div>
     );
   }
 
