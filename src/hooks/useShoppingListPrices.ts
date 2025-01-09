@@ -8,8 +8,8 @@ interface ShoppingListItem {
 }
 
 interface StoreBranch {
-  address: string | null;
   name: string | null;
+  address: string | null;
 }
 
 interface BranchMapping {
@@ -64,12 +64,11 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           product_code,
           product_name,
           price,
-          branch_mappings (
+          branch_mappings!inner (
             source_chain,
             source_branch_id,
             source_branch_name,
-            branch_id,
-            store_branches:store_branches!branch_id(
+            store_branches (
               name,
               address
             )
@@ -90,13 +89,19 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       console.log('Found products with mappings:', products);
 
       // Group products by store
-      const productsByStore = products.reduce((acc, product) => {
+      const productsByStore = products.reduce<Record<string, {
+        storeName: string;
+        storeId: string;
+        branchName: string | null;
+        branchAddress: string | null;
+        products: typeof products;
+      }>>((acc, product) => {
         if (!product.branch_mappings) return acc;
-        
+
         const mapping = product.branch_mappings;
-        const storeBranch = mapping.store_branches as StoreBranch;
+        const storeBranch = mapping.store_branches;
         const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
-        
+
         if (!acc[storeKey]) {
           acc[storeKey] = {
             storeName: mapping.source_chain,
@@ -108,13 +113,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         }
         acc[storeKey].products.push(product);
         return acc;
-      }, {} as Record<string, { 
-        storeName: string; 
-        storeId: string; 
-        branchName: string | null;
-        branchAddress: string | null;
-        products: typeof products 
-      }>);
+      }, {});
 
       // Process each store's comparison
       const allStoreComparisons = Object.values(productsByStore).map(store => {
