@@ -107,7 +107,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             storeName: mapping.source_chain,
             storeId: mapping.source_branch_id,
             branchName: mapping.source_branch_name || (storeBranch && typeof storeBranch === 'object' && 'name' in storeBranch ? storeBranch.name : null),
-            branchAddress: (storeBranch && typeof storeBranch === 'object' && 'address' in storeBranch ? storeBranch.address : null),
+            branchAddress: storeBranch && typeof storeBranch === 'object' && 'address' in storeBranch ? storeBranch.address : null,
             products: []
           };
         }
