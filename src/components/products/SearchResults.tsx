@@ -26,22 +26,47 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
-  // Fetch store information for each result
-  const { data: storeInfo } = useQuery({
-    queryKey: ['store-branches', results.map(r => r.store_id).join(',')],
+  // Fetch branch mappings and store information for each result
+  const { data: branchInfo } = useQuery({
+    queryKey: ['branch-mappings', results.map(r => `${r.store_chain}-${r.store_id}`).join(',')],
     queryFn: async () => {
       if (!results.length) return {};
       
-      const { data: branches } = await supabase
-        .from('store_branches')
-        .select('*')
-        .in('branch_id', results.map(r => r.store_id || ''));
-      
-      return branches?.reduce((acc, branch) => {
-        // Use branch_id as the key for lookup
-        acc[branch.branch_id] = branch;
+      // First get branch mappings
+      const { data: mappings } = await supabase
+        .from('branch_mappings')
+        .select(`
+          id,
+          source_chain,
+          source_branch_id,
+          source_branch_name,
+          branch_id,
+          store_branches!inner (
+            id,
+            name,
+            address,
+            chain_id,
+            store_chains!inner (
+              id,
+              name
+            )
+          )
+        `)
+        .in('source_chain', results.map(r => r.store_chain || ''))
+        .in('source_branch_id', results.map(r => r.store_id || ''));
+
+      if (!mappings) return {};
+
+      // Create a lookup map using source_chain and source_branch_id as composite key
+      return mappings.reduce((acc, mapping) => {
+        const key = `${mapping.source_chain}-${mapping.source_branch_id}`;
+        acc[key] = {
+          branchName: mapping.store_branches?.name || mapping.source_branch_name,
+          branchAddress: mapping.store_branches?.address || '',
+          chainName: mapping.store_branches?.store_chains?.name || mapping.source_chain
+        };
         return acc;
-      }, {} as Record<string, any>) || {};
+      }, {} as Record<string, { branchName: string; branchAddress: string; chainName: string; }>);
     },
     enabled: results.length > 0
   });
@@ -53,12 +78,19 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
       acc[result.product_code] = [];
     }
     
-    // Add store information to the result
-    const branchInfo = storeInfo?.[result.store_id || ''];
+    // Add store information to the result using the composite key
+    const lookupKey = `${result.store_chain}-${result.store_id}`;
+    const storeDetails = branchInfo?.[lookupKey] || {
+      branchName: result.store_name || '',
+      branchAddress: result.store_address || '',
+      chainName: result.store_chain || ''
+    };
+
     const enrichedResult = {
       ...result,
-      store_name: branchInfo?.name || result.store_name,
-      store_address: branchInfo?.address || result.store_address
+      store_chain: storeDetails.chainName,
+      store_name: storeDetails.branchName,
+      store_address: storeDetails.branchAddress
     };
     
     acc[result.product_code].push(enrichedResult);
