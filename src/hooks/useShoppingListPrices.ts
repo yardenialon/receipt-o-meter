@@ -1,30 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-
-interface ShoppingListItem {
-  name: string;
-  is_completed?: boolean;
-  quantity?: number;
-}
-
-interface StoreBranch {
-  name: string | null;
-  address: string | null;
-}
-
-interface BranchMapping {
-  source_chain: string;
-  source_branch_id: string;
-  source_branch_name: string | null;
-  store_branches?: StoreBranch | null;
-}
-
-interface Product {
-  branch_mappings: BranchMapping;
-  product_code: string;
-  product_name: string;
-  price: number;
-}
+import { ShoppingListItem, StoreComparison } from '@/types/shopping';
+import { groupProductsByStore, processStoreComparisons } from '@/utils/shopping/productUtils';
 
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
@@ -37,7 +14,6 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // First, get the product codes for our items by searching by name
       const { data: productMatches, error: matchError } = await supabase
         .from('store_products')
         .select('product_code, product_name')
@@ -53,11 +29,9 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      // Get unique product codes
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
       console.log('Found product codes:', productCodes);
 
-      // Get all store products with these product codes
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
@@ -88,111 +62,21 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Found products with mappings:', products);
 
-      // Group products by store
-      const productsByStore = products.reduce<Record<string, {
-        storeName: string;
-        storeId: string;
-        branchName: string | null;
-        branchAddress: string | null;
-        products: typeof products;
-      }>>((acc, product) => {
-        if (!product.branch_mappings) return acc;
-
-        const mapping = product.branch_mappings;
-        const storeBranch = mapping.store_branches;
-        const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
-
-        if (!acc[storeKey]) {
-          acc[storeKey] = {
-            storeName: mapping.source_chain,
-            storeId: mapping.source_branch_id,
-            branchName: mapping.source_branch_name || 
-              (storeBranch && 
-               typeof storeBranch === 'object' && 
-               'name' in storeBranch && 
-               storeBranch.name !== null ? 
-               storeBranch.name : 
-               null),
-            branchAddress: storeBranch && 
-              typeof storeBranch === 'object' && 
-              'address' in storeBranch && 
-              storeBranch.address !== null ? 
-              storeBranch.address : 
-              null,
-            products: []
-          };
-        }
-        acc[storeKey].products.push(product);
-        return acc;
-      }, {});
-
-      // Process each store's comparison
-      const allStoreComparisons = Object.values(productsByStore).map(store => {
-        const comparison = {
-          storeName: store.storeName,
-          storeId: store.storeId,
-          branchName: store.branchName,
-          branchAddress: store.branchAddress,
-          items: activeItems.map(item => ({
-            name: item.name,
-            price: null,
-            matchedProduct: '',
-            quantity: item.quantity || 1,
-            isAvailable: false
-          })),
-          total: 0,
-          availableItemsCount: 0
-        };
-
-        // For each item in our list, find matching products by product code
-        comparison.items.forEach((item, index) => {
-          // Find matching products for this item
-          const itemMatches = productMatches.filter(match => 
-            match.product_name.toLowerCase().includes(item.name.toLowerCase())
-          );
-          const matchingProductCodes = itemMatches.map(match => match.product_code);
-          
-          // Find all products in this store with matching product codes
-          const matchingProducts = store.products.filter(p => 
-            matchingProductCodes.includes(p.product_code)
-          );
-
-          if (matchingProducts.length > 0) {
-            // If we have multiple matches, use the cheapest one
-            const cheapestProduct = matchingProducts.reduce((min, p) => 
-              p.price < min.price ? p : min
-            , matchingProducts[0]);
-
-            comparison.items[index] = {
-              ...item,
-              price: cheapestProduct.price,
-              matchedProduct: cheapestProduct.product_name,
-              isAvailable: true
-            };
-            comparison.total += cheapestProduct.price * item.quantity;
-            comparison.availableItemsCount++;
-          }
-        });
-
-        return comparison;
-      });
-
-      // Include all stores that have at least one item available
-      const storesWithItems = allStoreComparisons.filter(store => 
-        store.availableItemsCount > 0
+      const productsByStore = groupProductsByStore(products);
+      const storesWithItems = processStoreComparisons(
+        productsByStore,
+        activeItems,
+        productMatches
       );
 
-      // Sort stores: first by availability (complete baskets first), then by total price
       const sortedComparisons = storesWithItems.sort((a, b) => {
-        // First, compare by whether all items are available
         const aComplete = a.availableItemsCount === activeItems.length;
         const bComplete = b.availableItemsCount === activeItems.length;
         
         if (aComplete !== bComplete) {
-          return bComplete ? 1 : -1; // Complete baskets come first
+          return bComplete ? 1 : -1;
         }
         
-        // If both have the same availability status, sort by total price
         return a.total - b.total;
       });
 
