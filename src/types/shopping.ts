@@ -37,4 +37,5 @@ export interface StoreComparison {
   }>;
   total: number;
   availableItemsCount: number;
+  products?: Product[]; // Add this line to fix the error
 }

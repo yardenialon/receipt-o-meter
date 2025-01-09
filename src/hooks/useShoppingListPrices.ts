@@ -41,11 +41,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           branch_mappings (
             source_chain,
             source_branch_id,
-            source_branch_name,
-            store_branches (
-              name,
-              address
-            )
+            source_branch_name
           )
         `)
         .in('product_code', productCodes);
