@@ -1,4 +1,4 @@
-import { Product, ShoppingListItem, StoreComparison } from "@/types/shopping";
+import { Product, ShoppingListItem, StoreComparison } from '@/types/shopping';
 
 export const groupProductsByStore = (products: Product[]): Record<string, StoreComparison> => {
   return products.reduce<Record<string, StoreComparison>>((acc, product) => {
@@ -12,7 +12,7 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
         storeName: mapping.source_chain,
         storeId: mapping.source_branch_id,
         branchName: mapping.source_branch_name,
-        branchAddress: mapping.store_branches?.address || null,
+        branchAddress: null,
         items: [],
         total: 0,
         availableItemsCount: 0,

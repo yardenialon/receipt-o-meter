@@ -13,7 +13,6 @@ export interface BranchMapping {
   source_chain: string;
   source_branch_id: string;
   source_branch_name: string | null;
-  store_branches?: StoreBranch | null;
 }
 
 export interface Product {
@@ -37,5 +36,5 @@ export interface StoreComparison {
   }>;
   total: number;
   availableItemsCount: number;
-  products?: Product[]; // Add this line to fix the error
+  products?: Product[];
 }
