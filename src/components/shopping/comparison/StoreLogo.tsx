@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 interface StoreLogoProps {
   storeName: string;
   className?: string;
+  logoUrl?: string | null;
 }
 
-export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
+export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const getLogo = (name: string) => {
     const normalizedName = name.toLowerCase().trim();
     
@@ -29,7 +30,7 @@ export const StoreLogo = ({ storeName, className }: StoreLogoProps) => {
       return '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png';
     }
     
-    return null;
+    return logoUrl || null;
   };
 
   const logo = getLogo(storeName);

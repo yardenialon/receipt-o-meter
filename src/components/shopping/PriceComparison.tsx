@@ -6,6 +6,24 @@ import { StoreCard } from "./comparison/StoreCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
+interface BranchMapping {
+  source_chain: string;
+  source_branch_id: string;
+  source_branch_name: string | null;
+}
+
+interface StoreBranch {
+  branch_id: string;
+  name: string;
+  address: string | null;
+  chain_id: string;
+  store_chains?: {
+    name: string;
+    logo_url: string | null;
+  };
+  branch_mappings?: BranchMapping[];
+}
+
 interface StoreComparison {
   storeName: string;
   storeId: string | null;
@@ -27,7 +45,6 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  // שיפור השאילתה לקבלת מידע מלא על הסניפים
   const { data: branchInfo } = useQuery({
     queryKey: ['store-branches-full', comparisons.map(c => c.storeId).join(',')],
     queryFn: async () => {
@@ -52,19 +69,21 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         `)
         .in('branch_id', comparisons.map(c => c.storeId || ''));
       
-      // ארגון המידע לפי מזהה סניף
-      return branches?.reduce((acc, branch) => {
+      const branchData: Record<string, any> = {};
+      
+      branches?.forEach((branch: StoreBranch) => {
         if (branch.branch_mappings && branch.branch_mappings.length > 0) {
           const mapping = branch.branch_mappings[0];
-          acc[mapping.source_branch_id] = {
+          branchData[mapping.source_branch_id] = {
             name: mapping.source_branch_name || branch.name,
             address: branch.address,
             chainName: branch.store_chains?.name || mapping.source_chain,
             logoUrl: branch.store_chains?.logo_url
           };
         }
-        return acc;
-      }, {} as Record<string, any>) || {};
+      });
+      
+      return branchData;
     },
     enabled: comparisons.length > 0
   });

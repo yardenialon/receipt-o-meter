@@ -7,6 +7,11 @@ interface ShoppingListItem {
   quantity?: number;
 }
 
+interface StoreBranch {
+  address: string | null;
+  name: string | null;
+}
+
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
     queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}`).join(',')],
@@ -74,14 +79,16 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const productsByStore = products.reduce((acc, product) => {
         if (!product.branch_mappings) return acc;
         
-        const storeKey = `${product.branch_mappings.source_chain}-${product.branch_mappings.source_branch_id}`;
+        const mapping = product.branch_mappings;
+        const storeBranch = mapping.store_branches as StoreBranch;
+        const storeKey = `${mapping.source_chain}-${mapping.source_branch_id}`;
         
         if (!acc[storeKey]) {
           acc[storeKey] = {
-            storeName: product.branch_mappings.source_chain,
-            storeId: product.branch_mappings.source_branch_id,
-            branchName: product.branch_mappings.source_branch_name,
-            branchAddress: product.branch_mappings.store_branches?.[0]?.address || null,
+            storeName: mapping.source_chain,
+            storeId: mapping.source_branch_id,
+            branchName: mapping.source_branch_name,
+            branchAddress: storeBranch?.address || null,
             products: []
           };
         }
@@ -170,7 +177,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       return sortedComparisons;
     },
     enabled: items.length > 0,
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 60000,
     retry: 3,
     staleTime: 30000,
   });
