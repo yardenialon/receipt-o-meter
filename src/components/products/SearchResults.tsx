@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Store, Plus } from 'lucide-react';
+import { Store, Plus, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { PriceComparison } from './PriceComparison';
 import { Button } from '@/components/ui/button';
@@ -26,20 +26,17 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
-  // Fetch branch mappings and store information for each result
   const { data: branchInfo } = useQuery({
     queryKey: ['branch-mappings', results.map(r => `${r.store_chain}-${r.store_id}`).join(',')],
     queryFn: async () => {
       if (!results.length) return {};
       
-      // First get branch mappings
       const { data: mappings } = await supabase
         .from('branch_mappings')
         .select('id, source_chain, source_branch_id, source_branch_name, branch_id');
 
       if (!mappings) return {};
 
-      // Then get store branches
       const branchIds = mappings.map(m => m.branch_id).filter(Boolean);
       const { data: branches } = await supabase
         .from('store_branches')
@@ -55,7 +52,6 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
         `)
         .in('id', branchIds);
 
-      // Create a lookup map
       return mappings.reduce((acc, mapping) => {
         const key = `${mapping.source_chain}-${mapping.source_branch_id}`;
         const branch = branches?.find(b => b.id === mapping.branch_id);
@@ -71,7 +67,6 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
     enabled: results.length > 0
   });
 
-  // Group results by product_code
   const groupedResults = results.reduce((acc, result) => {
     if (!result.product_code) return acc;
     if (!acc[result.product_code]) {

@@ -124,7 +124,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
                     <MapPin className="h-3 w-3" />
                     {price.store_address}
                     {price.distance !== null && (
-                      <span>({price.distance.toFixed(1)} ק"מ)</span>
+                      <span className="mr-1">({price.distance.toFixed(1)} ק"מ)</span>
                     )}
                   </div>
                 )}
