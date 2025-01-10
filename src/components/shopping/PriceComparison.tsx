@@ -68,7 +68,9 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'יוחננוף טוב טעם בעמ',
       'טוב טעם יוחננוף',
       'טוב טעם',
-      'tov taam'
+      'tov taam',
+      'tovtaam',
+      'טוב טעם בעמ'
     ];
 
     if (yochananofVariations.some(variant => normalizedStoreName.includes(variant))) {
