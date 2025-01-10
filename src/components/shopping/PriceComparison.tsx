@@ -44,10 +44,35 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
+  console.log('Raw comparisons:', comparisons); // Debug log
+
+  const normalizedComparisons = comparisons.map(comparison => {
+    // Normalize store names
+    let normalizedStoreName = comparison.storeName.toLowerCase().trim();
+    let displayName = comparison.storeName;
+
+    // Handle Yochananof variations
+    if (
+      normalizedStoreName.includes('yochananof') || 
+      normalizedStoreName.includes('יוחננוף') ||
+      normalizedStoreName.includes('יוחנונוף') ||
+      normalizedStoreName.includes('יוחננוב')
+    ) {
+      displayName = 'יוחננוף';
+    }
+
+    return {
+      ...comparison,
+      storeName: displayName
+    };
+  });
+
+  console.log('Normalized comparisons:', normalizedComparisons); // Debug log
+
   const { data: branchInfo } = useQuery({
-    queryKey: ['store-branches-full', comparisons.map(c => c.storeId).join(',')],
+    queryKey: ['store-branches-full', normalizedComparisons.map(c => c.storeId).join(',')],
     queryFn: async () => {
-      if (!comparisons.length) return {};
+      if (!normalizedComparisons.length) return {};
       
       const { data: branches } = await supabase
         .from('store_branches')
@@ -66,7 +91,9 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
             source_branch_name
           )
         `)
-        .in('branch_id', comparisons.map(c => c.storeId || ''));
+        .in('branch_id', normalizedComparisons.map(c => c.storeId || ''));
+      
+      console.log('Fetched branch info:', branches); // Debug log
       
       const branchData: Record<string, any> = {};
       
@@ -84,9 +111,10 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         });
       }
       
+      console.log('Processed branch data:', branchData); // Debug log
       return branchData;
     },
-    enabled: comparisons.length > 0
+    enabled: normalizedComparisons.length > 0
   });
 
   if (isLoading) {
@@ -102,7 +130,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     );
   }
 
-  if (!comparisons.length) {
+  if (!normalizedComparisons.length) {
     return (
       <div className="p-6">
         <p className="text-center text-muted-foreground">
@@ -113,7 +141,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   }
 
   // סינון סלים שלמים
-  const completeBaskets = comparisons.filter(store => 
+  const completeBaskets = normalizedComparisons.filter(store => 
     store.items.every(item => item.isAvailable)
   );
 
@@ -145,7 +173,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
       <ScrollArea className="h-[600px] pr-4">
         <div className="space-y-4">
-          {comparisons.map((comparison, index) => {
+          {normalizedComparisons.map((comparison, index) => {
             const isComplete = comparison.items.every(item => item.isAvailable);
             const priceDiff = isComplete && completeBaskets.length > 0 ? 
               ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1) : 
