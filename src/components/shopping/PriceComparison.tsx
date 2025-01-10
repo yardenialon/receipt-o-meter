@@ -44,21 +44,29 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  console.log('Raw comparisons:', comparisons); // Debug log
+  console.log('Raw comparisons:', JSON.stringify(comparisons, null, 2)); // More detailed logging
 
   const normalizedComparisons = comparisons.map(comparison => {
     // Normalize store names
     let normalizedStoreName = comparison.storeName.toLowerCase().trim();
     let displayName = comparison.storeName;
 
+    console.log('Processing store:', {
+      original: comparison.storeName,
+      normalized: normalizedStoreName,
+      storeId: comparison.storeId
+    });
+
     // Handle Yochananof variations
     if (
       normalizedStoreName.includes('yochananof') || 
       normalizedStoreName.includes('יוחננוף') ||
       normalizedStoreName.includes('יוחנונוף') ||
-      normalizedStoreName.includes('יוחננוב')
+      normalizedStoreName.includes('יוחננוב') ||
+      normalizedStoreName.includes('יוחננוף טוב טעם')
     ) {
       displayName = 'יוחננוף';
+      console.log('Matched Yochananof variation:', normalizedStoreName);
     }
 
     return {
@@ -67,14 +75,17 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     };
   });
 
-  console.log('Normalized comparisons:', normalizedComparisons); // Debug log
+  console.log('Normalized comparisons:', JSON.stringify(normalizedComparisons, null, 2));
 
   const { data: branchInfo } = useQuery({
     queryKey: ['store-branches-full', normalizedComparisons.map(c => c.storeId).join(',')],
     queryFn: async () => {
       if (!normalizedComparisons.length) return {};
       
-      const { data: branches } = await supabase
+      const storeIds = normalizedComparisons.map(c => c.storeId || '');
+      console.log('Fetching branch info for store IDs:', storeIds);
+      
+      const { data: branches, error } = await supabase
         .from('store_branches')
         .select(`
           branch_id,
@@ -91,9 +102,14 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
             source_branch_name
           )
         `)
-        .in('branch_id', normalizedComparisons.map(c => c.storeId || ''));
+        .in('branch_id', storeIds);
       
-      console.log('Fetched branch info:', branches); // Debug log
+      if (error) {
+        console.error('Error fetching branch info:', error);
+        return {};
+      }
+      
+      console.log('Fetched branch info:', JSON.stringify(branches, null, 2));
       
       const branchData: Record<string, any> = {};
       
@@ -111,7 +127,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         });
       }
       
-      console.log('Processed branch data:', branchData); // Debug log
+      console.log('Processed branch data:', JSON.stringify(branchData, null, 2));
       return branchData;
     },
     enabled: normalizedComparisons.length > 0
@@ -141,9 +157,13 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   }
 
   // סינון סלים שלמים
-  const completeBaskets = normalizedComparisons.filter(store => 
-    store.items.every(item => item.isAvailable)
-  );
+  const completeBaskets = normalizedComparisons.filter(store => {
+    const isComplete = store.items.every(item => item.isAvailable);
+    console.log(`Store ${store.storeName} complete status:`, isComplete, 'Available items:', store.items.filter(i => i.isAvailable).length);
+    return isComplete;
+  });
+
+  console.log('Complete baskets:', JSON.stringify(completeBaskets, null, 2));
 
   // חישוב חסכון רק אם יש סלים שלמים
   let cheapestTotal = 0;
