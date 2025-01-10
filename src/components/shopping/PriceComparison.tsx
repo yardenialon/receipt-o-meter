@@ -44,29 +44,38 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  console.log('Raw comparisons:', JSON.stringify(comparisons, null, 2)); // More detailed logging
+  console.log('Initial comparisons:', JSON.stringify(comparisons, null, 2));
 
   const normalizedComparisons = comparisons.map(comparison => {
     // Normalize store names
-    let normalizedStoreName = comparison.storeName.toLowerCase().trim();
+    let normalizedStoreName = comparison.storeName?.toLowerCase().trim() || '';
     let displayName = comparison.storeName;
 
     console.log('Processing store:', {
       original: comparison.storeName,
       normalized: normalizedStoreName,
-      storeId: comparison.storeId
+      storeId: comparison.storeId,
+      items: comparison.items
     });
 
-    // Handle Yochananof variations
-    if (
-      normalizedStoreName.includes('yochananof') || 
-      normalizedStoreName.includes('יוחננוף') ||
-      normalizedStoreName.includes('יוחנונוף') ||
-      normalizedStoreName.includes('יוחננוב') ||
-      normalizedStoreName.includes('יוחננוף טוב טעם')
-    ) {
+    // Handle Yochananof variations with more variations
+    const yochananofVariations = [
+      'yochananof',
+      'יוחננוף',
+      'יוחנונוף',
+      'יוחננוב',
+      'יוחננוף טוב טעם',
+      'יוחננוף טוב טעם בעמ',
+      'טוב טעם יוחננוף'
+    ];
+
+    if (yochananofVariations.some(variant => normalizedStoreName.includes(variant))) {
       displayName = 'יוחננוף';
-      console.log('Matched Yochananof variation:', normalizedStoreName);
+      console.log('Matched Yochananof variation:', {
+        original: normalizedStoreName,
+        matched: true,
+        displayName
+      });
     }
 
     return {
@@ -82,9 +91,14 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     queryFn: async () => {
       if (!normalizedComparisons.length) return {};
       
-      const storeIds = normalizedComparisons.map(c => c.storeId || '');
+      const storeIds = normalizedComparisons.map(c => c.storeId || '').filter(Boolean);
       console.log('Fetching branch info for store IDs:', storeIds);
       
+      if (storeIds.length === 0) {
+        console.log('No valid store IDs to fetch');
+        return {};
+      }
+
       const { data: branches, error } = await supabase
         .from('store_branches')
         .select(`
@@ -159,7 +173,13 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   // סינון סלים שלמים
   const completeBaskets = normalizedComparisons.filter(store => {
     const isComplete = store.items.every(item => item.isAvailable);
-    console.log(`Store ${store.storeName} complete status:`, isComplete, 'Available items:', store.items.filter(i => i.isAvailable).length);
+    console.log(`Store ${store.storeName} basket analysis:`, {
+      storeName: store.storeName,
+      totalItems: store.items.length,
+      availableItems: store.items.filter(i => i.isAvailable).length,
+      isComplete,
+      items: store.items
+    });
     return isComplete;
   });
 
