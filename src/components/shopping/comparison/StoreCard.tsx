@@ -73,7 +73,7 @@ export const StoreCard = ({
               </div>
             )}
             
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold mt-2">
               ₪{comparison.total.toFixed(2)}
               {isComplete && priceDiff && Number(priceDiff) > 0 && (
                 <span className="text-sm text-muted-foreground mr-2">
