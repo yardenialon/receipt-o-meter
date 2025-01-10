@@ -47,7 +47,6 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   console.log('Initial comparisons:', comparisons);
 
   const normalizedComparisons = comparisons.map(comparison => {
-    // Normalize store names
     let normalizedStoreName = comparison.storeName?.toLowerCase().trim() || '';
     let displayName = comparison.storeName;
 
@@ -55,10 +54,11 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       original: comparison.storeName,
       normalized: normalizedStoreName,
       storeId: comparison.storeId,
-      items: comparison.items
+      items: comparison.items,
+      total: comparison.total
     });
 
-    // Handle Yochananof variations with more variations
+    // הרחבת הווריאציות של יוחננוף
     const yochananofVariations = [
       'yochananof',
       'יוחננוף',
@@ -70,16 +70,21 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'טוב טעם',
       'tov taam',
       'tovtaam',
-      'טוב טעם בעמ'
+      'טוב טעם בעמ',
+      'טוב טעם רשת'
     ];
 
-    if (yochananofVariations.some(variant => normalizedStoreName.includes(variant))) {
+    if (yochananofVariations.some(variant => 
+      normalizedStoreName.includes(variant.toLowerCase()) || 
+      comparison.storeName?.includes(variant)
+    )) {
       displayName = 'יוחננוף';
       console.log('Matched Yochananof variation:', {
         original: normalizedStoreName,
         matched: true,
         displayName,
-        items: comparison.items
+        items: comparison.items,
+        total: comparison.total
       });
     }
 
@@ -183,7 +188,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       totalItems: store.items.length,
       availableItems: store.items.filter(i => i.isAvailable).length,
       isComplete,
-      items: store.items
+      items: store.items,
+      total: store.total
     });
     return isComplete;
   });
