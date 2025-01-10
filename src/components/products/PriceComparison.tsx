@@ -30,6 +30,15 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
     }
 
     let pricesWithDistance = prices.map(price => {
+      // Normalize store chain names for consistency
+      const normalizedChain = price.store_chain.toLowerCase().trim();
+      let displayChain = price.store_chain;
+      
+      // Map common variations of store names
+      if (normalizedChain.includes('yochananof') || normalizedChain.includes('יוחננוף')) {
+        displayChain = 'יוחננוף';
+      }
+
       let distance = null;
       if (location && price.store_address) {
         const storeCoords = parseCoordinates(price.store_address);
@@ -42,7 +51,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
           );
         }
       }
-      return { ...price, distance };
+      return { ...price, distance, store_chain: displayChain };
     });
 
     if (location) {

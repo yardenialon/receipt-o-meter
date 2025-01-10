@@ -29,6 +29,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     if (normalizedName.includes('victory') || normalizedName.includes('ויקטורי')) {
       return '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png';
     }
+
+    if (normalizedName.includes('yochananof') || normalizedName.includes('יוחננוף')) {
+      return '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png';
+    }
     
     return logoUrl || null;
   };
