@@ -29,7 +29,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       return [];
     }
 
-    console.log('Raw prices:', prices); // Debug log
+    console.log('Raw prices:', prices);
 
     let pricesWithDistance = prices.map(price => {
       // Normalize store chain names for consistency
@@ -49,8 +49,9 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       console.log('Processing store:', {
         original: price.store_chain,
         normalized: normalizedChain,
-        display: displayChain
-      }); // Debug log
+        display: displayChain,
+        storeName: price.store_name
+      });
 
       let distance = null;
       if (location && price.store_address) {
@@ -67,7 +68,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       return { ...price, distance, store_chain: displayChain };
     });
 
-    console.log('Processed prices:', pricesWithDistance); // Debug log
+    console.log('Processed prices:', pricesWithDistance);
 
     if (location) {
       pricesWithDistance = pricesWithDistance.filter(price => 
