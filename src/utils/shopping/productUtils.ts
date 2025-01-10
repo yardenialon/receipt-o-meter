@@ -26,13 +26,41 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   }, {});
 };
 
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '') // Remove quotes
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .replace(/[^\w\s]/g, ''); // Remove special characters
+};
+
 export const findMatchingProducts = (
   productMatches: Array<{ product_code: string; product_name: string }>,
   item: ShoppingListItem
 ) => {
-  return productMatches.filter(match => 
-    match.product_name.toLowerCase().includes(item.name.toLowerCase())
-  );
+  const normalizedItemName = normalizeText(item.name);
+  
+  console.log('Looking for matches for:', {
+    originalName: item.name,
+    normalizedName: normalizedItemName
+  });
+
+  return productMatches.filter(match => {
+    const normalizedProductName = normalizeText(match.product_name);
+    const isMatch = normalizedProductName.includes(normalizedItemName) || 
+                   normalizedItemName.includes(normalizedProductName);
+    
+    if (isMatch) {
+      console.log('Found match:', {
+        itemName: item.name,
+        productName: match.product_name,
+        productCode: match.product_code
+      });
+    }
+    
+    return isMatch;
+  });
 };
 
 export const processStoreComparisons = (
@@ -41,6 +69,11 @@ export const processStoreComparisons = (
   productMatches: Array<{ product_code: string; product_name: string }>
 ): StoreComparison[] => {
   return Object.values(productsByStore).map(store => {
+    console.log('Processing store products:', {
+      storeName: store.storeName,
+      totalProducts: store.products?.length || 0
+    });
+
     const comparison: StoreComparison = {
       ...store,
       items: activeItems.map(item => ({
@@ -59,9 +92,20 @@ export const processStoreComparisons = (
         const matchingProductCodes = findMatchingProducts(productMatches, { name: item.name })
           .map(match => match.product_code);
         
+        console.log('Found matching product codes:', {
+          itemName: item.name,
+          codes: matchingProductCodes
+        });
+
         const matchingProducts = store.products?.filter(p => 
           matchingProductCodes.includes(p.product_code)
         );
+
+        console.log('Matching store products:', {
+          itemName: item.name,
+          storeName: store.storeName,
+          matches: matchingProducts?.length || 0
+        });
 
         if (matchingProducts && matchingProducts.length > 0) {
           const cheapestProduct = matchingProducts.reduce((min, p) => 
@@ -76,6 +120,13 @@ export const processStoreComparisons = (
           };
           comparison.total += cheapestProduct.price * item.quantity;
           comparison.availableItemsCount++;
+
+          console.log('Found price for item:', {
+            itemName: item.name,
+            storeName: store.storeName,
+            price: cheapestProduct.price,
+            matchedProduct: cheapestProduct.product_name
+          });
         }
       });
     }
