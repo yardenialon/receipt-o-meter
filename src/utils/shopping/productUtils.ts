@@ -30,9 +30,10 @@ const normalizeText = (text: string): string => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/['"]/g, '') // Remove quotes
-    .replace(/\s+/g, ' ') // Normalize spaces
-    .replace(/[^\w\s]/g, ''); // Remove special characters
+    .replace(/['"]/g, '') // הסרת גרשיים
+    .replace(/\s+/g, ' ') // נירמול רווחים
+    .replace(/[^\w\s]/g, '') // הסרת תווים מיוחדים
+    .replace(/[a-zA-Z]/g, ''); // הסרת אותיות באנגלית
 };
 
 export const findMatchingProducts = (
@@ -46,7 +47,7 @@ export const findMatchingProducts = (
     normalizedName: normalizedItemName
   });
 
-  return productMatches.filter(match => {
+  const matches = productMatches.filter(match => {
     const normalizedProductName = normalizeText(match.product_name);
     const isMatch = normalizedProductName.includes(normalizedItemName) || 
                    normalizedItemName.includes(normalizedProductName);
@@ -61,6 +62,9 @@ export const findMatchingProducts = (
     
     return isMatch;
   });
+
+  console.log(`Found ${matches.length} matches for ${item.name}`);
+  return matches;
 };
 
 export const processStoreComparisons = (
@@ -89,14 +93,17 @@ export const processStoreComparisons = (
 
     if (store.products) {
       comparison.items.forEach((item, index) => {
+        // מציאת מקטים תואמים למוצר
         const matchingProductCodes = findMatchingProducts(productMatches, { name: item.name })
           .map(match => match.product_code);
         
-        console.log('Found matching product codes:', {
+        console.log('Found matching product codes for store:', {
           itemName: item.name,
+          storeName: store.storeName,
           codes: matchingProductCodes
         });
 
+        // מציאת המוצרים המתאימים בחנות הספציפית
         const matchingProducts = store.products?.filter(p => 
           matchingProductCodes.includes(p.product_code)
         );
@@ -108,6 +115,7 @@ export const processStoreComparisons = (
         });
 
         if (matchingProducts && matchingProducts.length > 0) {
+          // בחירת המוצר הזול ביותר מבין המתאימים
           const cheapestProduct = matchingProducts.reduce((min, p) => 
             p.price < min.price ? p : min
           , matchingProducts[0]);
@@ -118,7 +126,6 @@ export const processStoreComparisons = (
             matchedProduct: cheapestProduct.product_name,
             isAvailable: true
           };
-          comparison.total += cheapestProduct.price * item.quantity;
           comparison.availableItemsCount++;
 
           console.log('Found price for item:', {
@@ -127,8 +134,21 @@ export const processStoreComparisons = (
             price: cheapestProduct.price,
             matchedProduct: cheapestProduct.product_name
           });
+        } else {
+          console.log('No matching products found for:', {
+            itemName: item.name,
+            storeName: store.storeName
+          });
         }
       });
+
+      // חישוב הסכום הכולל לחנות
+      comparison.total = comparison.items.reduce((sum, item) => {
+        if (item.isAvailable && item.price !== null) {
+          return sum + (item.price * item.quantity);
+        }
+        return sum;
+      }, 0);
     }
 
     return comparison;

@@ -49,14 +49,14 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   const normalizedComparisons = comparisons.map(comparison => {
     let normalizedStoreName = comparison.storeName?.toLowerCase().trim() || '';
     let displayName = comparison.storeName;
-    let total = 0;
-
-    console.log('Processing store:', {
-      original: comparison.storeName,
-      normalized: normalizedStoreName,
-      storeId: comparison.storeId,
-      items: comparison.items
-    });
+    
+    // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
+    const total = comparison.items.reduce((sum, item) => {
+      if (item.isAvailable && item.price !== null) {
+        return sum + (item.price * item.quantity);
+      }
+      return sum;
+    }, 0);
 
     // הרחבת הווריאציות של יוחננוף
     const yochananofVariations = [
@@ -74,36 +74,19 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'טוב טעם רשת'
     ];
 
-    // חישוב הסכום הכולל לחנות
-    total = comparison.items.reduce((sum, item) => {
-      if (item.isAvailable && item.price !== null) {
-        return sum + (item.price * item.quantity);
-      }
-      return sum;
-    }, 0);
-
     if (yochananofVariations.some(variant => 
       normalizedStoreName.includes(variant.toLowerCase()) || 
       comparison.storeName?.includes(variant)
     )) {
       displayName = 'יוחננוף';
-      console.log('Matched Yochananof variation:', {
-        original: normalizedStoreName,
-        matched: true,
-        displayName,
-        items: comparison.items,
-        total
-      });
     }
 
     return {
       ...comparison,
       storeName: displayName,
-      total // עדכון הסכום הכולל
+      total
     };
   });
-
-  console.log('Normalized comparisons:', normalizedComparisons);
 
   const { data: branchInfo } = useQuery({
     queryKey: ['store-branches-full', normalizedComparisons.map(c => c.storeId).join(',')],
@@ -142,8 +125,6 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         return {};
       }
       
-      console.log('Fetched branch info:', branches);
-      
       const branchData: Record<string, any> = {};
       
       if (branches) {
@@ -160,7 +141,6 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         });
       }
       
-      console.log('Processed branch data:', branchData);
       return branchData;
     },
     enabled: normalizedComparisons.length > 0
@@ -189,19 +169,10 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     );
   }
 
-  // סינון סלים שלמים
-  const completeBaskets = normalizedComparisons.filter(store => {
-    const isComplete = store.items.every(item => item.isAvailable);
-    console.log(`Store ${store.storeName} basket analysis:`, {
-      storeName: store.storeName,
-      totalItems: store.items.length,
-      availableItems: store.items.filter(i => i.isAvailable).length,
-      isComplete,
-      items: store.items,
-      total: store.total
-    });
-    return isComplete;
-  });
+  // סינון סלים שלמים (כל הפריטים זמינים)
+  const completeBaskets = normalizedComparisons.filter(store => 
+    store.items.every(item => item.isAvailable)
+  );
 
   console.log('Complete baskets:', completeBaskets);
 
