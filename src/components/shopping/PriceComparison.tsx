@@ -52,11 +52,23 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     
     // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
     const total = comparison.items.reduce((sum, item) => {
-      if (item.isAvailable && item.price !== null) {
-        return sum + (item.price * item.quantity);
+      // בדיקה מיוחדת עבור רמי לוי
+      if (normalizedStoreName.includes('רמי לוי') || normalizedStoreName.includes('rami levy')) {
+        if (item.isAvailable && item.price !== null) {
+          const itemTotal = item.price * (item.quantity || 1);
+          console.log(`Rami Levy item calculation - Name: ${item.name}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
+          return sum + itemTotal;
+        }
+      } else {
+        // לוגיקה רגילה עבור שאר הרשתות
+        if (item.isAvailable && item.price !== null) {
+          return sum + (item.price * (item.quantity || 1));
+        }
       }
       return sum;
     }, 0);
+
+    console.log(`Store: ${displayName}, Total: ${total}`);
 
     // הרחבת הווריאציות של יוחננוף
     const yochananofVariations = [
@@ -74,11 +86,26 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'טוב טעם רשת'
     ];
 
+    // הרחבת הווריאציות של רמי לוי
+    const ramiLevyVariations = [
+      'רמי לוי',
+      'rami levy',
+      'רמי לוי שיווק השקמה',
+      'שיווק השקמה',
+      'רמי לוי שיווק השיקמה',
+      'רמי לוי סניף'
+    ];
+
     if (yochananofVariations.some(variant => 
       normalizedStoreName.includes(variant.toLowerCase()) || 
       comparison.storeName?.includes(variant)
     )) {
       displayName = 'יוחננוף';
+    } else if (ramiLevyVariations.some(variant =>
+      normalizedStoreName.includes(variant.toLowerCase()) ||
+      comparison.storeName?.includes(variant)
+    )) {
+      displayName = 'רמי לוי';
     }
 
     return {
