@@ -1,11 +1,8 @@
-import { Store, MapPin } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { useState, useMemo } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { calculateDistance, parseCoordinates } from '@/utils/distance';
-import { Slider } from "@/components/ui/slider";
-import { useState, useMemo } from 'react';
+import { StorePrice } from '@/components/shopping/comparison/StorePrice';
+import { DistanceFilter } from '@/components/shopping/comparison/DistanceFilter';
 
 interface StorePrice {
   store_chain: string;
@@ -32,11 +29,10 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
     console.log('Raw prices:', prices);
 
     let pricesWithDistance = prices.map(price => {
-      // Normalize store chain names for consistency
+      // נרמול שמות רשתות
       const normalizedChain = price.store_chain.toLowerCase().trim();
       let displayChain = price.store_chain;
       
-      // Map common variations of store names
       if (
         normalizedChain.includes('yochananof') || 
         normalizedChain.includes('יוחננוף') ||
@@ -45,13 +41,6 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       ) {
         displayChain = 'יוחננוף';
       }
-
-      console.log('Processing store:', {
-        original: price.store_chain,
-        normalized: normalizedChain,
-        display: displayChain,
-        storeName: price.store_name
-      });
 
       let distance = null;
       if (location && price.store_address) {
@@ -67,8 +56,6 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       }
       return { ...price, distance, store_chain: displayChain };
     });
-
-    console.log('Processed prices:', pricesWithDistance);
 
     if (location) {
       pricesWithDistance = pricesWithDistance.filter(price => 
@@ -104,76 +91,25 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
   return (
     <div className="space-y-4">
       {location && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            מרחק מקסימלי: {maxDistance} ק"מ
-          </label>
-          <Slider
-            value={[maxDistance]}
-            onValueChange={(value) => setMaxDistance(value[0])}
-            min={1}
-            max={50}
-            step={1}
-          />
-        </div>
+        <DistanceFilter 
+          maxDistance={maxDistance} 
+          onDistanceChange={(value) => setMaxDistance(value)} 
+        />
       )}
       
       <div className="space-y-2">
         {sortedPrices.map((price, index) => {
           const isLowestPrice = price.price === lowestPrice;
-          const priceDiff = isLowestPrice ? 0 : ((price.price - lowestPrice!) / lowestPrice! * 100).toFixed(1);
+          const priceDiff = isLowestPrice ? null : 
+            ((price.price - lowestPrice!) / lowestPrice! * 100).toFixed(1);
           
           return (
-            <div 
+            <StorePrice
               key={`${price.store_chain}-${price.store_id}-${index}`}
-              className={`flex justify-between items-start p-2 rounded ${
-                isLowestPrice ? 'bg-green-50 border border-green-100' : 'bg-white border'
-              }`}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant={isLowestPrice ? "default" : "secondary"}>
-                    <Store className="h-3 w-3 ml-1" />
-                    {price.store_chain}
-                  </Badge>
-                </div>
-                
-                {price.store_name && (
-                  <div className="text-sm font-medium">
-                    {price.store_name}
-                  </div>
-                )}
-                
-                {price.store_address && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    {price.store_address}
-                    {price.distance !== null && (
-                      <span className="mr-1">({price.distance.toFixed(1)} ק"מ)</span>
-                    )}
-                  </div>
-                )}
-                
-                {price.price_update_date && (
-                  <div className="text-sm text-muted-foreground">
-                    עודכן: {format(new Date(price.price_update_date), 'dd/MM/yyyy', { locale: he })}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className={`font-semibold ${
-                  isLowestPrice ? 'text-green-600' : ''
-                }`}>
-                  ₪{price.price.toFixed(2)}
-                </span>
-                {!isLowestPrice && (
-                  <span className="text-sm text-muted-foreground">
-                    (+{priceDiff}%)
-                  </span>
-                )}
-              </div>
-            </div>
+              store={price}
+              isLowestPrice={isLowestPrice}
+              priceDiff={priceDiff}
+            />
           );
         })}
       </div>
