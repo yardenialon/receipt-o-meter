@@ -26,9 +26,15 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   }, {});
 };
 
+// Create a new interface for the minimum required properties
+interface ProductMatchingItem {
+  name: string;
+  product_code?: string;
+}
+
 export const findMatchingProducts = (
   productMatches: Array<{ product_code: string; product_name: string }>,
-  item: ShoppingListItem
+  item: ProductMatchingItem
 ) => {
   // אם יש מק"ט, נשתמש בו במקום בשם המוצר
   if (item.product_code) {
@@ -104,7 +110,7 @@ export const processStoreComparisons = (
         // מציאת מקטים תואמים למוצר
         const matchingProductCodes = item.product_code ? 
           [item.product_code] : // אם יש מק"ט, נשתמש בו ישירות
-          findMatchingProducts(productMatches, { name: item.name }).map(match => match.product_code);
+          findMatchingProducts(productMatches, { name: item.name, product_code: item.product_code }).map(match => match.product_code);
         
         console.log('Found matching product codes for store:', {
           itemName: item.name,
