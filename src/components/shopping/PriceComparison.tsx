@@ -49,13 +49,13 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   const normalizedComparisons = comparisons.map(comparison => {
     let normalizedStoreName = comparison.storeName?.toLowerCase().trim() || '';
     let displayName = comparison.storeName;
+    let total = 0;
 
     console.log('Processing store:', {
       original: comparison.storeName,
       normalized: normalizedStoreName,
       storeId: comparison.storeId,
-      items: comparison.items,
-      total: comparison.total
+      items: comparison.items
     });
 
     // הרחבת הווריאציות של יוחננוף
@@ -74,6 +74,14 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'טוב טעם רשת'
     ];
 
+    // חישוב הסכום הכולל לחנות
+    total = comparison.items.reduce((sum, item) => {
+      if (item.isAvailable && item.price !== null) {
+        return sum + (item.price * item.quantity);
+      }
+      return sum;
+    }, 0);
+
     if (yochananofVariations.some(variant => 
       normalizedStoreName.includes(variant.toLowerCase()) || 
       comparison.storeName?.includes(variant)
@@ -84,13 +92,14 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         matched: true,
         displayName,
         items: comparison.items,
-        total: comparison.total
+        total
       });
     }
 
     return {
       ...comparison,
-      storeName: displayName
+      storeName: displayName,
+      total // עדכון הסכום הכולל
     };
   });
 
