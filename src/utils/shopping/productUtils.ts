@@ -37,51 +37,30 @@ const normalizeText = (text: string): string => {
     .trim()
     .replace(/['"]/g, '')
     .replace(/\s+/g, ' ')
-    .replace(/[^\w\s]/g, '')
-    .replace(/[a-zA-Z]/g, '');
+    .replace(/[^\w\s]/g, '');
 };
 
-export const findMatchingProducts = (
-  productMatches: Array<{ product_code: string; product_name: string }>,
-  item: ProductMatchingItem
-): Array<{ product_code: string; product_name: string }> => {
-  // אם יש קוד מוצר, נחפש התאמה מדויקת
-  if (item.product_code) {
-    console.log('מחפש התאמה מדויקת לפי קוד מוצר:', item.product_code);
-    const exactMatches = productMatches.filter(match => match.product_code === item.product_code);
-    if (exactMatches.length > 0) {
-      console.log('נמצאה התאמה מדויקת:', exactMatches);
-      return exactMatches;
-    }
-  }
+const findExactProductMatch = (
+  products: Product[] | undefined,
+  productCode: string
+): Product | undefined => {
+  if (!products) return undefined;
+  return products.find(p => p.product_code === productCode);
+};
 
-  // אם אין קוד מוצר או לא נמצאה התאמה, נחפש לפי שם
-  const normalizedItemName = normalizeText(item.name);
-  console.log('מחפש התאמות לפי שם:', {
-    שםמקורי: item.name,
-    שםמנורמל: normalizedItemName
+const findSimilarProducts = (
+  products: Product[] | undefined,
+  itemName: string
+): Product[] => {
+  if (!products) return [];
+  
+  const normalizedItemName = normalizeText(itemName);
+  
+  return products.filter(product => {
+    const normalizedProductName = normalizeText(product.product_name);
+    return normalizedProductName.includes(normalizedItemName) || 
+           normalizedItemName.includes(normalizedProductName);
   });
-
-  const matches = productMatches.filter(match => {
-    const normalizedProductName = normalizeText(match.product_name);
-    
-    // בדיקה אם השם המנורמל של המוצר מכיל את השם המנורמל של הפריט או להיפך
-    const isMatch = normalizedProductName.includes(normalizedItemName) || 
-                   normalizedItemName.includes(normalizedProductName);
-    
-    if (isMatch) {
-      console.log('נמצאה התאמה:', {
-        שםפריט: item.name,
-        שםמוצר: match.product_name,
-        קודמוצר: match.product_code
-      });
-    }
-    
-    return isMatch;
-  });
-
-  console.log(`נמצאו ${matches.length} התאמות עבור ${item.name}`);
-  return matches;
 };
 
 export const processStoreComparisons = (
@@ -89,12 +68,12 @@ export const processStoreComparisons = (
   activeItems: ShoppingListItem[],
   productMatches: Array<{ product_code: string; product_name: string }>
 ): StoreComparison[] => {
-  return Object.values(productsByStore).map(store => {
-    console.log('מעבד מוצרי חנות:', {
-      שםחנות: store.storeName,
-      סהכמוצרים: store.products?.length || 0
-    });
+  console.log('התחלת עיבוד השוואת מחירים:', {
+    מספרחנויות: Object.keys(productsByStore).length,
+    מספרפריטים: activeItems.length
+  });
 
+  return Object.values(productsByStore).map(store => {
     const comparison: StoreComparison = {
       ...store,
       items: activeItems.map(item => ({
@@ -109,83 +88,74 @@ export const processStoreComparisons = (
       availableItemsCount: 0
     };
 
-    if (store.products) {
-      comparison.items.forEach((item, index) => {
-        // אם יש קוד מוצר, נחפש התאמה מדויקת בחנות הספציפית
-        if (item.product_code) {
-          const matchingProduct = store.products?.find(p => p.product_code === item.product_code);
-          if (matchingProduct) {
-            comparison.items[index] = {
-              ...item,
-              price: matchingProduct.price,
-              matchedProduct: matchingProduct.product_name,
-              isAvailable: true,
-              product_code: matchingProduct.product_code
-            };
-            comparison.availableItemsCount++;
-          } else {
-            // אם לא נמצאה התאמה מדויקת, המוצר לא זמין בחנות זו
-            comparison.items[index] = {
-              ...item,
-              isAvailable: false
-            };
-          }
-        } else {
-          // חיפוש לפי שם רק אם אין קוד מוצר
-          const matchingProductCodes = findMatchingProducts(productMatches, { 
-            name: item.name
-          }).map(match => match.product_code);
-          
-          console.log('קודי מוצר תואמים שנמצאו בחנות:', {
+    if (!store.products) {
+      console.log(`אין מוצרים בחנות ${store.storeName}`);
+      return comparison;
+    }
+
+    comparison.items.forEach((item, index) => {
+      let matchingProduct: Product | undefined;
+
+      // חיפוש לפי קוד מוצר אם קיים
+      if (item.product_code) {
+        matchingProduct = findExactProductMatch(store.products, item.product_code);
+        if (matchingProduct) {
+          console.log(`נמצאה התאמה מדויקת לפי קוד מוצר:`, {
             שםפריט: item.name,
             קודמוצר: item.product_code,
-            שםחנות: store.storeName,
-            קודים: matchingProductCodes
+            שםחנות: store.storeName
           });
+        }
+      }
 
-          // חיפוש מוצרים תואמים בחנות הספציפית
-          const matchingProducts = store.products?.filter(p => 
-            matchingProductCodes.includes(p.product_code)
-          );
+      // אם אין התאמה מדויקת, מנסים למצוא לפי שם
+      if (!matchingProduct) {
+        const similarProducts = findSimilarProducts(store.products, item.name);
+        if (similarProducts.length > 0) {
+          // בוחרים את המוצר הזול ביותר מבין ההתאמות
+          matchingProduct = similarProducts.reduce((min, p) => 
+            p.price < min.price ? p : min
+          , similarProducts[0]);
 
-          console.log('מוצרים תואמים בחנות:', {
+          console.log(`נמצאה התאמה לפי שם:`, {
             שםפריט: item.name,
-            שםחנות: store.storeName,
-            התאמות: matchingProducts?.length || 0
+            שםמוצר: matchingProduct.product_name,
+            מחיר: matchingProduct.price,
+            שםחנות: store.storeName
           });
-
-          if (matchingProducts && matchingProducts.length > 0) {
-            // בחירת המוצר הזול ביותר מבין ההתאמות
-            const cheapestProduct = matchingProducts.reduce((min, p) => 
-              p.price < min.price ? p : min
-            , matchingProducts[0]);
-
-            comparison.items[index] = {
-              ...item,
-              price: cheapestProduct.price,
-              matchedProduct: cheapestProduct.product_name,
-              isAvailable: true,
-              product_code: cheapestProduct.product_code
-            };
-            comparison.availableItemsCount++;
-          } else {
-            // אם לא נמצאו התאמות, המוצר לא זמין
-            comparison.items[index] = {
-              ...item,
-              isAvailable: false
-            };
-          }
         }
-      });
+      }
 
-      // חישוב סך הכל עבור החנות
-      comparison.total = comparison.items.reduce((sum, item) => {
-        if (item.isAvailable && item.price !== null) {
-          return sum + (item.price * item.quantity);
-        }
-        return sum;
-      }, 0);
-    }
+      if (matchingProduct) {
+        comparison.items[index] = {
+          ...item,
+          price: matchingProduct.price,
+          matchedProduct: matchingProduct.product_name,
+          isAvailable: true,
+          product_code: matchingProduct.product_code
+        };
+        comparison.availableItemsCount++;
+      } else {
+        console.log(`לא נמצאה התאמה:`, {
+          שםפריט: item.name,
+          שםחנות: store.storeName
+        });
+      }
+    });
+
+    // חישוב סך הכל עבור החנות
+    comparison.total = comparison.items.reduce((sum, item) => {
+      if (item.isAvailable && item.price !== null) {
+        return sum + (item.price * item.quantity);
+      }
+      return sum;
+    }, 0);
+
+    console.log(`סיכום חנות ${store.storeName}:`, {
+      סהכמחיר: comparison.total,
+      מוצריםזמינים: comparison.availableItemsCount,
+      סהכמוצרים: comparison.items.length
+    });
 
     return comparison;
   });
