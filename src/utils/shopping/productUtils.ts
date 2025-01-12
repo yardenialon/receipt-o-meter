@@ -26,7 +26,7 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   }, {});
 };
 
-// Create a new interface for the minimum required properties
+// Interface for the minimum required properties for product matching
 interface ProductMatchingItem {
   name: string;
   product_code?: string;
@@ -36,13 +36,16 @@ export const findMatchingProducts = (
   productMatches: Array<{ product_code: string; product_name: string }>,
   item: ProductMatchingItem
 ) => {
-  // אם יש מק"ט, נשתמש בו במקום בשם המוצר
+  // If we have a product code, use it for exact matching
   if (item.product_code) {
     console.log('Looking for exact match by product code:', item.product_code);
-    return productMatches.filter(match => match.product_code === item.product_code);
+    const exactMatches = productMatches.filter(match => match.product_code === item.product_code);
+    if (exactMatches.length > 0) {
+      return exactMatches;
+    }
   }
 
-  // אם אין מק"ט, נשתמש בחיפוש לפי שם כגיבוי
+  // Only proceed with name matching if no product code match was found
   const normalizedItemName = normalizeText(item.name);
   
   console.log('Looking for matches by name:', {
@@ -74,10 +77,10 @@ const normalizeText = (text: string): string => {
   return text
     .toLowerCase()
     .trim()
-    .replace(/['"]/g, '') // הסרת גרשיים
-    .replace(/\s+/g, ' ') // נירמול רווחים
-    .replace(/[^\w\s]/g, '') // הסרת תווים מיוחדים
-    .replace(/[a-zA-Z]/g, ''); // הסרת אותיות באנגלית
+    .replace(/['"]/g, '') // Remove quotes
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .replace(/[^\w\s]/g, '') // Remove special characters
+    .replace(/[a-zA-Z]/g, ''); // Remove English letters
 };
 
 export const processStoreComparisons = (
@@ -107,61 +110,62 @@ export const processStoreComparisons = (
 
     if (store.products) {
       comparison.items.forEach((item, index) => {
-        // מציאת מקטים תואמים למוצר
-        const matchingProductCodes = item.product_code ? 
-          [item.product_code] : // אם יש מק"ט, נשתמש בו ישירות
-          findMatchingProducts(productMatches, { name: item.name, product_code: item.product_code }).map(match => match.product_code);
-        
-        console.log('Found matching product codes for store:', {
-          itemName: item.name,
-          productCode: item.product_code,
-          storeName: store.storeName,
-          codes: matchingProductCodes
-        });
-
-        // מציאת המוצרים המתאימים בחנות הספציפית
-        const matchingProducts = store.products?.filter(p => 
-          matchingProductCodes.includes(p.product_code)
-        );
-
-        console.log('Matching store products:', {
-          itemName: item.name,
-          storeName: store.storeName,
-          matches: matchingProducts?.length || 0
-        });
-
-        if (matchingProducts && matchingProducts.length > 0) {
-          // בחירת המוצר הזול ביותר מבין המתאימים
-          const cheapestProduct = matchingProducts.reduce((min, p) => 
-            p.price < min.price ? p : min
-          , matchingProducts[0]);
-
-          comparison.items[index] = {
-            ...item,
-            price: cheapestProduct.price,
-            matchedProduct: cheapestProduct.product_name,
-            isAvailable: true,
-            product_code: cheapestProduct.product_code
-          };
-          comparison.availableItemsCount++;
-
-          console.log('Found price for item:', {
-            itemName: item.name,
-            storeName: store.storeName,
-            price: cheapestProduct.price,
-            matchedProduct: cheapestProduct.product_name,
-            productCode: cheapestProduct.product_code
-          });
+        // If we have a product code, only look for exact matches
+        if (item.product_code) {
+          const matchingProduct = store.products?.find(p => p.product_code === item.product_code);
+          if (matchingProduct) {
+            comparison.items[index] = {
+              ...item,
+              price: matchingProduct.price,
+              matchedProduct: matchingProduct.product_name,
+              isAvailable: true,
+              product_code: matchingProduct.product_code
+            };
+            comparison.availableItemsCount++;
+          }
         } else {
-          console.log('No matching products found for:', {
+          // Only use name matching if no product code is available
+          const matchingProductCodes = findMatchingProducts(productMatches, { 
+            name: item.name, 
+            product_code: item.product_code 
+          }).map(match => match.product_code);
+          
+          console.log('Found matching product codes for store:', {
             itemName: item.name,
             productCode: item.product_code,
-            storeName: store.storeName
+            storeName: store.storeName,
+            codes: matchingProductCodes
           });
+
+          // Find matching products in this specific store
+          const matchingProducts = store.products?.filter(p => 
+            matchingProductCodes.includes(p.product_code)
+          );
+
+          console.log('Matching store products:', {
+            itemName: item.name,
+            storeName: store.storeName,
+            matches: matchingProducts?.length || 0
+          });
+
+          if (matchingProducts && matchingProducts.length > 0) {
+            const cheapestProduct = matchingProducts.reduce((min, p) => 
+              p.price < min.price ? p : min
+            , matchingProducts[0]);
+
+            comparison.items[index] = {
+              ...item,
+              price: cheapestProduct.price,
+              matchedProduct: cheapestProduct.product_name,
+              isAvailable: true,
+              product_code: cheapestProduct.product_code
+            };
+            comparison.availableItemsCount++;
+          }
         }
       });
 
-      // חישוב הסכום הכולל לחנות
+      // Calculate total for the store
       comparison.total = comparison.items.reduce((sum, item) => {
         if (item.isAvailable && item.price !== null) {
           return sum + (item.price * item.quantity);
