@@ -26,23 +26,20 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   }, {});
 };
 
-const normalizeText = (text: string): string => {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/['"]/g, '') // הסרת גרשיים
-    .replace(/\s+/g, ' ') // נירמול רווחים
-    .replace(/[^\w\s]/g, '') // הסרת תווים מיוחדים
-    .replace(/[a-zA-Z]/g, ''); // הסרת אותיות באנגלית
-};
-
 export const findMatchingProducts = (
   productMatches: Array<{ product_code: string; product_name: string }>,
   item: ShoppingListItem
 ) => {
+  // אם יש מק"ט, נשתמש בו במקום בשם המוצר
+  if (item.product_code) {
+    console.log('Looking for exact match by product code:', item.product_code);
+    return productMatches.filter(match => match.product_code === item.product_code);
+  }
+
+  // אם אין מק"ט, נשתמש בחיפוש לפי שם כגיבוי
   const normalizedItemName = normalizeText(item.name);
   
-  console.log('Looking for matches for:', {
+  console.log('Looking for matches by name:', {
     originalName: item.name,
     normalizedName: normalizedItemName
   });
@@ -67,6 +64,16 @@ export const findMatchingProducts = (
   return matches;
 };
 
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '') // הסרת גרשיים
+    .replace(/\s+/g, ' ') // נירמול רווחים
+    .replace(/[^\w\s]/g, '') // הסרת תווים מיוחדים
+    .replace(/[a-zA-Z]/g, ''); // הסרת אותיות באנגלית
+};
+
 export const processStoreComparisons = (
   productsByStore: Record<string, StoreComparison>,
   activeItems: ShoppingListItem[],
@@ -85,7 +92,8 @@ export const processStoreComparisons = (
         price: null,
         matchedProduct: '',
         quantity: item.quantity || 1,
-        isAvailable: false
+        isAvailable: false,
+        product_code: item.product_code
       })),
       total: 0,
       availableItemsCount: 0
@@ -94,11 +102,13 @@ export const processStoreComparisons = (
     if (store.products) {
       comparison.items.forEach((item, index) => {
         // מציאת מקטים תואמים למוצר
-        const matchingProductCodes = findMatchingProducts(productMatches, { name: item.name })
-          .map(match => match.product_code);
+        const matchingProductCodes = item.product_code ? 
+          [item.product_code] : // אם יש מק"ט, נשתמש בו ישירות
+          findMatchingProducts(productMatches, { name: item.name }).map(match => match.product_code);
         
         console.log('Found matching product codes for store:', {
           itemName: item.name,
+          productCode: item.product_code,
           storeName: store.storeName,
           codes: matchingProductCodes
         });
@@ -124,7 +134,8 @@ export const processStoreComparisons = (
             ...item,
             price: cheapestProduct.price,
             matchedProduct: cheapestProduct.product_name,
-            isAvailable: true
+            isAvailable: true,
+            product_code: cheapestProduct.product_code
           };
           comparison.availableItemsCount++;
 
@@ -132,11 +143,13 @@ export const processStoreComparisons = (
             itemName: item.name,
             storeName: store.storeName,
             price: cheapestProduct.price,
-            matchedProduct: cheapestProduct.product_name
+            matchedProduct: cheapestProduct.product_name,
+            productCode: cheapestProduct.product_code
           });
         } else {
           console.log('No matching products found for:', {
             itemName: item.name,
+            productCode: item.product_code,
             storeName: store.storeName
           });
         }
