@@ -1,42 +1,8 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AnimatePresence } from "framer-motion";
-import { SavingsCard } from "./comparison/SavingsCard";
-import { StoreCard } from "./comparison/StoreCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-
-interface BranchMapping {
-  source_chain: string;
-  source_branch_id: string;
-  source_branch_name: string | null;
-}
-
-interface StoreBranch {
-  branch_id: string;
-  name: string;
-  address: string | null;
-  chain_id: string;
-  store_chains: {
-    name: string;
-    logo_url: string | null;
-  } | null;
-  branch_mappings: BranchMapping[];
-}
-
-interface StoreComparison {
-  storeName: string;
-  storeId: string | null;
-  branchName?: string | null;
-  total: number;
-  items: {
-    name: string;
-    price: number | null;
-    matchedProduct: string;
-    quantity: number;
-    isAvailable: boolean;
-  }[];
-  availableItemsCount: number;
-}
+import { ComparisonHeader } from "./comparison/ComparisonHeader";
+import { ComparisonList } from "./comparison/ComparisonList";
+import { StoreComparison } from "@/types/shopping";
 
 interface PriceComparisonProps {
   comparisons: StoreComparison[];
@@ -52,48 +18,30 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     
     // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
     const total = comparison.items.reduce((sum, item) => {
-      // בדיקה מיוחדת עבור רמי לוי
       if (normalizedStoreName.includes('רמי לוי') || normalizedStoreName.includes('rami levy')) {
         if (item.isAvailable && item.price !== null) {
           const itemTotal = item.price * (item.quantity || 1);
           console.log(`Rami Levy item calculation - Name: ${item.name}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
           return sum + itemTotal;
         }
-      } else {
-        // לוגיקה רגילה עבור שאר הרשתות
-        if (item.isAvailable && item.price !== null) {
-          return sum + (item.price * (item.quantity || 1));
-        }
+      } else if (item.isAvailable && item.price !== null) {
+        return sum + (item.price * (item.quantity || 1));
       }
       return sum;
     }, 0);
 
     console.log(`Store: ${displayName}, Total: ${total}`);
 
-    // הרחבת הווריאציות של יוחננוף
+    // נרמול שמות רשתות
     const yochananofVariations = [
-      'yochananof',
-      'יוחננוף',
-      'יוחנונוף',
-      'יוחננוב',
-      'יוחננוף טוב טעם',
-      'יוחננוף טוב טעם בעמ',
-      'טוב טעם יוחננוף',
-      'טוב טעם',
-      'tov taam',
-      'tovtaam',
-      'טוב טעם בעמ',
-      'טוב טעם רשת'
+      'yochananof', 'יוחננוף', 'יוחנונוף', 'יוחננוב',
+      'יוחננוף טוב טעם', 'יוחננוף טוב טעם בעמ', 'טוב טעם יוחננוף',
+      'טוב טעם', 'tov taam', 'tovtaam', 'טוב טעם בעמ', 'טוב טעם רשת'
     ];
 
-    // הרחבת הווריאציות של רמי לוי
     const ramiLevyVariations = [
-      'רמי לוי',
-      'rami levy',
-      'רמי לוי שיווק השקמה',
-      'שיווק השקמה',
-      'רמי לוי שיווק השיקמה',
-      'רמי לוי סניף'
+      'רמי לוי', 'rami levy', 'רמי לוי שיווק השקמה',
+      'שיווק השקמה', 'רמי לוי שיווק השיקמה', 'רמי לוי סניף'
     ];
 
     if (yochananofVariations.some(variant => 
@@ -203,63 +151,30 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
   console.log('Complete baskets:', completeBaskets);
 
-  // חישוב חסכון רק אם יש סלים שלמים
-  let cheapestTotal = 0;
-  let mostExpensiveTotal = 0;
-  let potentialSavings = 0;
-  let savingsPercentage = "0.0";
-
-  if (completeBaskets.length > 0) {
-    cheapestTotal = Math.min(...completeBaskets.map(c => c.total));
-    mostExpensiveTotal = Math.max(...completeBaskets.map(c => c.total));
-    potentialSavings = mostExpensiveTotal - cheapestTotal;
-    savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
-  }
+  // חישוב חסכון
+  const cheapestTotal = completeBaskets.length > 0 ? 
+    Math.min(...completeBaskets.map(c => c.total)) : 0;
+  const mostExpensiveTotal = completeBaskets.length > 0 ? 
+    Math.max(...completeBaskets.map(c => c.total)) : 0;
+  const potentialSavings = mostExpensiveTotal - cheapestTotal;
+  const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
 
   return (
     <div className="space-y-6">
-      <AnimatePresence>
-        {potentialSavings > 0 && completeBaskets.length > 1 && (
-          <SavingsCard
-            potentialSavings={potentialSavings}
-            savingsPercentage={savingsPercentage}
-            storeName={completeBaskets[0].storeName}
-            storeId={completeBaskets[0].storeId}
-          />
-        )}
-      </AnimatePresence>
+      <ComparisonHeader
+        potentialSavings={potentialSavings}
+        savingsPercentage={savingsPercentage}
+        storeName={completeBaskets[0]?.storeName}
+        storeId={completeBaskets[0]?.storeId}
+        completeBaskets={completeBaskets.length}
+      />
 
-      <ScrollArea className="h-[600px] pr-4">
-        <div className="space-y-4">
-          {normalizedComparisons.map((comparison, index) => {
-            const isComplete = comparison.items.every(item => item.isAvailable);
-            const priceDiff = isComplete && completeBaskets.length > 0 ? 
-              ((comparison.total - cheapestTotal) / cheapestTotal * 100).toFixed(1) : 
-              null;
-            const progressValue = mostExpensiveTotal > 0 ? 
-              (comparison.total / mostExpensiveTotal) * 100 : 
-              0;
-            
-            const branchData = branchInfo?.[comparison.storeId || ''] || {};
-            
-            return (
-              <StoreCard
-                key={`${comparison.storeName}-${comparison.storeId}-${index}`}
-                comparison={comparison}
-                isComplete={isComplete}
-                isCheapest={isComplete && comparison.total === cheapestTotal}
-                priceDiff={priceDiff}
-                progressValue={progressValue}
-                index={index}
-                branchName={branchData.name || comparison.branchName}
-                branchAddress={branchData.address}
-                chainName={branchData.chainName || comparison.storeName}
-                logoUrl={branchData.logoUrl}
-              />
-            );
-          })}
-        </div>
-      </ScrollArea>
+      <ComparisonList
+        comparisons={normalizedComparisons}
+        cheapestTotal={cheapestTotal}
+        mostExpensiveTotal={mostExpensiveTotal}
+        branchInfo={branchInfo || {}}
+      />
     </div>
   );
 };
