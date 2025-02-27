@@ -23,11 +23,6 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       const itemsWithoutProductCode = activeItems.filter(item => !item.product_code);
       const nameSearchTerms = itemsWithoutProductCode.map(item => item.name.toLowerCase().trim());
       
-      // נכין תנאי חיפוש לפי שם מוצר
-      const nameSearchConditions = nameSearchTerms.length > 0 
-        ? nameSearchTerms.map(term => `product_name.ilike.%${term}%`).join(',')
-        : '';
-
       let products = [];
       
       // אם יש לנו מוצרים עם קודי מוצר, נשלוף אותם
@@ -53,7 +48,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         if (codeError) {
           console.error('Error fetching products by code:', codeError);
         } else if (productsByCode && productsByCode.length > 0) {
-          console.log(`Found ${productsByCode.length} products by code:`, productsByCode.map(p => `${p.product_name} (${p.store_chain})`));
+          console.log(`Found ${productsByCode.length} products by code`);
           
           // דיבוג: בדוק אילו רשתות קיימות עבור מוצרים אלה
           const chains = new Set(productsByCode.map(p => p.store_chain));
@@ -63,15 +58,14 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         }
       }
 
-      // אם יש לנו מוצרים ללא קוד מוצר, נשלוף אותם לפי שם
+      // שינוי משמעותי: עבור כל מוצר ללא קוד, נבצע חיפוש נפרד וגם נעלה את הלימיט
       if (nameSearchTerms.length > 0) {
-        // חשוב: הגדרה כללית יותר - אנחנו רוצים להתאים כמה שיותר מוצרים
         const nameProducts = [];
         
         for (const searchTerm of nameSearchTerms) {
           console.log(`Searching for products with name containing: "${searchTerm}"`);
           
-          // שינוי חשוב: לא מגבילים את התוצאות לפי סניף אלא מביאים מכל הסניפים
+          // שינוי משמעותי: הגדלת הלימיט ל-500
           const { data: productsByName, error: nameError } = await supabase
             .from('store_products')
             .select(`
@@ -88,7 +82,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
               )
             `)
             .ilike('product_name', `%${searchTerm}%`)
-            .limit(250); // מגדילים את הלימיט כדי לקבל יותר תוצאות
+            .limit(500); // הגדלנו את הלימיט משמעותית
           
           if (nameError) {
             console.error(`Error fetching products for term "${searchTerm}":`, nameError);
@@ -97,6 +91,33 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             console.log(`Found ${productsByName.length} products for term "${searchTerm}" in chains:`, storeChains);
             nameProducts.push(...productsByName);
           } else {
+            // ניסיון נוסף עם חיפוש יותר כללי - אולי נמצא משהו
+            const words = searchTerm.split(/\s+/).filter(word => word.length > 3);
+            for (const word of words) {
+              const { data: productsByWord, error: wordError } = await supabase
+                .from('store_products')
+                .select(`
+                  product_code,
+                  product_name,
+                  price,
+                  store_chain,
+                  store_id,
+                  branch_mapping_id,
+                  branch_mappings (
+                    source_chain,
+                    source_branch_id,
+                    source_branch_name
+                  )
+                `)
+                .ilike('product_name', `%${word}%`)
+                .limit(300);
+              
+              if (!wordError && productsByWord && productsByWord.length > 0) {
+                console.log(`Found ${productsByWord.length} products for word "${word}"`);
+                nameProducts.push(...productsByWord);
+              }
+            }
+            
             console.log(`No products found for term "${searchTerm}"`);
           }
         }
@@ -106,12 +127,20 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           const nameChains = new Set(nameProducts.map(p => p.store_chain));
           console.log('Chains found for name search:', [...nameChains]);
           
-          // מסיר כפילויות
-          const existingCodes = new Set(products.map(p => `${p.product_code}-${p.store_chain}`));
-          const uniqueProductsByName = nameProducts.filter(p => !existingCodes.has(`${p.product_code}-${p.store_chain}`));
+          // הסרת כפילויות
+          const existingProductsMap = new Map(
+            products.map(p => [`${p.product_code}-${p.store_chain}-${p.store_id}`, p])
+          );
           
-          products = [...products, ...uniqueProductsByName];
-          console.log(`Added ${uniqueProductsByName.length} unique products by name search`);
+          for (const product of nameProducts) {
+            const key = `${product.product_code}-${product.store_chain}-${product.store_id}`;
+            if (!existingProductsMap.has(key)) {
+              existingProductsMap.set(key, product);
+            }
+          }
+          
+          products = Array.from(existingProductsMap.values());
+          console.log(`Total combined unique products: ${products.length}`);
         }
       }
 
@@ -147,8 +176,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       return storesWithItems;
     },
     enabled: items.length > 0,
-    refetchInterval: false, // שינוי ל-false כדי למנוע טעינה אוטומטית מחדש
-    retry: 1, // מנסה רק פעם אחת נוספת במקרה של שגיאה
-    staleTime: 5 * 60 * 1000, // 5 דקות - כך שהמידע יישאר תקף זמן סביר
+    refetchInterval: false,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
 };
