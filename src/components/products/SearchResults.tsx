@@ -1,77 +1,159 @@
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { Store, Plus, MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PriceComparison } from './PriceComparison';
+import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatCurrency } from "@/lib/utils";
+interface SearchResult {
+  product_code?: string;
+  product_name?: string;
+  price?: number;
+  price_update_date?: string;
+  store_chain?: string;
+  store_id?: string;
+  store_name?: string;
+  store_address?: string;
+  manufacturer?: string;
+}
 
 interface SearchResultsProps {
-  results: Array<{
-    id: string;
-    product_name: string;
-    product_code?: string;
-    price?: number;
-    store_chain?: string;
-  }>;
-  isLoading: boolean;
-  onSelect: (result: any) => void;
+  results: SearchResult[];
+  isLoading?: boolean;
+  onSelect?: (result: SearchResult) => void;
 }
 
 export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsProps) => {
+  const { data: branchInfo } = useQuery({
+    queryKey: ['branch-mappings', results.map(r => `${r.store_chain}-${r.store_id}`).join(',')],
+    queryFn: async () => {
+      if (!results.length) return {};
+      
+      const { data: mappings } = await supabase
+        .from('branch_mappings')
+        .select('id, source_chain, source_branch_id, source_branch_name, branch_id');
+
+      if (!mappings) return {};
+
+      const branchIds = mappings.map(m => m.branch_id).filter(Boolean);
+      const { data: branches } = await supabase
+        .from('store_branches')
+        .select(`
+          id,
+          name,
+          address,
+          chain_id,
+          store_chains (
+            id,
+            name
+          )
+        `)
+        .in('id', branchIds);
+
+      return mappings.reduce((acc, mapping) => {
+        const key = `${mapping.source_chain}-${mapping.source_branch_id}`;
+        const branch = branches?.find(b => b.id === mapping.branch_id);
+        
+        acc[key] = {
+          branchName: branch?.name || mapping.source_branch_name || '',
+          branchAddress: branch?.address || '',
+          chainName: branch?.store_chains?.name || mapping.source_chain
+        };
+        return acc;
+      }, {} as Record<string, { branchName: string; branchAddress: string; chainName: string; }>);
+    },
+    enabled: results.length > 0
+  });
+
+  const groupedResults = results.reduce((acc, result) => {
+    if (!result.product_code) return acc;
+    if (!acc[result.product_code]) {
+      acc[result.product_code] = [];
+    }
+    
+    const lookupKey = `${result.store_chain}-${result.store_id}`;
+    const storeDetails = branchInfo?.[lookupKey] || {
+      branchName: result.store_name || '',
+      branchAddress: result.store_address || '',
+      chainName: result.store_chain || ''
+    };
+
+    const enrichedResult = {
+      ...result,
+      store_chain: storeDetails.chainName,
+      store_name: storeDetails.branchName,
+      store_address: storeDetails.branchAddress
+    };
+    
+    acc[result.product_code].push(enrichedResult);
+    return acc;
+  }, {} as Record<string, SearchResult[]>);
+
   if (isLoading) {
     return (
-      <Card className="absolute top-full left-0 right-0 mt-1 z-10 shadow-lg max-h-64 overflow-hidden">
-        <div className="p-4 text-center text-muted-foreground">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto"></div>
-          טוען...
-        </div>
-      </Card>
+      <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border shadow-lg p-4" dir="rtl">
+        <div className="text-center text-muted-foreground">טוען...</div>
+      </div>
     );
   }
 
-  if (results.length === 0) {
-    return (
-      <Card className="absolute top-full left-0 right-0 mt-1 z-10 shadow-lg">
-        <div className="p-4 text-center text-muted-foreground">
-          לא נמצאו תוצאות
-        </div>
-      </Card>
-    );
-  }
+  if (!results.length) return null;
 
   return (
-    <Card className="absolute top-full left-0 right-0 mt-1 z-10 shadow-lg">
-      <ScrollArea className="max-h-64">
-        <div className="p-1">
-          {results.map((result) => (
-            <div
-              key={`${result.id}-${result.product_code}`}
-              className="p-2 hover:bg-muted rounded-md cursor-pointer flex justify-between items-center"
-              onClick={() => {
-                console.log('Selecting product:', result);
-                onSelect(result);
-              }}
-            >
-              <div className="flex flex-col">
-                <div className="font-medium">{result.product_name}</div>
-                {result.product_code && (
-                  <div className="text-xs text-muted-foreground">
-                    קוד: {result.product_code}
+    <div className="absolute z-10 mt-1 w-full bg-white rounded-lg border shadow-lg max-h-96 overflow-auto" dir="rtl">
+      {Object.entries(groupedResults).map(([itemCode, items]) => {
+        const mainItem = items[0];
+        
+        const prices = items.map(item => ({
+          store_chain: item.store_chain || '',
+          store_id: item.store_id || '',
+          store_name: item.store_name || '',
+          store_address: item.store_address || '',
+          price: item.price || 0,
+          price_update_date: item.price_update_date || new Date().toISOString()
+        }));
+
+        return (
+          <div
+            key={itemCode}
+            className="p-3 hover:bg-gray-50 border-b last:border-b-0"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="space-y-1">
+                <div className="font-medium">{mainItem.product_name}</div>
+                {mainItem.price_update_date && (
+                  <div className="text-sm text-muted-foreground">
+                    עודכן: {format(new Date(mainItem.price_update_date), 'dd/MM/yyyy', { locale: he })}
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground">
+                  מק״ט: {mainItem.product_code}
+                </div>
+                {mainItem.manufacturer && (
+                  <div className="text-sm text-muted-foreground">
+                    יצרן: {mainItem.manufacturer}
                   </div>
                 )}
               </div>
-              {result.price && (
-                <div className="text-sm font-semibold">
-                  {formatCurrency(result.price)}
-                </div>
-              )}
-              {result.store_chain && (
-                <div className="text-xs text-muted-foreground mr-2">
-                  {result.store_chain}
-                </div>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onSelect?.(mainItem)}
+                className="shrink-0"
+              >
+                <Plus className="h-4 w-4 ml-2" />
+                הוסף לרשימה
+              </Button>
             </div>
-          ))}
-        </div>
-      </ScrollArea>
-    </Card>
+            
+            <div className="mt-4">
+              <PriceComparison prices={prices} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 };

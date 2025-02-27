@@ -21,7 +21,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     const total = comparison.items.reduce((sum, item) => {
       if (item.isAvailable && item.price !== null) {
         const itemTotal = item.price * (item.quantity || 1);
-        console.log(`Item calculation - Name: ${item.name}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
+        console.log(`Item calculation - Name: ${item.name}, Code: ${item.product_code}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
         return sum + itemTotal;
       }
       return sum;

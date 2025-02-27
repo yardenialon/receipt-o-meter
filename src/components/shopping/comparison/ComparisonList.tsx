@@ -1,4 +1,3 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StoreCard } from "./StoreCard";
 import { StoreComparison } from "@/types/shopping";

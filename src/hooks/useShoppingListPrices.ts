@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ShoppingListItem, StoreComparison } from '@/types/shopping';
@@ -6,7 +5,7 @@ import { groupProductsByStore, processStoreComparisons } from '@/utils/shopping/
 
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
-    queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}-${i.product_code || ''}`).join(',')],
+    queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}`).join(',')],
     queryFn: async () => {
       if (!items.length) return [];
 
@@ -15,78 +14,30 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       console.log('Active items to compare:', activeItems);
 
-      // קודם חפש התאמות מדויקות לפי קוד מוצר אם קיים
-      const itemsWithProductCode = activeItems.filter(item => item.product_code);
-      const itemsWithoutProductCode = activeItems.filter(item => !item.product_code);
-      
-      let productMatches = [];
-      
-      // חיפוש לפי קוד מוצר
-      if (itemsWithProductCode.length > 0) {
-        const { data: exactMatches, error: exactMatchError } = await supabase
-          .from('store_products')
-          .select('product_code, product_name')
-          .in('product_code', itemsWithProductCode.map(item => item.product_code));
-          
-        if (exactMatchError) {
-          console.error('Error finding exact matches:', exactMatchError);
-        } else if (exactMatches) {
-          productMatches = [...productMatches, ...exactMatches];
-          console.log('Found exact product matches:', exactMatches.length);
-        }
-      }
-      
-      // חיפוש לפי שם מוצר עבור פריטים ללא קוד מוצר - נשפר את החיפוש להיות רחב יותר
-      if (itemsWithoutProductCode.length > 0) {
-        // יצירת תנאי חיפוש עבור כל הפריטים
-        const searchTerms = itemsWithoutProductCode.map(item => {
-          // פירוק שם המוצר למילים משמעותיות (מעל 2 תווים)
-          const words = item.name.split(' ').filter(word => word.length > 2);
-          
-          // יצירת תנאי חיפוש עבור כל מילה משמעותית
-          const wordConditions = words
-            .map(word => `product_name.ilike.%${word}%`)
-            .join(',');
-          
-          return `(${wordConditions})`;
-        }).join(',');
-        
-        const { data: nameMatches, error: nameMatchError } = await supabase
-          .from('store_products')
-          .select('product_code, product_name')
-          .or(searchTerms);
-          
-        if (nameMatchError) {
-          console.error('Error finding name matches:', nameMatchError);
-        } else if (nameMatches) {
-          console.log('Found name-based product matches:', nameMatches.length);
-          
-          // סינון כפילויות
-          const existingCodes = new Set(productMatches.map(match => match.product_code));
-          const uniqueNameMatches = nameMatches.filter(match => !existingCodes.has(match.product_code));
-          
-          productMatches = [...productMatches, ...uniqueNameMatches];
-        }
+      const { data: productMatches, error: matchError } = await supabase
+        .from('store_products')
+        .select('product_code, product_name')
+        .or(activeItems.map(item => `product_name.ilike.%${item.name}%`).join(','));
+
+      if (matchError) {
+        console.error('Error finding item matches:', matchError);
+        throw matchError;
       }
 
-      if (!productMatches.length) {
+      if (!productMatches?.length) {
         console.log('No matching products found');
         return [];
       }
 
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
-      console.log('Found product codes for lookup:', productCodes.length);
+      console.log('Found product codes:', productCodes);
 
-      // נגדיל את מספר תוצאות הערפול כדי לקבל יותר מוצרים מהדאטאבייס
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
           product_code,
           product_name,
           price,
-          branch_mapping_id,
-          store_chain,
-          store_id,
           branch_mappings (
             source_chain,
             source_branch_id,
@@ -105,7 +56,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      console.log('Found products with prices:', products.length);
+      console.log('Found products with mappings:', products);
 
       const productsByStore = groupProductsByStore(products);
       const storesWithItems = processStoreComparisons(

@@ -1,4 +1,3 @@
-
 import { Card } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -30,7 +29,7 @@ export default function ShoppingList() {
 
   // Get price comparisons for all active items across all lists
   const allItems = lists?.flatMap(list => list.shopping_list_items) || [];
-  const { data: priceComparisons, isLoading: isPriceComparisonLoading } = useShoppingListPrices(allItems);
+  const { data: priceComparisons } = useShoppingListPrices(allItems);
 
   const createList = useMutation({
     mutationFn: async () => {
@@ -49,8 +48,7 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('רשימה חדשה נוצרה בהצלחה');
     },
-    onError: (error) => {
-      console.error('Error creating list:', error);
+    onError: () => {
       toast.error('אירעה שגיאה ביצירת הרשימה');
     },
   });
@@ -68,8 +66,7 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('הרשימה נמחקה בהצלחה');
     },
-    onError: (error) => {
-      console.error('Error deleting list:', error);
+    onError: () => {
       toast.error('אירעה שגיאה במחיקת הרשימה');
     },
   });
@@ -89,10 +86,6 @@ export default function ShoppingList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
     },
-    onError: (error) => {
-      console.error('Error toggling item:', error);
-      toast.error('אירעה שגיאה בעדכון הפריט');
-    },
   });
 
   const deleteItem = useMutation({
@@ -108,63 +101,36 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('פריט נמחק בהצלחה');
     },
-    onError: (error) => {
-      console.error('Error deleting item:', error);
+    onError: () => {
       toast.error('אירעה שגיאה במחיקת הפריט');
     },
   });
 
   const addItem = useMutation({
-    mutationFn: async ({ listId, name, product_code }: { listId: string; name: string; product_code?: string }) => {
-      console.log('Adding item:', { listId, name, product_code });
-      if (!name || name.trim() === '') {
-        throw new Error('שם המוצר לא יכול להיות ריק');
-      }
-
+    mutationFn: async ({ listId, name }: { listId: string; name: string }) => {
       const { data, error } = await supabase
         .from('shopping_list_items')
-        .insert([{ 
-          list_id: listId, 
-          name: name.trim(), 
-          product_code: product_code || null 
-        }])
+        .insert([{ list_id: listId, name }])
         .select()
         .single();
       
-      if (error) {
-        console.error('Supabase error adding item:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('פריט נוסף בהצלחה');
     },
-    onError: (error) => {
-      console.error('Error adding item:', error);
+    onError: () => {
       toast.error('אירעה שגיאה בהוספת הפריט');
     },
   });
 
   const handleAddProductToList = (listId: string, product: any) => {
-    console.log('Product selected for list:', product);
-    if (!product) {
-      toast.error('לא ניתן להוסיף מוצר ריק');
-      return;
-    }
-
-    try {
-      addItem.mutate({
-        listId,
-        name: product.name || product.product_name || '',
-        product_code: product.product_code || product.code
-      });
-    } catch (error) {
-      console.error('Error in handleAddProductToList:', error);
-      toast.error('אירעה שגיאה בהוספת הפריט');
-    }
+    addItem.mutate({
+      listId,
+      name: product.name
+    });
   };
 
   if (isLoading) {
@@ -203,10 +169,7 @@ export default function ShoppingList() {
         <div className="space-y-8 sticky top-8 px-4 md:px-0">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">השוואת מחירים כוללת</h2>
-            <ShoppingListPriceComparison 
-              comparisons={priceComparisons || []} 
-              isLoading={isPriceComparisonLoading}
-            />
+            <ShoppingListPriceComparison comparisons={priceComparisons || []} />
           </Card>
         </div>
       </div>
