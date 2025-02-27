@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { calculateDistance, parseCoordinates } from '@/utils/distance';
@@ -28,20 +29,48 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
 
     console.log('Raw prices:', prices);
 
-    let pricesWithDistance = prices.map(price => {
+    // נרמל את רשימת המחירים - נסיר כפילויות של אותה רשת
+    // בחנויות ספציפיות נשמור על מחירים זולים יותר
+    const normalizedPrices = new Map<string, StorePrice>();
+    
+    prices.forEach(price => {
       // נרמול שמות רשתות
       const normalizedChain = price.store_chain.toLowerCase().trim();
       let displayChain = price.store_chain;
       
+      // נרמול שמות רשתות ידועות
       if (
         normalizedChain.includes('yochananof') || 
         normalizedChain.includes('יוחננוף') ||
         normalizedChain.includes('יוחנונוף') ||
-        normalizedChain.includes('יוחננוב')
+        normalizedChain.includes('יוחננוב') ||
+        normalizedChain.includes('טוב טעם')
       ) {
         displayChain = 'יוחננוף';
+      } else if (
+        normalizedChain.includes('shufersal') ||
+        normalizedChain.includes('שופרסל')
+      ) {
+        displayChain = 'שופרסל';
+      } else if (
+        normalizedChain.includes('רמי לוי') ||
+        normalizedChain.includes('rami levy')
+      ) {
+        displayChain = 'רמי לוי';
       }
+      
+      const storeKey = `${displayChain}-${price.store_id || 'unknown'}`;
+      
+      // אם אין מחיר קודם, או שיש מחיר זול יותר, שמור את החדש
+      if (!normalizedPrices.has(storeKey) || normalizedPrices.get(storeKey)!.price > price.price) {
+        normalizedPrices.set(storeKey, {
+          ...price,
+          store_chain: displayChain
+        });
+      }
+    });
 
+    let pricesWithDistance = Array.from(normalizedPrices.values()).map(price => {
       let distance = null;
       if (location && price.store_address) {
         const storeCoords = parseCoordinates(price.store_address);
@@ -54,7 +83,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
           );
         }
       }
-      return { ...price, distance, store_chain: displayChain };
+      return { ...price, distance };
     });
 
     if (location) {

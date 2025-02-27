@@ -41,6 +41,11 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       'שיווק השקמה', 'רמי לוי שיווק השיקמה', 'רמי לוי סניף'
     ];
 
+    const shufersalVariations = [
+      'שופרסל', 'shufersal', 'שופרסל אונליין',
+      'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
+    ];
+
     if (yochananofVariations.some(variant => 
       normalizedStoreName.includes(variant.toLowerCase()) || 
       comparison.storeName?.includes(variant)
@@ -51,6 +56,11 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       comparison.storeName?.includes(variant)
     )) {
       displayName = 'רמי לוי';
+    } else if (shufersalVariations.some(variant =>
+      normalizedStoreName.includes(variant.toLowerCase()) ||
+      comparison.storeName?.includes(variant)
+    )) {
+      displayName = 'שופרסל';
     }
 
     return {

@@ -39,6 +39,9 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
 
       if (!productCodes.length) return {};
 
+      console.log('Fetching price comparisons for product codes:', productCodes);
+      console.log('Current store name:', storeName);
+
       const { data, error } = await supabase
         .from('store_products')
         .select('product_code, price, store_chain, store_id')
@@ -49,18 +52,37 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
         return {};
       }
 
+      console.log('Raw price data from database:', data);
+
       // Group prices by product code
-      return data.reduce((acc, item) => {
+      const result = data.reduce((acc, item) => {
         if (!acc[item.product_code]) {
           acc[item.product_code] = [];
         }
+        
+        // נרמול שמות רשתות
+        let normalizedStoreName = item.store_chain?.toLowerCase().trim();
+        let displayName = item.store_chain;
+        
+        // יוחננוף וטוב טעם הם למעשה אותה רשת
+        if (normalizedStoreName && 
+            (normalizedStoreName.includes('יוחננוף') || 
+             normalizedStoreName.includes('טוב טעם'))) {
+          displayName = 'יוחננוף';
+        }
+        
         acc[item.product_code].push({
           price: item.price,
-          store_chain: item.store_chain,
+          store_chain: displayName || item.store_chain,
           store_id: item.store_id
         });
+        
         return acc;
       }, {} as Record<string, PriceComparison[]>);
+      
+      console.log('Processed price comparisons:', result);
+      
+      return result;
     },
     enabled: items.some(item => item.product_code)
   });
@@ -69,16 +91,32 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
     <div className="space-y-4 mb-4">
       {items.map((item) => {
         // Find cheaper prices for this item if it has a product code
-        let cheaperPrice: PriceComparison | null = null;
+        let cheaperPrices: PriceComparison[] = [];
         if (item.product_code && priceComparisons?.[item.product_code]) {
           const prices = priceComparisons[item.product_code];
           const currentPrice = item.price / item.quantity; // Price per unit
           
-          // Find the cheapest price from other stores
-          cheaperPrice = prices
-            .filter(p => p.store_chain !== storeName) // Exclude current store
-            .sort((a, b) => a.price - b.price)
-            .find(p => p.price < currentPrice) || null;
+          // נרמל את שם החנות הנוכחית לצורך השוואה
+          let normalizedCurrentStore = storeName?.toLowerCase().trim() || '';
+          
+          // מצא את כל המחירים הזולים יותר בחנויות אחרות
+          cheaperPrices = prices
+            .filter(p => {
+              // נרמול שם החנות להשוואה
+              const pStoreLower = p.store_chain.toLowerCase().trim();
+              
+              // אם החנות הנוכחית היא "יוחננוף" או "טוב טעם", נתייחס אליהן כאותה חנות
+              if ((normalizedCurrentStore.includes('יוחננוף') || 
+                   normalizedCurrentStore.includes('טוב טעם')) &&
+                  (pStoreLower.includes('יוחננוף') || 
+                   pStoreLower.includes('טוב טעם'))) {
+                return false; // אותה רשת
+              }
+              
+              // סינון רגיל - רק חנויות אחרות עם מחיר זול יותר
+              return p.store_chain !== storeName && p.price < currentPrice;
+            })
+            .sort((a, b) => a.price - b.price); // מיון לפי מחיר עולה
         }
 
         return (
@@ -104,8 +142,12 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
               </div>
             </div>
 
-            {cheaperPrice && (
-              <Alert variant="warning" className="bg-amber-50 text-amber-900 border-amber-200">
+            {cheaperPrices.length > 0 && cheaperPrices.map((cheaperPrice, index) => (
+              <Alert 
+                key={`${cheaperPrice.store_chain}-${cheaperPrice.store_id}-${index}`}
+                variant="warning" 
+                className="bg-amber-50 text-amber-900 border-amber-200 mb-2"
+              >
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-sm">
                   נמצא מחיר זול יותר ב{cheaperPrice.store_chain}
@@ -118,7 +160,7 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
                   </span>
                 </AlertDescription>
               </Alert>
-            )}
+            ))}
           </div>
         );
       })}
