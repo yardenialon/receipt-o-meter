@@ -155,18 +155,29 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
   // סינון סלים שלמים (כל הפריטים זמינים)
   const completeBaskets = normalizedComparisons.filter(store => 
-    store.items.every(item => item.isAvailable)
+    store.availableItemsCount === store.items.length
   );
 
   console.log('Complete baskets:', completeBaskets);
 
-  // חישוב חסכון
-  const cheapestTotal = completeBaskets.length > 0 ? 
-    Math.min(...completeBaskets.map(c => c.total)) : 0;
-  const mostExpensiveTotal = completeBaskets.length > 0 ? 
-    Math.max(...completeBaskets.map(c => c.total)) : 0;
-  const potentialSavings = mostExpensiveTotal - cheapestTotal;
-  const savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+  // חישוב חסכון - רק עבור סלים שלמים
+  let cheapestTotal = 0;
+  let mostExpensiveTotal = 0;
+  let potentialSavings = 0;
+  let savingsPercentage = "0";
+  
+  if (completeBaskets.length > 0) {
+    cheapestTotal = Math.min(...completeBaskets.map(c => c.total));
+    mostExpensiveTotal = Math.max(...completeBaskets.map(c => c.total));
+    potentialSavings = mostExpensiveTotal - cheapestTotal;
+    savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+  } else {
+    // אם אין סלים שלמים, חשב ערכים עבור כל הסלים (אבל ציין שההשוואה חלקית)
+    if (normalizedComparisons.length > 0) {
+      cheapestTotal = Math.min(...normalizedComparisons.map(c => c.total));
+      mostExpensiveTotal = Math.max(...normalizedComparisons.map(c => c.total));
+    }
+  }
 
   return (
     <div className="space-y-6">

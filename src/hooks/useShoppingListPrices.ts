@@ -21,9 +21,12 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       
       // שליפת מוצרים לפי שם (עבור מוצרים ללא קוד)
       const itemsWithoutProductCode = activeItems.filter(item => !item.product_code);
-      const nameSearchConditions = itemsWithoutProductCode
-        .map(item => `product_name.ilike.%${item.name}%`)
-        .join(',');
+      const nameSearchTerms = itemsWithoutProductCode.map(item => item.name.toLowerCase().trim());
+      
+      // נכין תנאי חיפוש לפי שם מוצר
+      const nameSearchConditions = nameSearchTerms.length > 0 
+        ? nameSearchTerms.map(term => `product_name.ilike.%${term}%`).join(',')
+        : '';
 
       let products = [];
       
@@ -50,40 +53,50 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         if (codeError) {
           console.error('Error fetching products by code:', codeError);
         } else if (productsByCode && productsByCode.length > 0) {
-          console.log(`Found ${productsByCode.length} products by code:`, productsByCode);
+          console.log(`Found ${productsByCode.length} products by code:`, productsByCode.map(p => `${p.product_name} (${p.store_chain})`));
           products = productsByCode;
         }
       }
 
       // אם יש לנו מוצרים ללא קוד מוצר, נשלוף אותם לפי שם
-      if (itemsWithoutProductCode.length > 0) {
-        const { data: productsByName, error: nameError } = await supabase
-          .from('store_products')
-          .select(`
-            product_code,
-            product_name,
-            price,
-            store_chain,
-            store_id,
-            branch_mapping_id,
-            branch_mappings (
-              source_chain,
-              source_branch_id,
-              source_branch_name
-            )
-          `)
-          .or(nameSearchConditions);
-
-        if (nameError) {
-          console.error('Error fetching products by name:', nameError);
-        } else if (productsByName && productsByName.length > 0) {
-          console.log(`Found ${productsByName.length} products by name`);
+      if (nameSearchTerms.length > 0) {
+        // נפצל את החיפוש לכמה בקשות כדי להגדיל את הסיכוי למצוא התאמות
+        const nameProducts = [];
+        
+        for (const searchTerm of nameSearchTerms) {
+          const { data: productsByName, error: nameError } = await supabase
+            .from('store_products')
+            .select(`
+              product_code,
+              product_name,
+              price,
+              store_chain,
+              store_id,
+              branch_mapping_id,
+              branch_mappings (
+                source_chain,
+                source_branch_id,
+                source_branch_name
+              )
+            `)
+            .ilike('product_name', `%${searchTerm}%`)
+            .limit(100); // מגביל כדי לא להחזיר יותר מדי תוצאות
           
+          if (nameError) {
+            console.error(`Error fetching products for term "${searchTerm}":`, nameError);
+          } else if (productsByName && productsByName.length > 0) {
+            console.log(`Found ${productsByName.length} products for term "${searchTerm}"`);
+            nameProducts.push(...productsByName);
+          }
+        }
+        
+        if (nameProducts.length > 0) {
           // נסיר כפילויות
-          const existingCodes = new Set(products.map(p => p.product_code));
-          const uniqueProductsByName = productsByName.filter(p => !existingCodes.has(p.product_code));
+          const existingCodes = new Set(products.map(p => `${p.product_code}-${p.store_chain}`));
+          const uniqueProductsByName = nameProducts.filter(p => !existingCodes.has(`${p.product_code}-${p.store_chain}`));
           
           products = [...products, ...uniqueProductsByName];
+          console.log(`Added ${uniqueProductsByName.length} unique products by name search`);
         }
       }
 
@@ -92,15 +105,17 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      console.log('Found products with prices:', products.length);
-
-      // בדיקת רשתות
-      const chains = new Set(products.map(p => normalizeChainName(p.store_chain || '')));
-      console.log('Found chains:', Array.from(chains));
+      // לוג של כל המוצרים לפי רשת כדי לראות מה נמצא
+      const storeChains = [...new Set(products.map(p => normalizeChainName(p.store_chain || '')))];
+      console.log('Found products in these chains:', storeChains);
+      storeChains.forEach(chain => {
+        const chainProducts = products.filter(p => normalizeChainName(p.store_chain || '') === chain);
+        console.log(`Chain ${chain}: ${chainProducts.length} products`);
+      });
 
       // נשלח את המוצרים לעיבוד
       const productsByStore = groupProductsByStore(products);
-      console.log('Products grouped by store:', productsByStore);
+      console.log('Products grouped by store:', Object.keys(productsByStore));
       
       const storesWithItems = processStoreComparisons(
         productsByStore,
@@ -108,25 +123,13 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         products
       );
 
-      // מיון החנויות: קודם אלו עם כל המוצרים, ואז לפי מחיר
-      const sortedComparisons = storesWithItems.sort((a, b) => {
-        const aComplete = a.availableItemsCount === activeItems.length;
-        const bComplete = b.availableItemsCount === activeItems.length;
-        
-        if (aComplete !== bComplete) {
-          return bComplete ? 1 : -1;
-        }
-        
-        return a.total - b.total;
-      });
-
-      console.log('Final sorted comparisons:', sortedComparisons);
+      console.log('Final stores with items:', storesWithItems.length);
       
-      return sortedComparisons;
+      return storesWithItems;
     },
     enabled: items.length > 0,
-    refetchInterval: 60000,
-    retry: 3,
-    staleTime: 30000,
+    refetchInterval: false, // שינוי ל-false כדי למנוע טעינה אוטומטית מחדש
+    retry: 1, // מנסה רק פעם אחת נוספת במקרה של שגיאה
+    staleTime: 5 * 60 * 1000, // 5 דקות - כך שהמידע יישאר תקף זמן סביר
   });
 };

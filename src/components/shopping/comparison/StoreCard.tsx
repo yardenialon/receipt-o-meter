@@ -21,6 +21,7 @@ interface StoreCardProps {
       store_id?: string | null;
     }>;
     branches?: Record<string, string[]>;
+    availableItemsCount: number;
   };
   isComplete: boolean;
   isCheapest: boolean;
@@ -47,6 +48,7 @@ export const StoreCard = ({
 }: StoreCardProps) => {
   const unavailableItems = comparison.items.filter(item => !item.isAvailable);
   const availableItems = comparison.items.filter(item => item.isAvailable);
+  const totalItems = comparison.items.length;
   
   // חישוב מספר סניפים
   const branchCount = comparison.branches ? 
@@ -106,7 +108,7 @@ export const StoreCard = ({
                   סניף {comparison.storeId}
                 </Badge>
               )}
-              {isCheapest && (
+              {isCheapest && isComplete && (
                 <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
                   המחיר הזול ביותר
                 </Badge>
@@ -117,7 +119,9 @@ export const StoreCard = ({
               {unavailableItems.length > 0 ? (
                 <div className="flex items-center gap-1 text-amber-600">
                   <AlertCircle className="h-4 w-4" />
-                  <span>{unavailableItems.length} פריטים חסרים</span>
+                  <span>
+                    {comparison.availableItemsCount} מתוך {totalItems} פריטים זמינים
+                  </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1 text-green-600">
@@ -126,9 +130,19 @@ export const StoreCard = ({
                 </div>
               )}
             </div>
+            
+            {!isComplete && (
+              <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50/50">
+                המחיר מחושב רק עבור הפריטים הזמינים
+              </Badge>
+            )}
           </div>
 
-          <Progress value={progressValue} className="h-2" />
+          <Progress 
+            value={(comparison.availableItemsCount / totalItems) * 100} 
+            className="h-2"
+            color={isComplete ? "bg-green-600" : "bg-amber-500"}
+          />
 
           <div className="space-y-2 divide-y">
             {availableItems.map((item, itemIndex) => (
