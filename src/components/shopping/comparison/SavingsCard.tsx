@@ -1,5 +1,6 @@
+
 import { Card } from "@/components/ui/card";
-import { TrendingDown } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SavingsCardProps {
@@ -9,22 +10,31 @@ interface SavingsCardProps {
   storeId: string | null;
 }
 
-export const SavingsCard = ({ potentialSavings, savingsPercentage, storeName, storeId }: SavingsCardProps) => {
+export const SavingsCard = ({ 
+  potentialSavings, 
+  savingsPercentage, 
+  storeName, 
+  storeId 
+}: SavingsCardProps) => {
+  
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.3 }}
     >
-      <Card className="p-6 bg-gradient-to-br from-green-50 to-white border-green-100">
-        <div className="flex items-center gap-3 text-green-700">
-          <div className="p-3 bg-green-100 rounded-full">
-            <TrendingDown className="h-6 w-6" />
+      <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-green-100 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-green-100 p-2 rounded-full">
+            <Sparkles className="h-6 w-6 text-green-600" />
           </div>
           <div>
-            <h4 className="text-xl font-semibold">חיסכון פוטנציאלי</h4>
-            <p className="text-sm">
-              ניתן לחסוך עד ₪{potentialSavings.toFixed(2)} ({savingsPercentage}%) בקנייה ברשת {storeName}
+            <h3 className="text-lg font-semibold text-green-800">
+              חיסכון פוטנציאלי: ₪{potentialSavings.toFixed(2)}
+            </h3>
+            <p className="text-sm text-green-600">
+              חיסכון של {savingsPercentage}% בקנייה ברשת {storeName}
               {storeId && ` (סניף ${storeId})`}
             </p>
           </div>

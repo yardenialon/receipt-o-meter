@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, MapPin } from "lucide-react";
@@ -120,6 +121,7 @@ export const StoreCard = ({
                 price={item.price}
                 quantity={item.quantity}
                 isAvailable={true}
+                matchedProduct={item.matchedProduct}
               />
             ))}
             
@@ -130,6 +132,7 @@ export const StoreCard = ({
                 price={item.price}
                 quantity={item.quantity}
                 isAvailable={false}
+                matchedProduct={item.matchedProduct}
               />
             ))}
           </div>
