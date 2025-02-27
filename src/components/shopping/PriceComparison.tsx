@@ -11,7 +11,7 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  console.log('Initial comparisons:', comparisons);
+  console.log('Initial comparisons received:', comparisons);
 
   const normalizedComparisons = comparisons.map(comparison => {
     let normalizedStoreName = comparison.storeName?.toLowerCase().trim() || '';
@@ -21,7 +21,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     const total = comparison.items.reduce((sum, item) => {
       if (item.isAvailable && item.price !== null) {
         const itemTotal = item.price * (item.quantity || 1);
-        console.log(`Item calculation - Name: ${item.name}, Code: ${item.product_code}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
+        console.log(`Item calculation - Name: ${item.name}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
         return sum + itemTotal;
       }
       return sum;
@@ -150,6 +150,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       </div>
     );
   }
+
+  console.log('Normalized comparisons:', normalizedComparisons);
 
   // סינון סלים שלמים (כל הפריטים זמינים)
   const completeBaskets = normalizedComparisons.filter(store => 

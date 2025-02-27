@@ -17,7 +17,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // שליפת מוצרים לפי קודי מוצר (אם קיימים)
       const itemsWithProductCode = activeItems.filter(item => item.product_code);
-      const productCodes = itemsWithProductCode.map(item => item.product_code).filter(Boolean);
+      const productCodes = itemsWithProductCode.map(item => item.product_code).filter(Boolean) as string[];
       
       // שליפת מוצרים לפי שם (עבור מוצרים ללא קוד)
       const itemsWithoutProductCode = activeItems.filter(item => !item.product_code);
@@ -29,6 +29,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       
       // אם יש לנו מוצרים עם קודי מוצר, נשלוף אותם
       if (productCodes.length > 0) {
+        console.log('Searching for products with codes:', productCodes);
         const { data: productsByCode, error: codeError } = await supabase
           .from('store_products')
           .select(`
@@ -49,7 +50,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         if (codeError) {
           console.error('Error fetching products by code:', codeError);
         } else if (productsByCode && productsByCode.length > 0) {
-          console.log(`Found ${productsByCode.length} products by code`);
+          console.log(`Found ${productsByCode.length} products by code:`, productsByCode);
           products = productsByCode;
         }
       }
@@ -99,6 +100,8 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
 
       // נשלח את המוצרים לעיבוד
       const productsByStore = groupProductsByStore(products);
+      console.log('Products grouped by store:', productsByStore);
+      
       const storesWithItems = processStoreComparisons(
         productsByStore,
         activeItems,
