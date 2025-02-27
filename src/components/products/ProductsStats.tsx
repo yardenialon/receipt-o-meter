@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Card } from "@/components/ui/card";
@@ -16,9 +15,9 @@ export const ProductsStats = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['products-import-stats'],
     queryFn: async () => {
-      // Get unique store chains with their branches from store_products table
+      // Get unique store chains with their branches from store_products_import table
       const { data: uniqueChains, error: chainsError } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('store_chain')
         .not('store_chain', 'is', null)
         .or('store_chain.eq.שופרסל,store_chain.eq.ויקטורי,store_chain.eq.מחסני השוק,store_chain.eq.קרפור');
@@ -30,7 +29,7 @@ export const ProductsStats = () => {
 
       // Get total products count
       const { count: totalProducts, error: countError } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('*', { count: 'exact', head: true });
 
       if (countError) {
@@ -40,9 +39,9 @@ export const ProductsStats = () => {
 
       // Get latest update time
       const { data: latestUpdate, error: updateError } = await supabase
-        .from('store_products')
-        .select('price_update_date')
-        .order('price_update_date', { ascending: false })
+        .from('store_products_import')
+        .select('PriceUpdateDate')
+        .order('PriceUpdateDate', { ascending: false })
         .limit(1);
 
       if (updateError) {
@@ -52,7 +51,7 @@ export const ProductsStats = () => {
 
       // Get store chains with their branches
       const { data: storeChains, error: branchesError } = await supabase
-        .from('store_products')
+        .from('store_products_import')
         .select('store_chain, store_id')
         .not('store_id', 'is', null)
         .or('store_chain.eq.שופרסל,store_chain.eq.ויקטורי,store_chain.eq.מחסני השוק,store_chain.eq.קרפור');
@@ -94,7 +93,7 @@ export const ProductsStats = () => {
       return {
         totalUniqueChains: allChains.size || processedChains.length,
         totalProducts: totalProducts || 0,
-        latestUpdate: latestUpdate?.[0]?.price_update_date,
+        latestUpdate: latestUpdate?.[0]?.PriceUpdateDate,
         storeChains: processedChains
       };
     },

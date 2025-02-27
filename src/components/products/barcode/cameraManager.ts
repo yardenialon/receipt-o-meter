@@ -1,4 +1,3 @@
-
 export const initializeCamera = async (videoRef: React.RefObject<HTMLVideoElement>) => {
   try {
     console.log('Initializing camera...');
