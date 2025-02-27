@@ -133,7 +133,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           );
           
           for (const product of nameProducts) {
-            const key = `${product.product_code}-${product.store_chain}-${product.store_id}`;
+            const key = `${product.product_code}-${product.store_chain}-${p.store_id}`;
             if (!existingProductsMap.has(key)) {
               existingProductsMap.set(key, product);
             }
