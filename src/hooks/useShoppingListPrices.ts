@@ -64,6 +64,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         const nameProducts = [];
         
         for (const searchTerm of nameSearchTerms) {
+          console.log(`Searching for products with name containing: "${searchTerm}"`);
           const { data: productsByName, error: nameError } = await supabase
             .from('store_products')
             .select(`
@@ -85,8 +86,11 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           if (nameError) {
             console.error(`Error fetching products for term "${searchTerm}":`, nameError);
           } else if (productsByName && productsByName.length > 0) {
-            console.log(`Found ${productsByName.length} products for term "${searchTerm}"`);
+            const storeChains = [...new Set(productsByName.map(p => p.store_chain))];
+            console.log(`Found ${productsByName.length} products for term "${searchTerm}" in chains:`, storeChains);
             nameProducts.push(...productsByName);
+          } else {
+            console.log(`No products found for term "${searchTerm}"`);
           }
         }
         
@@ -123,7 +127,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         products
       );
 
-      console.log('Final stores with items:', storesWithItems.length);
+      console.log('Final stores with items:', storesWithItems.length, storesWithItems.map(s => s.storeName));
       
       return storesWithItems;
     },

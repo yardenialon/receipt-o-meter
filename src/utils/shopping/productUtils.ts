@@ -309,19 +309,26 @@ export const processStoreComparisons = (
     return comparison;
   });
   
-  // !! החלק החשוב ביותר - לא מסננים חנויות שיש להן מוצרים חסרים
-  // במקום זאת, מיון מתוחכם שמראה קודם חנויות שלמות ורק אז חנויות חלקיות
-  const sortedComparisons = comparisons
-    .filter(comparison => comparison.availableItemsCount > 0) // רק חנויות עם מוצר זמין אחד לפחות
-    .sort((a, b) => {
-      // קודם כל סדר את החנויות לפי כמות הפריטים הזמינים (מהגבוה לנמוך)
-      if (a.availableItemsCount !== b.availableItemsCount) {
-        return b.availableItemsCount - a.availableItemsCount;
-      }
-      
-      // עבור חנויות עם אותה כמות פריטים, סדר לפי מחיר מהנמוך לגבוה
-      return a.total - b.total;
-    });
+  // !! חלק משמעותי - סינון החנויות שיש להן לפחות מוצר אחד זמין
+  // חשוב לוודא שהסינון לא מחמיר מדי
+  const filteredComparisons = comparisons.filter(comparison => {
+    // כל חנות עם לפחות מוצר אחד זמין תיכלל בהשוואה
+    console.log(`Filtering store ${comparison.storeName}, available items: ${comparison.availableItemsCount}`);
+    return comparison.availableItemsCount > 0;
+  });
+  
+  console.log('Filtered comparisons:', filteredComparisons.map(c => c.storeName));
+  
+  // מיון: קודם חנויות עם יותר פריטים זמינים, ואז לפי מחיר
+  const sortedComparisons = filteredComparisons.sort((a, b) => {
+    // קודם כל סדר לפי כמות פריטים זמינים (מהגבוה לנמוך)
+    if (a.availableItemsCount !== b.availableItemsCount) {
+      return b.availableItemsCount - a.availableItemsCount;
+    }
+    
+    // אם יש אותה כמות פריטים, סדר לפי מחיר כולל (מהנמוך לגבוה)
+    return a.total - b.total;
+  });
 
   console.log('Final sorted comparisons:', sortedComparisons.map(c => ({
     store: c.storeName,
