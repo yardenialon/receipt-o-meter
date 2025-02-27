@@ -192,7 +192,7 @@ export const processStoreComparisons = (
   console.log('Number of stores:', Object.keys(productsByStore).length);
   console.log('Number of active items:', activeItems.length);
 
-  // וודא שלכל רשת יש רשומה
+  // קריטי: וודא שלכל רשת יש רשומה
   const allChains = new Set<string>();
   productMatches.forEach(product => {
     if (product.store_chain) {
@@ -203,24 +203,15 @@ export const processStoreComparisons = (
   
   console.log('All chains found in products:', Array.from(allChains));
 
-  // אוסף מידע על מוצרים לפי קודים
-  const productCodeMap = new Map<string, Product[]>();
-  productMatches.forEach(product => {
-    if (!product.product_code) return;
-    
-    if (!productCodeMap.has(product.product_code)) {
-      productCodeMap.set(product.product_code, []);
-    }
-    productCodeMap.get(product.product_code)?.push(product);
-  });
-
-  // וודא שיש לנו רשומה לכל רשת
+  // חשוב מאוד: וודא שיש לנו רשומה לכל רשת שמופיעה במוצרים
   allChains.forEach(chainName => {
     if (!productsByStore[chainName]) {
       console.log(`Creating missing record for chain: ${chainName}`);
       
       // חיפוש מוצרים עבור הרשת הזו
-      const chainProducts = productMatches.filter(p => normalizeChainName(p.store_chain || '') === chainName);
+      const chainProducts = productMatches.filter(product => 
+        normalizeChainName(product.store_chain || '') === chainName
+      );
       
       if (chainProducts.length > 0) {
         const firstProduct = chainProducts[0];
@@ -236,6 +227,8 @@ export const processStoreComparisons = (
           availableItemsCount: 0,
           products: chainProducts
         };
+        
+        console.log(`Created new store comparison for ${chainName} with ${chainProducts.length} products`);
       }
     }
   });
