@@ -6,7 +6,7 @@ import { groupProductsByStore, processStoreComparisons } from '@/utils/shopping/
 
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
-    queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}`).join(',')],
+    queryKey: ['shopping-list-prices', items.map(i => `${i.name}-${i.quantity || 1}-${i.product_code || ''}`).join(',')],
     queryFn: async () => {
       if (!items.length) return [];
 
@@ -32,20 +32,40 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
           console.error('Error finding exact matches:', exactMatchError);
         } else if (exactMatches) {
           productMatches = [...productMatches, ...exactMatches];
+          console.log('Found exact product matches:', exactMatches.length);
         }
       }
       
-      // חיפוש לפי שם מוצר עבור פריטים ללא קוד מוצר
+      // חיפוש לפי שם מוצר עבור פריטים ללא קוד מוצר - נשפר את החיפוש להיות רחב יותר
       if (itemsWithoutProductCode.length > 0) {
+        // יצירת תנאי חיפוש עבור כל הפריטים
+        const searchTerms = itemsWithoutProductCode.map(item => {
+          // פירוק שם המוצר למילים משמעותיות (מעל 2 תווים)
+          const words = item.name.split(' ').filter(word => word.length > 2);
+          
+          // יצירת תנאי חיפוש עבור כל מילה משמעותית
+          const wordConditions = words
+            .map(word => `product_name.ilike.%${word}%`)
+            .join(',');
+          
+          return `(${wordConditions})`;
+        }).join(',');
+        
         const { data: nameMatches, error: nameMatchError } = await supabase
           .from('store_products')
           .select('product_code, product_name')
-          .or(itemsWithoutProductCode.map(item => `product_name.ilike.%${item.name}%`).join(','));
+          .or(searchTerms);
           
         if (nameMatchError) {
           console.error('Error finding name matches:', nameMatchError);
         } else if (nameMatches) {
-          productMatches = [...productMatches, ...nameMatches];
+          console.log('Found name-based product matches:', nameMatches.length);
+          
+          // סינון כפילויות
+          const existingCodes = new Set(productMatches.map(match => match.product_code));
+          const uniqueNameMatches = nameMatches.filter(match => !existingCodes.has(match.product_code));
+          
+          productMatches = [...productMatches, ...uniqueNameMatches];
         }
       }
 
@@ -55,8 +75,9 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       }
 
       const productCodes = [...new Set(productMatches.map(match => match.product_code))];
-      console.log('Found product codes:', productCodes);
+      console.log('Found product codes for lookup:', productCodes.length);
 
+      // נגדיל את מספר תוצאות הערפול כדי לקבל יותר מוצרים מהדאטאבייס
       const { data: products, error } = await supabase
         .from('store_products')
         .select(`
@@ -84,7 +105,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         return [];
       }
 
-      console.log('Found products with prices:', products);
+      console.log('Found products with prices:', products.length);
 
       const productsByStore = groupProductsByStore(products);
       const storesWithItems = processStoreComparisons(
