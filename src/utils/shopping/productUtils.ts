@@ -128,20 +128,21 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   return result;
 };
 
-// פונקציה משופרת לחיפוש מוצר מתאים
-const findBestProductMatch = (
+// פונקציה משופרת לחיפוש מוצרים מתאימים - החזרת מערך של כל המוצרים המתאימים
+const findMatchingProducts = (
   products: Product[] | undefined,
   itemName: string,
   productCode?: string | null
-): Product | undefined => {
-  if (!products || !products.length) return undefined;
+): Product[] => {
+  if (!products || !products.length) return [];
   
   // אם יש לנו קוד מוצר, נחפש התאמה מדויקת
   if (productCode) {
-    const exactCodeMatch = products.find(p => p.product_code === productCode);
-    if (exactCodeMatch) {
-      console.log(`Found exact match by product code for ${itemName}:`, exactCodeMatch.product_name);
-      return exactCodeMatch;
+    const exactCodeMatches = products.filter(p => p.product_code === productCode);
+    if (exactCodeMatches.length > 0) {
+      console.log(`Found ${exactCodeMatches.length} exact matches by product code for ${itemName}`);
+      // מיון לפי מחיר נמוך תחילה
+      return exactCodeMatches.sort((a, b) => a.price - b.price);
     }
   }
   
@@ -156,10 +157,9 @@ const findBestProductMatch = (
   });
   
   if (nameMatches.length > 0) {
-    // מיון התוצאות - העדפה למחיר נמוך יותר עבור התוצאה הראשונה
-    nameMatches.sort((a, b) => a.price - b.price);
-    console.log(`Found exact name match for ${itemName}:`, nameMatches[0].product_name);
-    return nameMatches[0];
+    // מיון התוצאות - העדפה למחיר נמוך יותר
+    console.log(`Found ${nameMatches.length} name matches for ${itemName}`);
+    return nameMatches.sort((a, b) => a.price - b.price);
   }
   
   // התאמה חלקית (מילים משותפות)
@@ -176,12 +176,11 @@ const findBestProductMatch = (
   
   if (partialMatches.length > 0) {
     // מיון תוצאות לפי מחיר
-    partialMatches.sort((a, b) => a.price - b.price);
-    console.log(`Found partial word match for ${itemName}:`, partialMatches[0].product_name);
-    return partialMatches[0];
+    console.log(`Found ${partialMatches.length} partial word matches for ${itemName}`);
+    return partialMatches.sort((a, b) => a.price - b.price);
   }
   
-  return undefined;
+  return [];
 };
 
 export const processStoreComparisons = (
@@ -203,6 +202,17 @@ export const processStoreComparisons = (
   });
   
   console.log('All chains found in products:', Array.from(allChains));
+
+  // אוסף מידע על מוצרים לפי קודים
+  const productCodeMap = new Map<string, Product[]>();
+  productMatches.forEach(product => {
+    if (!product.product_code) return;
+    
+    if (!productCodeMap.has(product.product_code)) {
+      productCodeMap.set(product.product_code, []);
+    }
+    productCodeMap.get(product.product_code)?.push(product);
+  });
 
   // וודא שיש לנו רשומה לכל רשת
   allChains.forEach(chainName => {
@@ -243,7 +253,8 @@ export const processStoreComparisons = (
         matchedProduct: '',
         quantity: item.quantity || 1,
         isAvailable: false,
-        product_code: item.product_code
+        product_code: item.product_code,
+        matchedProducts: [] // אתחול מערך המוצרים המתאימים
       })),
       total: 0,
       availableItemsCount: 0
@@ -255,34 +266,30 @@ export const processStoreComparisons = (
       return comparison;
     }
 
-    // עבור כל פריט ברשימה, מצא את המוצר הזול ביותר ברשת
+    // עבור כל פריט ברשימה, מצא את כל המוצרים המתאימים ברשת
     comparison.items.forEach((item, index) => {
-      // חפש רק מוצרים עם אותו קוד מוצר אם יש קוד מוצר
-      let relevantProducts = store.products;
-      
-      if (item.product_code) {
-        relevantProducts = store.products.filter(p => p.product_code === item.product_code);
-        console.log(`Found ${relevantProducts.length} products with code ${item.product_code} for item ${item.name}`);
-      }
-      
-      // מצא את המוצר הזול ביותר מבין ההתאמות
-      const matchingProduct = findBestProductMatch(
-        relevantProducts,
+      // חפש מוצרים מתאימים
+      const matchingProducts = findMatchingProducts(
+        store.products,
         item.name,
         item.product_code
       );
 
-      if (matchingProduct) {
-        console.log(`Found matching product for ${item.name} in chain ${store.storeName}:`, matchingProduct.product_name, matchingProduct.price);
+      if (matchingProducts.length > 0) {
+        console.log(`Found ${matchingProducts.length} matching products for ${item.name} in chain ${store.storeName}`);
+        
+        // שמור את המוצר הזול ביותר כמוצר הראשי
+        const cheapestProduct = matchingProducts[0];
         
         comparison.items[index] = {
           ...item,
-          price: matchingProduct.price,
-          matchedProduct: matchingProduct.product_name,
+          price: cheapestProduct.price,
+          matchedProduct: cheapestProduct.product_name,
           isAvailable: true,
-          product_code: matchingProduct.product_code,
-          store_id: matchingProduct.store_id,
-          store_chain: matchingProduct.store_chain
+          product_code: cheapestProduct.product_code,
+          store_id: cheapestProduct.store_id,
+          store_chain: cheapestProduct.store_chain,
+          matchedProducts: matchingProducts // שמור את כל המוצרים המתאימים
         };
         comparison.availableItemsCount++;
       } else {
@@ -309,13 +316,7 @@ export const processStoreComparisons = (
     return comparison;
   });
   
-  // !! חלק קריטי - מכאן מגיעה הבעיה
-  // שינוי: לא נסנן חנויות כלל, נחזיר את כולן גם אם אין להן פריטים זמינים
-  // זה יבטיח שכל החנויות שנמצאו בבסיס הנתונים יופיעו בהשוואה
-  
-  // בניגוד לגרסה הקודמת שכוללת פילטר:
-  // const filteredComparisons = comparisons.filter(comparison => comparison.availableItemsCount > 0);
-  // אנחנו פשוט מציגים את כל החנויות:
+  // לא נסנן חנויות כלל, נחזיר את כולן גם אם אין להן פריטים זמינים
   const filteredComparisons = comparisons;
   
   console.log('All comparisons (no filtering):', filteredComparisons.map(c => c.storeName));

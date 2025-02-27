@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { ComparisonItem } from "./ComparisonItem";
 import { StoreLogo } from "./StoreLogo";
+import { Product } from "@/types/shopping";
 
 interface StoreCardProps {
   comparison: {
@@ -19,6 +20,7 @@ interface StoreCardProps {
       quantity: number;
       isAvailable: boolean;
       store_id?: string | null;
+      matchedProducts?: Product[];
     }>;
     branches?: Record<string, string[]>;
     availableItemsCount: number;
@@ -153,6 +155,7 @@ export const StoreCard = ({
                 quantity={item.quantity}
                 isAvailable={true}
                 storeId={item.store_id}
+                matchedProducts={item.matchedProducts}
               />
             ))}
             
@@ -163,6 +166,7 @@ export const StoreCard = ({
                 price={item.price}
                 quantity={item.quantity}
                 isAvailable={false}
+                matchedProducts={item.matchedProducts}
               />
             ))}
           </div>

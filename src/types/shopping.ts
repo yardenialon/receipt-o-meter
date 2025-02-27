@@ -35,6 +35,7 @@ export interface StoreComparison {
     product_code?: string | null;
     store_id?: string | null;
     store_chain?: string | null;
+    matchedProducts?: Product[]; // הוספנו שדה חדש עם כל המוצרים המתאימים
   }>;
   total: number;
   availableItemsCount: number;
