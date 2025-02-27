@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { ShoppingListItem, StoreComparison } from '@/types/shopping';
-import { groupProductsByStore, processStoreComparisons } from '@/utils/shopping/productUtils';
+import { groupProductsByStore, processStoreComparisons, normalizeChainName } from '@/utils/shopping/productUtils';
 
 export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
   return useQuery({
@@ -92,6 +92,10 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       }
 
       console.log('Found products with prices:', products.length);
+
+      // בדיקת רשתות
+      const chains = new Set(products.map(p => normalizeChainName(p.store_chain || '')));
+      console.log('Found chains:', Array.from(chains));
 
       // נשלח את המוצרים לעיבוד
       const productsByStore = groupProductsByStore(products);

@@ -1,47 +1,113 @@
 
 import { Product, ShoppingListItem, StoreComparison } from '@/types/shopping';
 
+// פונקציה לנרמול שם רשת
+export const normalizeChainName = (storeName: string): string => {
+  const normalizedName = storeName.toLowerCase().trim();
+  
+  const yochananofVariations = [
+    'yochananof', 'יוחננוף', 'יוחנונוף', 'יוחננוב',
+    'יוחננוף טוב טעם', 'יוחננוף טוב טעם בעמ', 'טוב טעם יוחננוף',
+    'טוב טעם', 'tov taam', 'tovtaam', 'טוב טעם בעמ', 'טוב טעם רשת'
+  ];
+
+  const ramiLevyVariations = [
+    'רמי לוי', 'rami levy', 'רמי לוי שיווק השקמה',
+    'שיווק השקמה', 'רמי לוי שיווק השיקמה', 'רמי לוי סניף'
+  ];
+
+  const shufersalVariations = [
+    'שופרסל', 'shufersal', 'שופרסל אונליין',
+    'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
+  ];
+
+  if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'יוחננוף';
+  } else if (ramiLevyVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'רמי לוי';
+  } else if (shufersalVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'שופרסל';
+  }
+
+  return storeName;
+};
+
 export const groupProductsByStore = (products: Product[]): Record<string, StoreComparison> => {
-  return products.reduce<Record<string, StoreComparison>>((acc, product) => {
-    if (!product.price) return acc; // נתעלם ממוצרים ללא מחיר
+  // Step 1: First, group all products by chain (not by store)
+  const chainGroups = new Map<string, Product[]>();
+  
+  products.forEach(product => {
+    if (!product.price) return; // נתעלם ממוצרים ללא מחיר
     
     // קביעת פרטי החנות - נשתמש בשדה branch_mappings אם קיים, אחרת בשדות ישירים
-    const storeChain = product.branch_mappings?.source_chain || product.store_chain;
-    const storeId = product.branch_mappings?.source_branch_id || product.store_id;
-    const branchName = product.branch_mappings?.source_branch_name || null;
+    const sourceChain = product.branch_mappings?.source_chain || product.store_chain;
     
-    // חובה שיהיה לנו chain ו-ID כדי לזהות חנות ייחודית
-    if (!storeChain || !storeId) {
-      console.log('Missing store info for product:', product.product_name);
-      return acc;
+    if (!sourceChain) {
+      console.log('Missing store chain for product:', product.product_name);
+      return;
     }
     
-    const storeKey = `${storeChain}-${storeId}`;
-
-    if (!acc[storeKey]) {
-      acc[storeKey] = {
-        storeName: storeChain,
-        storeId: storeId,
-        branchName: branchName,
-        branchAddress: null,
-        items: [],
-        total: 0,
-        availableItemsCount: 0,
-        products: []
-      };
-    }
-
-    acc[storeKey].products = acc[storeKey].products || [];
-    acc[storeKey].products.push(product);
+    // נרמול שם הרשת
+    const normalizedChain = normalizeChainName(sourceChain);
     
-    console.log(`Adding product to store ${storeKey}:`, {
-      product_code: product.product_code,
-      product_name: product.product_name,
-      price: product.price
+    if (!chainGroups.has(normalizedChain)) {
+      chainGroups.set(normalizedChain, []);
+    }
+    
+    chainGroups.get(normalizedChain)?.push({
+      ...product,
+      store_chain: normalizedChain // עדכון שם הרשת המנורמל
+    });
+  });
+  
+  console.log('Grouped products by chain:', Array.from(chainGroups.keys()));
+  
+  // Step 2: Create a StoreComparison for each chain
+  const result: Record<string, StoreComparison> = {};
+  
+  chainGroups.forEach((chainProducts, chainName) => {
+    // שליפת הסניף הראשון לצורך מידע על החנות
+    const firstProduct = chainProducts[0];
+    const storeId = firstProduct.branch_mappings?.source_branch_id || firstProduct.store_id;
+    const branchName = firstProduct.branch_mappings?.source_branch_name || null;
+    
+    // יצירת מזהה ייחודי לרשת
+    const chainKey = chainName;
+    
+    result[chainKey] = {
+      storeName: chainName,
+      storeId: storeId,
+      branchName: branchName,
+      branchAddress: null,
+      items: [],
+      total: 0,
+      availableItemsCount: 0,
+      products: chainProducts, // כל המוצרים של אותה רשת
+      branches: {} // נאחסן כאן מידע על כל הסניפים
+    };
+    
+    // איסוף מידע על כל הסניפים של הרשת
+    const branchesMap = new Map<string, Set<string>>();
+    chainProducts.forEach(product => {
+      const branchId = product.branch_mappings?.source_branch_id || product.store_id;
+      if (branchId) {
+        if (!branchesMap.has(chainName)) {
+          branchesMap.set(chainName, new Set());
+        }
+        branchesMap.get(chainName)?.add(branchId);
+      }
     });
     
-    return acc;
-  }, {});
+    // הוספת הסניפים למידע על הרשת
+    result[chainKey].branches = Array.from(branchesMap.entries()).reduce((acc, [chain, branches]) => {
+      acc[chain] = Array.from(branches);
+      return acc;
+    }, {} as Record<string, string[]>);
+    
+    console.log(`Added chain ${chainName} with ${chainProducts.length} products`);
+  });
+  
+  return result;
 };
 
 // פונקציה משופרת לחיפוש מוצר מתאים
@@ -111,8 +177,9 @@ export const processStoreComparisons = (
   });
 
   return Object.values(productsByStore).map(store => {
-    console.log(`עיבוד חנות ${store.storeName} (${store.storeId})`, {
-      מספרמוצרים: store.products?.length || 0
+    console.log(`עיבוד רשת ${store.storeName}`, {
+      מספרמוצרים: store.products?.length || 0,
+      סניפים: Object.keys(store.branches || {}).length
     });
 
     const comparison: StoreComparison = {
@@ -131,31 +198,41 @@ export const processStoreComparisons = (
 
     // וודא שקיימים מוצרים בחנות
     if (!store.products || store.products.length === 0) {
-      console.log(`אין מוצרים בחנות ${store.storeName}`);
+      console.log(`אין מוצרים ברשת ${store.storeName}`);
       return comparison;
     }
 
-    // עבור כל פריט ברשימה, מצא את המוצר המתאים בחנות
+    // עבור כל פריט ברשימה, מצא את המוצר הזול ביותר ברשת
     comparison.items.forEach((item, index) => {
+      // חפש רק מוצרים עם אותו קוד מוצר אם יש קוד מוצר
+      let relevantProducts = store.products;
+      
+      if (item.product_code) {
+        relevantProducts = store.products.filter(p => p.product_code === item.product_code);
+      }
+      
+      // מצא את המוצר הזול ביותר מבין ההתאמות
       const matchingProduct = findBestProductMatch(
-        store.products,
+        relevantProducts,
         item.name,
         item.product_code
       );
 
       if (matchingProduct) {
-        console.log(`נמצא מוצר מתאים בחנות ${store.storeName}: ${matchingProduct.product_name} במחיר ${matchingProduct.price} ש"ח`);
+        console.log(`נמצא מוצר מתאים ברשת ${store.storeName}: ${matchingProduct.product_name} במחיר ${matchingProduct.price} ש"ח`);
         
         comparison.items[index] = {
           ...item,
           price: matchingProduct.price,
           matchedProduct: matchingProduct.product_name,
           isAvailable: true,
-          product_code: matchingProduct.product_code
+          product_code: matchingProduct.product_code,
+          store_id: matchingProduct.store_id, // שמירת מזהה הסניף
+          store_chain: matchingProduct.store_chain // שמירת שם הרשת
         };
         comparison.availableItemsCount++;
       } else {
-        console.log(`לא נמצאה התאמה בחנות ${store.storeName}:`, {
+        console.log(`לא נמצאה התאמה ברשת ${store.storeName}:`, {
           שםפריט: item.name,
           קודמוצר: item.product_code
         });
@@ -172,7 +249,7 @@ export const processStoreComparisons = (
       return sum;
     }, 0);
 
-    console.log(`סיכום חנות ${store.storeName}:`, {
+    console.log(`סיכום רשת ${store.storeName}:`, {
       סהכמחיר: comparison.total,
       מוצריםזמינים: comparison.availableItemsCount,
       סהכמוצרים: comparison.items.length

@@ -1,6 +1,7 @@
+
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, MapPin } from "lucide-react";
+import { AlertCircle, CheckCircle2, MapPin, Store } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { ComparisonItem } from "./ComparisonItem";
@@ -17,7 +18,9 @@ interface StoreCardProps {
       matchedProduct: string;
       quantity: number;
       isAvailable: boolean;
+      store_id?: string | null;
     }>;
+    branches?: Record<string, string[]>;
   };
   isComplete: boolean;
   isCheapest: boolean;
@@ -44,6 +47,10 @@ export const StoreCard = ({
 }: StoreCardProps) => {
   const unavailableItems = comparison.items.filter(item => !item.isAvailable);
   const availableItems = comparison.items.filter(item => item.isAvailable);
+  
+  // חישוב מספר סניפים
+  const branchCount = comparison.branches ? 
+    Object.values(comparison.branches).reduce((sum, branches) => sum + branches.length, 0) : 0;
 
   return (
     <motion.div
@@ -60,8 +67,12 @@ export const StoreCard = ({
               className="h-8 w-auto mb-1" 
             />
             
+            <div className="text-base font-medium text-gray-700">
+              {chainName || comparison.storeName}
+            </div>
+            
             {branchName && (
-              <div className="text-base font-medium text-gray-700">
+              <div className="text-sm text-gray-600">
                 {branchName}
               </div>
             )}
@@ -70,6 +81,13 @@ export const StoreCard = ({
               <div className="flex items-center gap-1 text-sm text-gray-500">
                 <MapPin className="h-4 w-4" />
                 {branchAddress}
+              </div>
+            )}
+            
+            {branchCount > 0 && (
+              <div className="flex items-center gap-1 text-sm text-gray-500">
+                <Store className="h-4 w-4" />
+                <span>{branchCount} סניפים זמינים</span>
               </div>
             )}
             
@@ -120,6 +138,7 @@ export const StoreCard = ({
                 price={item.price}
                 quantity={item.quantity}
                 isAvailable={true}
+                storeId={item.store_id}
               />
             ))}
             

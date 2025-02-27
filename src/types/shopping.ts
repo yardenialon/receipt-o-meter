@@ -33,8 +33,11 @@ export interface StoreComparison {
     quantity: number;
     isAvailable: boolean;
     product_code?: string | null;
+    store_id?: string | null;
+    store_chain?: string | null;
   }>;
   total: number;
   availableItemsCount: number;
   products?: Product[];
+  branches?: Record<string, string[]>;
 }
