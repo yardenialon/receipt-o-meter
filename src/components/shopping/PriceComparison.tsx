@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { ComparisonHeader } from "./comparison/ComparisonHeader";
@@ -18,14 +19,10 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     
     // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
     const total = comparison.items.reduce((sum, item) => {
-      if (normalizedStoreName.includes('רמי לוי') || normalizedStoreName.includes('rami levy')) {
-        if (item.isAvailable && item.price !== null) {
-          const itemTotal = item.price * (item.quantity || 1);
-          console.log(`Rami Levy item calculation - Name: ${item.name}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
-          return sum + itemTotal;
-        }
-      } else if (item.isAvailable && item.price !== null) {
-        return sum + (item.price * (item.quantity || 1));
+      if (item.isAvailable && item.price !== null) {
+        const itemTotal = item.price * (item.quantity || 1);
+        console.log(`Item calculation - Name: ${item.name}, Code: ${item.product_code}, Price: ${item.price}, Quantity: ${item.quantity}, Total: ${itemTotal}`);
+        return sum + itemTotal;
       }
       return sum;
     }, 0);

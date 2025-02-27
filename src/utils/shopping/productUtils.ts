@@ -1,9 +1,5 @@
-import { Product, ShoppingListItem, StoreComparison } from '@/types/shopping';
 
-interface ProductMatchingItem {
-  name: string;
-  product_code?: string;
-}
+import { Product, ShoppingListItem, StoreComparison } from '@/types/shopping';
 
 export const groupProductsByStore = (products: Product[]): Record<string, StoreComparison> => {
   return products.reduce<Record<string, StoreComparison>>((acc, product) => {
@@ -31,36 +27,12 @@ export const groupProductsByStore = (products: Product[]): Record<string, StoreC
   }, {});
 };
 
-const normalizeText = (text: string): string => {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/['"]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[^\w\s]/g, '');
-};
-
 const findExactProductMatch = (
   products: Product[] | undefined,
   productCode: string
 ): Product | undefined => {
   if (!products) return undefined;
   return products.find(p => p.product_code === productCode);
-};
-
-const findSimilarProducts = (
-  products: Product[] | undefined,
-  itemName: string
-): Product[] => {
-  if (!products) return [];
-  
-  const normalizedItemName = normalizeText(itemName);
-  
-  return products.filter(product => {
-    const normalizedProductName = normalizeText(product.product_name);
-    return normalizedProductName.includes(normalizedItemName) || 
-           normalizedItemName.includes(normalizedProductName);
-  });
 };
 
 export const processStoreComparisons = (
@@ -96,31 +68,13 @@ export const processStoreComparisons = (
     comparison.items.forEach((item, index) => {
       let matchingProduct: Product | undefined;
 
-      // חיפוש לפי קוד מוצר אם קיים
+      // חיפוש לפי קוד מוצר
       if (item.product_code) {
         matchingProduct = findExactProductMatch(store.products, item.product_code);
         if (matchingProduct) {
           console.log(`נמצאה התאמה מדויקת לפי קוד מוצר:`, {
             שםפריט: item.name,
             קודמוצר: item.product_code,
-            שםחנות: store.storeName
-          });
-        }
-      }
-
-      // אם אין התאמה מדויקת, מנסים למצוא לפי שם
-      if (!matchingProduct) {
-        const similarProducts = findSimilarProducts(store.products, item.name);
-        if (similarProducts.length > 0) {
-          // בוחרים את המוצר הזול ביותר מבין ההתאמות
-          matchingProduct = similarProducts.reduce((min, p) => 
-            p.price < min.price ? p : min
-          , similarProducts[0]);
-
-          console.log(`נמצאה התאמה לפי שם:`, {
-            שםפריט: item.name,
-            שםמוצר: matchingProduct.product_name,
-            מחיר: matchingProduct.price,
             שםחנות: store.storeName
           });
         }
@@ -138,6 +92,7 @@ export const processStoreComparisons = (
       } else {
         console.log(`לא נמצאה התאמה:`, {
           שםפריט: item.name,
+          קודמוצר: item.product_code,
           שםחנות: store.storeName
         });
       }
