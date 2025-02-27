@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { SearchResults } from './SearchResults';
@@ -6,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 
 interface ProductSearchProps {
-  onProductSelect?: (product: { name: string; product_code: string }) => void;
+  onProductSelect?: (product: { name: string; product_code?: string | null }) => void;
 }
 
 export const ProductsSearch = ({ onProductSelect }: ProductSearchProps) => {
@@ -44,8 +45,11 @@ export const ProductsSearch = ({ onProductSelect }: ProductSearchProps) => {
 
   const handleProductSelect = (product: any) => {
     if (onProductSelect) {
+      // וודא שיש שם מוצר
+      const productName = product.product_name || "מוצר ללא שם";
+      
       onProductSelect({
-        name: product.product_name,
+        name: productName,
         product_code: product.product_code
       });
     }

@@ -49,7 +49,8 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('רשימה חדשה נוצרה בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error creating list:', error);
       toast.error('אירעה שגיאה ביצירת הרשימה');
     },
   });
@@ -67,7 +68,8 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('הרשימה נמחקה בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error deleting list:', error);
       toast.error('אירעה שגיאה במחיקת הרשימה');
     },
   });
@@ -89,6 +91,10 @@ export default function ShoppingList() {
       // גם עדכון מחירים כשסימון משתנה
       queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
     },
+    onError: (error) => {
+      console.error('Error toggling item:', error);
+      toast.error('אירעה שגיאה בעדכון הפריט');
+    },
   });
 
   const deleteItem = useMutation({
@@ -105,7 +111,8 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
       toast.success('פריט נמחק בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error deleting item:', error);
       toast.error('אירעה שגיאה במחיקת הפריט');
     },
   });
@@ -120,17 +127,26 @@ export default function ShoppingList() {
       name: string;
       productCode?: string | null
     }) => {
+      console.log('Adding item:', { listId, name, productCode });
+      
+      const item = {
+        list_id: listId,
+        name: name,
+        product_code: productCode || null,
+        is_completed: false
+      };
+      
       const { data, error } = await supabase
         .from('shopping_list_items')
-        .insert([{ 
-          list_id: listId, 
-          name,
-          product_code: productCode 
-        }])
+        .insert([item])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error adding item:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
@@ -138,12 +154,20 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
       toast.success('פריט נוסף בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error adding item:', error);
       toast.error('אירעה שגיאה בהוספת הפריט');
     },
   });
 
   const handleAddProductToList = (listId: string, product: any) => {
+    console.log('Product selected:', product);
+    
+    if (!product || !product.name && !product.product_name) {
+      toast.error('נתוני מוצר חסרים');
+      return;
+    }
+    
     addItem.mutate({
       listId,
       name: product.product_name || product.name, 
