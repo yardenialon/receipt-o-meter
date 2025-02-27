@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle } from 'lucide-react';
@@ -17,7 +18,7 @@ interface ReceiptItemsListProps {
 }
 
 interface PriceComparison {
-  ItemPrice: number;
+  price: number;
   store_chain: string;
   store_id: string;
 }
@@ -39,9 +40,9 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
       if (!productCodes.length) return {};
 
       const { data, error } = await supabase
-        .from('store_products_import')
-        .select('ItemCode, ItemPrice, store_chain, store_id')
-        .in('ItemCode', productCodes);
+        .from('store_products')
+        .select('product_code, price, store_chain, store_id')
+        .in('product_code', productCodes);
 
       if (error) {
         console.error('Error fetching price comparisons:', error);
@@ -50,11 +51,11 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
 
       // Group prices by product code
       return data.reduce((acc, item) => {
-        if (!acc[item.ItemCode]) {
-          acc[item.ItemCode] = [];
+        if (!acc[item.product_code]) {
+          acc[item.product_code] = [];
         }
-        acc[item.ItemCode].push({
-          ItemPrice: item.ItemPrice,
+        acc[item.product_code].push({
+          price: item.price,
           store_chain: item.store_chain,
           store_id: item.store_id
         });
@@ -76,8 +77,8 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
           // Find the cheapest price from other stores
           cheaperPrice = prices
             .filter(p => p.store_chain !== storeName) // Exclude current store
-            .sort((a, b) => a.ItemPrice - b.ItemPrice)
-            .find(p => p.ItemPrice < currentPrice) || null;
+            .sort((a, b) => a.price - b.price)
+            .find(p => p.price < currentPrice) || null;
         }
 
         return (
@@ -110,10 +111,10 @@ export const ReceiptItemsList = ({ items, storeName }: ReceiptItemsListProps) =>
                   נמצא מחיר זול יותר ב{cheaperPrice.store_chain}
                   {cheaperPrice.store_id && ` (סניף ${cheaperPrice.store_id})`}:
                   <span className="font-bold mr-1">
-                    ₪{cheaperPrice.ItemPrice.toFixed(2)}
+                    ₪{cheaperPrice.price.toFixed(2)}
                   </span>
                   <span className="text-xs">
-                    (חיסכון של ₪{((item.price / item.quantity - cheaperPrice.ItemPrice) * item.quantity).toFixed(2)})
+                    (חיסכון של ₪{((item.price / item.quantity - cheaperPrice.price) * item.quantity).toFixed(2)})
                   </span>
                 </AlertDescription>
               </Alert>

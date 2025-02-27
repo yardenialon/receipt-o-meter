@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -6,9 +7,9 @@ export const findProductByBarcode = async (barcode: string) => {
   
   try {
     const { data, error } = await supabase
-      .from('store_products_import')
+      .from('store_products')
       .select('*')
-      .eq('ItemCode', barcode)
+      .eq('product_code', barcode)
       .limit(1);
 
     if (error) {
