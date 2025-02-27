@@ -4,7 +4,8 @@ export interface ShoppingListItem {
   name: string;
   is_completed?: boolean;
   quantity?: number;
-  product_code?: string;
+  product_code?: string | null;
+  list_id?: string;
 }
 
 export interface Product {
@@ -32,7 +33,7 @@ export interface StoreComparison {
     matchedProduct: string;
     quantity: number;
     isAvailable: boolean;
-    product_code?: string;
+    product_code?: string | null;
   }>;
   total: number;
   availableItemsCount: number;

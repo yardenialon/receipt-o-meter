@@ -49,7 +49,8 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('רשימה חדשה נוצרה בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error creating list:', error);
       toast.error('אירעה שגיאה ביצירת הרשימה');
     },
   });
@@ -67,7 +68,8 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('הרשימה נמחקה בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error deleting list:', error);
       toast.error('אירעה שגיאה במחיקת הרשימה');
     },
   });
@@ -87,6 +89,10 @@ export default function ShoppingList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
     },
+    onError: (error) => {
+      console.error('Error toggling item:', error);
+      toast.error('אירעה שגיאה בעדכון הפריט');
+    },
   });
 
   const deleteItem = useMutation({
@@ -102,41 +108,63 @@ export default function ShoppingList() {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('פריט נמחק בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error deleting item:', error);
       toast.error('אירעה שגיאה במחיקת הפריט');
     },
   });
 
   const addItem = useMutation({
     mutationFn: async ({ listId, name, product_code }: { listId: string; name: string; product_code?: string }) => {
+      console.log('Adding item:', { listId, name, product_code });
+      if (!name || name.trim() === '') {
+        throw new Error('שם המוצר לא יכול להיות ריק');
+      }
+
       const { data, error } = await supabase
         .from('shopping_list_items')
         .insert([{ 
           list_id: listId, 
-          name, 
-          product_code 
+          name: name.trim(), 
+          product_code: product_code || null 
         }])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error adding item:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
       toast.success('פריט נוסף בהצלחה');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error adding item:', error);
       toast.error('אירעה שגיאה בהוספת הפריט');
     },
   });
 
   const handleAddProductToList = (listId: string, product: any) => {
-    addItem.mutate({
-      listId,
-      name: product.name || product.product_name,
-      product_code: product.product_code
-    });
+    console.log('Product selected for list:', product);
+    if (!product) {
+      toast.error('לא ניתן להוסיף מוצר ריק');
+      return;
+    }
+
+    try {
+      addItem.mutate({
+        listId,
+        name: product.name || product.product_name || '',
+        product_code: product.product_code || product.code
+      });
+    } catch (error) {
+      console.error('Error in handleAddProductToList:', error);
+      toast.error('אירעה שגיאה בהוספת הפריט');
+    }
   };
 
   if (isLoading) {
