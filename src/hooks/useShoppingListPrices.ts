@@ -50,9 +50,26 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
         } else if (productsByCode && productsByCode.length > 0) {
           console.log(`Found ${productsByCode.length} products by code`);
           
-          // דיבוג: בדוק אילו רשתות קיימות עבור מוצרים אלה
+          // בדיקה מיוחדת - נבדוק שיש התאמות בכל הרשתות
           const chains = new Set(productsByCode.map(product => product.store_chain));
           console.log('Chains found for product codes:', [...chains]);
+          
+          // בדיקת מחירים עבור כל קוד מוצר בכל רשת
+          productCodes.forEach(code => {
+            const productsWithCode = productsByCode.filter(p => p.product_code === code);
+            if (productsWithCode.length > 0) {
+              console.log(`Product ${code} found in ${productsWithCode.length} stores:`);
+              const productsByChain = productsWithCode.reduce((acc, p) => {
+                if (!acc[p.store_chain]) acc[p.store_chain] = [];
+                acc[p.store_chain].push(p);
+                return acc;
+              }, {} as Record<string, any[]>);
+              
+              Object.entries(productsByChain).forEach(([chain, prods]) => {
+                console.log(`  ${chain}: ${prods.length} products, prices: ${prods.map(p => p.price).join(', ')}`);
+              });
+            }
+          });
           
           products = productsByCode;
         }
@@ -90,6 +107,18 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
             // בדוק בכמה רשתות שונות נמצאו מוצרים
             const storeChains = [...new Set(productsByName.map(p => p.store_chain))];
             console.log(`Found ${productsByName.length} products for term "${searchTerm}" in chains:`, storeChains);
+            
+            // בדיקת מחירים עבור כל מוצר בכל רשת
+            const productsByChain = productsByName.reduce((acc, p) => {
+              if (!acc[p.store_chain]) acc[p.store_chain] = [];
+              acc[p.store_chain].push(p);
+              return acc;
+            }, {} as Record<string, any[]>);
+            
+            Object.entries(productsByChain).forEach(([chain, prods]) => {
+              console.log(`  ${chain}: ${prods.length} products, example prices: ${prods.slice(0, 3).map(p => p.price).join(', ')}...`);
+            });
+            
             nameProducts.push(...productsByName);
           } else {
             // ניסיון נוסף עם חיפוש יותר כללי - אולי נמצא משהו
@@ -158,6 +187,14 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       storeChains.forEach(chain => {
         const chainProducts = products.filter(product => normalizeChainName(product.store_chain || '') === chain);
         console.log(`Chain ${chain}: ${chainProducts.length} products`);
+        
+        // בדיקת הטווח של מחירים
+        if (chainProducts.length > 0) {
+          const prices = chainProducts.map(p => p.price).filter(Boolean).sort((a, b) => a - b);
+          if (prices.length > 0) {
+            console.log(`  Price range for ${chain}: ${prices[0]} - ${prices[prices.length - 1]}`);
+          }
+        }
       });
 
       // נשלח את המוצרים לעיבוד
@@ -171,7 +208,7 @@ export const useShoppingListPrices = (items: ShoppingListItem[] = []) => {
       );
 
       console.log('Final stores with items:', storesWithItems.length, storesWithItems.map(s => 
-        `${s.storeName} (${s.availableItemsCount}/${s.items.length})`
+        `${s.storeName} (${s.availableItemsCount}/${s.items.length}, total: ${s.total})`
       ));
       
       return storesWithItems;

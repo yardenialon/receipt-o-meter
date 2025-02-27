@@ -39,6 +39,11 @@ export const ComparisonItem = ({
     });
   }
   
+  // מיון המוצרים בכל רשת לפי מחיר
+  Object.keys(productsByChain).forEach(chain => {
+    productsByChain[chain].sort((a, b) => a.price - b.price);
+  });
+  
   // בדוק אם יש מוצרים זמינים במספר רשתות
   const multipleChains = Object.keys(productsByChain).length > 1;
 
@@ -103,7 +108,7 @@ export const ComparisonItem = ({
               if (products.length === 0) return null;
               
               // מצא את המוצר הזול ביותר ברשת זו
-              const cheapestProduct = products.sort((a, b) => a.price - b.price)[0];
+              const cheapestProduct = products[0]; // כבר ממוין לפי מחיר
               const productPrice = cheapestProduct.price;
               const productTotal = productPrice * quantity;
               

@@ -1,3 +1,4 @@
+
 import { Card } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -29,7 +30,7 @@ export default function ShoppingList() {
 
   // Get price comparisons for all active items across all lists
   const allItems = lists?.flatMap(list => list.shopping_list_items) || [];
-  const { data: priceComparisons } = useShoppingListPrices(allItems);
+  const { data: priceComparisons, isLoading: isLoadingPrices } = useShoppingListPrices(allItems);
 
   const createList = useMutation({
     mutationFn: async () => {
@@ -85,6 +86,8 @@ export default function ShoppingList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      // גם עדכון מחירים כשסימון משתנה
+      queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
     },
   });
 
@@ -99,6 +102,7 @@ export default function ShoppingList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
       toast.success('פריט נמחק בהצלחה');
     },
     onError: () => {
@@ -107,10 +111,22 @@ export default function ShoppingList() {
   });
 
   const addItem = useMutation({
-    mutationFn: async ({ listId, name }: { listId: string; name: string }) => {
+    mutationFn: async ({ 
+      listId, 
+      name, 
+      productCode 
+    }: { 
+      listId: string; 
+      name: string;
+      productCode?: string | null
+    }) => {
       const { data, error } = await supabase
         .from('shopping_list_items')
-        .insert([{ list_id: listId, name }])
+        .insert([{ 
+          list_id: listId, 
+          name,
+          product_code: productCode 
+        }])
         .select()
         .single();
       
@@ -119,6 +135,7 @@ export default function ShoppingList() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-lists'] });
+      queryClient.invalidateQueries({ queryKey: ['shopping-list-prices'] });
       toast.success('פריט נוסף בהצלחה');
     },
     onError: () => {
@@ -129,7 +146,8 @@ export default function ShoppingList() {
   const handleAddProductToList = (listId: string, product: any) => {
     addItem.mutate({
       listId,
-      name: product.name
+      name: product.product_name || product.name, 
+      productCode: product.product_code
     });
   };
 
@@ -169,7 +187,10 @@ export default function ShoppingList() {
         <div className="space-y-8 sticky top-8 px-4 md:px-0">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">השוואת מחירים כוללת</h2>
-            <ShoppingListPriceComparison comparisons={priceComparisons || []} />
+            <ShoppingListPriceComparison 
+              comparisons={priceComparisons || []} 
+              isLoading={isLoadingPrices}
+            />
           </Card>
         </div>
       </div>
