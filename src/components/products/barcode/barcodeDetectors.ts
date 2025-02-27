@@ -1,77 +1,52 @@
-import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
 
-export const findProductByBarcode = async (barcode: string) => {
-  console.log('Searching for product with barcode:', barcode);
-  
+import { supabase } from "@/lib/supabase";
+
+export const detectBarcodeFromAPI = async (barcode: string) => {
   try {
-    const { data, error } = await supabase
-      .from('store_products_import')
+    // Check if the barcode exists in our database
+    const { data: products, error } = await supabase
+      .from('store_products')
       .select('*')
-      .eq('ItemCode', barcode)
+      .eq('product_code', barcode)
       .limit(1);
 
     if (error) {
-      console.error('Error searching for product:', error);
       throw error;
     }
 
-    if (data && data.length > 0) {
-      console.log('Product found:', data[0]);
-      return data[0];
+    if (products && products.length > 0) {
+      return {
+        success: true,
+        data: products[0],
+        source: 'database'
+      };
     }
-    
-    console.log('No product found with barcode:', barcode);
-    return null;
-  } catch (error) {
-    console.error('Error in findProductByBarcode:', error);
-    toast.error('שגיאה בחיפוש המוצר');
-    return null;
-  }
-};
 
-export const detectBarcodeWithNative = async (video: HTMLVideoElement): Promise<string | null> => {
-  try {
-    if ('BarcodeDetector' in window) {
-      console.log('Using native BarcodeDetector');
-      const barcodeDetector = new (window as any).BarcodeDetector();
-      const barcodes = await barcodeDetector.detect(video);
-      
-      if (barcodes.length > 0) {
-        console.log('Barcode detected:', barcodes[0].rawValue);
-        return barcodes[0].rawValue;
-      }
-    }
-    return null;
-  } catch (error) {
-    console.error('Error using native BarcodeDetector:', error);
-    return null;
-  }
-};
-
-export const detectBarcodeWithVision = async (imageBlob: Blob): Promise<string | null> => {
-  try {
-    console.log('Using Vision API for barcode detection');
-    const formData = new FormData();
-    formData.append('image', imageBlob);
-    
-    const response = await fetch('https://kthqkydgegsoheymesgc.supabase.co/functions/v1/detect-barcode', {
+    // If not found in our database, we can try to fetch from external API
+    const response = await fetch('/api/detect-barcode', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ barcode }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to detect barcode');
+      throw new Error('Failed to detect barcode from API');
     }
 
     const result = await response.json();
-    if (result.barcode) {
-      console.log('Barcode detected by Vision API:', result.barcode);
-      return result.barcode;
-    }
-    return null;
+    
+    return {
+      success: true,
+      data: result,
+      source: 'api'
+    };
   } catch (error) {
-    console.error('Error detecting barcode with Vision:', error);
-    return null;
+    console.error('Error detecting barcode:', error);
+    return {
+      success: false,
+      error: 'Failed to detect barcode'
+    };
   }
 };
