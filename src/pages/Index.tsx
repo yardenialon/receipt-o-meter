@@ -15,6 +15,7 @@ import { TopStores } from '@/components/analytics/TopStores';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { LogoSlider } from '@/components/logos/LogoSlider';
 
 const categories = [
   { name: 'פירות וירקות', icon: Apple, color: 'bg-green-50 text-green-600', borderColor: 'border-green-200' },
@@ -172,6 +173,14 @@ export default function Index() {
               רשימת הקניות שלי
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* סליידר לוגואים */}
+      <div className="py-6 bg-gray-50 border-t border-b border-gray-100">
+        <div className="container mx-auto px-4">
+          <h2 className="text-xl font-bold text-gray-800 text-center mb-4">רשתות המזון המובילות</h2>
+          <LogoSlider />
         </div>
       </div>
 
