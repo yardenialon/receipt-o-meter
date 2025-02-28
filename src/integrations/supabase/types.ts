@@ -588,6 +588,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_popular_products: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          name: string
+          product_code: string
+          count: number
+        }[]
+      }
       process_imported_products: {
         Args: Record<PropertyKey, never>
         Returns: undefined

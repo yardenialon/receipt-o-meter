@@ -57,12 +57,13 @@ export default function Index() {
   const { data: topProducts, isLoading: isLoadingTopProducts } = useQuery({
     queryKey: ['top-products'],
     queryFn: async () => {
-      // במקום להשתמש ב-group, נשתמש בשאילתה מותאמת
+      // במקום להשתמש בפונקציה RPC, נשתמש בשאילתה רגילה
       const { data, error } = await supabase
-        .rpc('get_popular_products', {}, { count: 'exact' })
-        .limit(5);
+        .from('shopping_list_items')
+        .select('name, product_code')
+        .not('product_code', 'is', null)
+        .limit(50);
 
-      // במקרה שהפונקציה לא קיימת, נחזיר מידע סטטי לדוגמה
       if (error) {
         console.error('Error fetching top products:', error);
         console.log('Using fallback data for top products');
@@ -76,7 +77,27 @@ export default function Index() {
         ];
       }
 
-      return data || [];
+      // עיבוד המידע בצד הלקוח - ספירת המופעים של כל מוצר
+      const productCounts: Record<string, { name: string; product_code: string; count: number }> = {};
+      
+      data.forEach(item => {
+        const key = item.product_code || '';
+        if (!productCounts[key]) {
+          productCounts[key] = { 
+            name: item.name, 
+            product_code: item.product_code || '', 
+            count: 0 
+          };
+        }
+        productCounts[key].count += 1;
+      });
+
+      // המרה למערך וסידור לפי כמות יורדת
+      const sortedProducts = Object.values(productCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      return sortedProducts;
     },
   });
 
