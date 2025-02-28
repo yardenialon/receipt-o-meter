@@ -380,6 +380,7 @@ export type Database = {
           is_completed: boolean | null
           list_id: string
           name: string
+          product_code: string | null
           updated_at: string
         }
         Insert: {
@@ -388,6 +389,7 @@ export type Database = {
           is_completed?: boolean | null
           list_id: string
           name: string
+          product_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -396,6 +398,7 @@ export type Database = {
           is_completed?: boolean | null
           list_id?: string
           name?: string
+          product_code?: string | null
           updated_at?: string
         }
         Relationships: [
