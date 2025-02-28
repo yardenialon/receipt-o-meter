@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 
 interface StoreLogoProps {
@@ -32,6 +33,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
     if (normalizedName.includes('yochananof') || normalizedName.includes('יוחננוף')) {
       return '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png';
+    }
+    
+    if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
+      return '/lovable-uploads/be320eeb-41fc-47ee-b56c-e856f36b61fd.png';
     }
     
     return logoUrl || null;

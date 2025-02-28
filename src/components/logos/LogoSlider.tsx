@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { StoreLogo } from '@/components/shopping/comparison/StoreLogo';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
-// רשימת רשתות מזון לסליידר
-const storeChains = [
+// רשימה סטטית של רשתות במקרה שאין תוצאות מה-API
+const fallbackStoreChains = [
   { name: 'רמי לוי', id: 'rami-levy' },
   { name: 'שופרסל', id: 'shufersal' },
   { name: 'יינות ביתן', id: 'yeinot-bitan' },
@@ -23,6 +25,33 @@ export function LogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // שליפת כל רשתות המזון מהדאטהבייס
+  const { data: storeChains, isLoading } = useQuery({
+    queryKey: ['store-chains'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('store_products')
+        .select('store_chain')
+        .order('store_chain')
+        .not('store_chain', 'is', null);
+
+      if (error) {
+        console.error('Error fetching store chains:', error);
+        return fallbackStoreChains;
+      }
+
+      // הסרת כפילויות
+      const uniqueStores = Array.from(new Set(data.map(item => item.store_chain)));
+      
+      // המרה לפורמט הנדרש
+      return uniqueStores.map(storeName => ({
+        name: storeName,
+        id: storeName.toLowerCase().replace(/\s+/g, '-')
+      }));
+    },
+    initialData: fallbackStoreChains
+  });
 
   // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
   useEffect(() => {
@@ -46,12 +75,16 @@ export function LogoSlider() {
 
   // הזזת הלוגואים שמאלה וימינה
   const goToNext = () => {
+    if (!storeChains || storeChains.length <= visibleLogos) return;
+    
     setCurrentIndex((prevIndex) => 
       (prevIndex + 1) % (storeChains.length - visibleLogos + 1)
     );
   };
 
   const goToPrev = () => {
+    if (!storeChains || storeChains.length <= visibleLogos) return;
+    
     setCurrentIndex((prevIndex) => 
       prevIndex === 0 ? storeChains.length - visibleLogos : prevIndex - 1
     );
@@ -59,27 +92,37 @@ export function LogoSlider() {
 
   // הפעלת הסליידר אוטומטית
   useEffect(() => {
+    if (!storeChains || storeChains.length <= visibleLogos) return;
+    
     const interval = setInterval(() => {
       goToNext();
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [visibleLogos]);
+  }, [visibleLogos, storeChains]);
 
   // וידוא שלא חורגים מגבולות המערך
-  const adjustedIndex = Math.min(currentIndex, storeChains.length - visibleLogos);
+  const adjustedIndex = Math.min(
+    currentIndex, 
+    (storeChains?.length || 0) - visibleLogos
+  );
+
+  // במידה ואין מספיק רשתות להציג
+  const showControls = (storeChains?.length || 0) > visibleLogos;
 
   return (
     <div className="relative py-8">
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 rounded-full absolute left-0 z-10 opacity-80 shadow-sm"
-          onClick={goToPrev}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+        {showControls && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full absolute left-0 z-10 opacity-80 shadow-sm"
+            onClick={goToPrev}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
 
         <div 
           ref={containerRef}
@@ -91,7 +134,7 @@ export function LogoSlider() {
             animate={{ x: `-${adjustedIndex * (100 / visibleLogos)}%` }}
             transition={{ ease: "easeInOut", duration: 0.5 }}
           >
-            {storeChains.map((store) => (
+            {storeChains?.map((store) => (
               <div 
                 key={store.id} 
                 className={cn(
@@ -114,14 +157,16 @@ export function LogoSlider() {
           </motion.div>
         </div>
 
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 rounded-full absolute right-0 z-10 opacity-80 shadow-sm"
-          onClick={goToNext}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        {showControls && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full absolute right-0 z-10 opacity-80 shadow-sm"
+            onClick={goToNext}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
