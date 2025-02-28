@@ -1,24 +1,289 @@
-import ReceiptList from '@/components/ReceiptList';
-import UploadZone from '@/components/UploadZone';
-import { ReceiptStats } from '@/components/stats/ReceiptStats';
+
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { ShoppingCart, TrendingUp, ArrowUp, Flame, Search, Apple, Milk, Bread, Drumstick, Spray } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { SavvyLogo } from '@/components/SavvyLogo';
+import { ProductsSearch } from '@/components/products/ProductsSearch';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Badge } from '@/components/ui/badge';
+import { ProductRecommendations } from '@/components/analytics/ProductRecommendations';
+import { TopStores } from '@/components/analytics/TopStores';
+import { cn } from '@/lib/utils';
+
+const categories = [
+  { name: 'פירות וירקות', icon: Apple, color: 'bg-green-50 text-green-600', borderColor: 'border-green-200' },
+  { name: 'מוצרי חלב וביצים', icon: Milk, color: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-200' },
+  { name: 'מאפים ולחמים', icon: Bread, color: 'bg-amber-50 text-amber-600', borderColor: 'border-amber-200' },
+  { name: 'בשר, עוף ודגים', icon: Drumstick, color: 'bg-red-50 text-red-600', borderColor: 'border-red-200' },
+  { name: 'ניקיון וטואלטיקה', icon: Spray, color: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-200' },
+];
 
 export default function Index() {
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // מבצעי השבוע
+  const { data: weeklyDeals, isLoading: isLoadingDeals } = useQuery({
+    queryKey: ['weekly-deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('store_products')
+        .select(`
+          product_code,
+          product_name,
+          price,
+          store_chain,
+          price_update_date
+        `)
+        .order('price', { ascending: true })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching weekly deals:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+  });
+
+  // מוצרים הכי נמכרים
+  const { data: topProducts, isLoading: isLoadingTopProducts } = useQuery({
+    queryKey: ['top-products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shopping_list_items')
+        .select('name, product_code, count(*)')
+        .not('product_code', 'is', null)
+        .group('name, product_code')
+        .order('count', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching top products:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+  });
+
+  // מוצרים בעליית מחירים
+  const { data: pricingTrends, isLoading: isLoadingPricing } = useQuery({
+    queryKey: ['pricing-trends'],
+    queryFn: async () => {
+      // במציאות, נרצה לבדוק מוצרים שעלו במחיר לאחרונה
+      // כרגע נציג פשוט מוצרים יקרים להדגמה
+      const { data, error } = await supabase
+        .from('store_products')
+        .select(`
+          product_code,
+          product_name,
+          price,
+          store_chain,
+          price_update_date
+        `)
+        .order('price', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error fetching pricing trends:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+  });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // ניתן להוסיף ניווט לדף חיפוש עם הפרמטר searchQuery
+    console.log('Searching for:', searchQuery);
+  };
+
+  const goToShoppingList = () => {
+    navigate('/shopping-list');
+  };
+
   return (
-    <div className="container mx-auto p-4 space-y-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-          הקבלות שלי
-        </h1>
-        <p className="text-gray-600 mb-8">
-          צלם או העלה את הקבלות שלך לקבלת החזרים והמלצות לחיסכון
-        </p>
-        
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-primary-100/50 p-8">
-          <ReceiptStats />
-          <UploadZone />
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-white py-16 sm:py-24">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center justify-center text-center">
+            <SavvyLogo size={120} className="mb-6" />
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl mb-6">
+              <span className="block text-primary-600">זהו את המחירים המשתלמים</span>
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-base text-gray-500 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl mb-8">
+              חסכו כסף במכולת שלכם על ידי השוואת מחירים חכמה בין רשתות השיווק בישראל
+            </p>
+            
+            {/* חיפוש מרכזי */}
+            <div className="w-full max-w-2xl mb-6 relative">
+              <ProductsSearch 
+                onProductSelect={(product) => {
+                  console.log('Selected product:', product);
+                  // ניתן להוסיף לוגיקה נוספת כאן
+                }}
+              />
+            </div>
+            
+            {/* כפתור רשימת קניות */}
+            <Button 
+              onClick={goToShoppingList}
+              size="lg" 
+              className="mt-4 bg-primary-600 hover:bg-primary-700 text-white"
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              רשימת הקניות שלי
+            </Button>
+          </div>
         </div>
-        
-        <ReceiptList />
+      </div>
+
+      {/* קטגוריות מובילות */}
+      <div className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">קטגוריות מובילות</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-5">
+            {categories.map((category) => (
+              <div 
+                key={category.name} 
+                className={cn("flex flex-col items-center p-5 rounded-xl border-2 transition-all transform hover:scale-105 cursor-pointer", category.borderColor)}
+              >
+                <div className={cn("p-4 rounded-full mb-3", category.color)}>
+                  <category.icon className="h-8 w-8" />
+                </div>
+                <h3 className="text-base font-medium text-center">{category.name}</h3>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* בלוקים חכמים */}
+      <div className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-10">מידע חכם לצרכן</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* מבצעי השבוע */}
+            <Card className="p-6 hover:shadow-lg transition-all">
+              <div className="flex items-center mb-4">
+                <div className="bg-orange-100 p-3 rounded-full text-orange-500 mr-3">
+                  <Flame className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold">מבצעי השבוע</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {isLoadingDeals ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                ) : (
+                  weeklyDeals?.map((product) => (
+                    <div key={product.product_code} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg">
+                      <div className="truncate flex-1">
+                        <div className="font-medium">{product.product_name}</div>
+                        <div className="text-sm text-gray-500">{product.store_chain}</div>
+                      </div>
+                      <div className="font-bold text-green-600 text-lg">₪{product.price?.toFixed(2)}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+
+            {/* מוצרים בעליית מחירים */}
+            <Card className="p-6 hover:shadow-lg transition-all">
+              <div className="flex items-center mb-4">
+                <div className="bg-red-100 p-3 rounded-full text-red-500 mr-3">
+                  <ArrowUp className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold">מוצרים בעליית מחירים</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {isLoadingPricing ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                ) : (
+                  pricingTrends?.map((product) => (
+                    <div key={product.product_code} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg">
+                      <div className="truncate flex-1">
+                        <div className="font-medium">{product.product_name}</div>
+                        <div className="text-sm text-gray-500">{product.store_chain}</div>
+                      </div>
+                      <div className="flex items-center">
+                        <ArrowUp className="h-4 w-4 text-red-500 mr-1" />
+                        <div className="font-bold text-red-500">₪{product.price?.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+
+            {/* מוצרים הכי נמכרים */}
+            <Card className="p-6 hover:shadow-lg transition-all">
+              <div className="flex items-center mb-4">
+                <div className="bg-blue-100 p-3 rounded-full text-blue-500 mr-3">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold">מוצרים הכי נמכרים</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {isLoadingTopProducts ? (
+                  <div className="animate-pulse space-y-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                ) : (
+                  topProducts?.map((product, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-lg">
+                      <div className="truncate flex-1">
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm text-gray-500">קוד: {product.product_code}</div>
+                      </div>
+                      <Badge variant="secondary" className="ml-2">
+                        {product.count} פעמים
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* חלק מעודכן מהעיצוב הקודם - המלצות והשוואות */}
+      <div className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h2 className="text-2xl font-bold mb-6">המלצות לחיסכון</h2>
+              <ProductRecommendations />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-6">חנויות מובילות</h2>
+              <TopStores />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
