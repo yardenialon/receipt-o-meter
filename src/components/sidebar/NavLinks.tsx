@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
@@ -62,7 +63,7 @@ export const NavLinks = () => {
   };
 
   const links = [
-    { href: '/', label: 'קבלות', icon: Home },
+    { href: '/', label: 'ראשי', icon: Home },
     { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },

@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
@@ -8,7 +9,7 @@ import { toast } from 'sonner';
 
 export const MobileNav = () => {
   const links = [
-    { href: '/', label: 'קבלות', icon: Home },
+    { href: '/', label: 'ראשי', icon: Home },
     { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימות', icon: ListCheck },
