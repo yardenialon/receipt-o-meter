@@ -42,7 +42,6 @@ export function LogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [duplicatedStores, setDuplicatedStores] = useState<Array<{name: string, id: string}>>([]);
 
   // שליפת כל רשתות המזון מהדאטהבייס
   const { data: storeChains, isLoading } = useQuery({
@@ -85,14 +84,6 @@ export function LogoSlider() {
     initialData: fallbackStoreChains
   });
 
-  // יצירת מערך כפול של חנויות כדי ליצור אפקט של לופ אינסופי
-  useEffect(() => {
-    if (storeChains && storeChains.length > 0) {
-      // שכפול המערך כדי ליצור אפקט של לופ אינסופי
-      setDuplicatedStores([...storeChains, ...storeChains]);
-    }
-  }, [storeChains]);
-
   // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
   useEffect(() => {
     const handleResize = () => {
@@ -115,50 +106,70 @@ export function LogoSlider() {
 
   // הזזת הלוגואים שמאלה וימינה
   const goToNext = () => {
-    if (!duplicatedStores || duplicatedStores.length <= visibleLogos) return;
+    if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // כאשר מגיעים קרוב לסוף המערך הראשון, נחזור להתחלה באופן חלק
-      const nextIndex = prevIndex + 1;
-      
-      // אם התקרבנו לסוף המערך המקורי, נתחיל לחזור להתחלה
-      if (nextIndex >= storeChains?.length) {
-        return 0;
-      }
-      
-      return nextIndex;
+      // קידום רגיל, עם טיפול במעבר חלק בין סופו של המערך לתחילתו
+      return (prevIndex + 1) % storeChains.length;
     });
   };
 
   const goToPrev = () => {
-    if (!duplicatedStores || duplicatedStores.length <= visibleLogos) return;
+    if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // כאשר מגיעים להתחלה, נעבור לסוף המערך הראשון באופן חלק
-      if (prevIndex === 0) {
-        return Math.max(0, (storeChains?.length || 0) - visibleLogos);
-      }
-      
-      return prevIndex - 1;
+      // נסיגה אחורה, עם טיפול במעבר חלק בין תחילת המערך לסופו
+      return (prevIndex - 1 + storeChains.length) % storeChains.length;
     });
   };
 
   // הפעלת הסליידר אוטומטית באופן איטי
   useEffect(() => {
-    if (!duplicatedStores || duplicatedStores.length <= visibleLogos) return;
+    if (!storeChains || storeChains.length <= visibleLogos) return;
     
     const interval = setInterval(() => {
       goToNext();
     }, 5000); // 5 שניות לגלילה
 
     return () => clearInterval(interval);
-  }, [visibleLogos, duplicatedStores, storeChains]);
+  }, [visibleLogos, storeChains]);
 
   // במידה ואין מספיק רשתות להציג
   const showControls = (storeChains?.length || 0) > visibleLogos;
 
-  // המיקום האפקטיבי בהתייחס ללופ האינסופי
-  const effectiveIndex = currentIndex % (storeChains?.length || 1);
+  // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
+  const getDisplayItems = () => {
+    if (!storeChains || storeChains.length === 0) return [];
+    
+    // מספר הפריטים שצריך להציג לפני ואחרי כדי למנוע חללים ריקים
+    const additionalItems = Math.ceil(visibleLogos * 1.5);
+    
+    // יצירת מערך מעגלי לתצוגה רציפה
+    let items = [];
+    
+    // הוספת פריטים מהסוף להתחלה (לטיפול בגלילה אחורה)
+    for (let i = additionalItems; i > 0; i--) {
+      const idx = (currentIndex - i + storeChains.length) % storeChains.length;
+      items.push({...storeChains[idx], key: `pre-${idx}`});
+    }
+    
+    // הוספת הפריטים הנוכחיים
+    for (let i = 0; i < storeChains.length; i++) {
+      const idx = (currentIndex + i) % storeChains.length;
+      items.push({...storeChains[idx], key: `main-${idx}`});
+    }
+    
+    // הוספת פריטים מההתחלה לסוף (לטיפול בגלילה קדימה)
+    for (let i = 0; i < additionalItems; i++) {
+      const idx = (currentIndex + storeChains.length + i) % storeChains.length;
+      items.push({...storeChains[idx], key: `post-${idx}`});
+    }
+    
+    return items;
+  };
+
+  // החזרת הפריטים לתצוגה
+  const displayItems = getDisplayItems();
 
   return (
     <div className="relative py-8">
@@ -176,44 +187,23 @@ export function LogoSlider() {
 
         <div 
           ref={containerRef}
-          className="overflow-hidden mx-10"
+          className="overflow-hidden mx-10 w-full"
         >
           <motion.div 
             className="flex items-center gap-6"
             initial={false}
-            animate={{ x: `-${effectiveIndex * (100 / visibleLogos)}%` }}
-            transition={{ ease: "easeInOut", duration: 1.0 }}
+            animate={{ 
+              x: `calc(-${(currentIndex * 100) / visibleLogos}%)` 
+            }}
+            transition={{ 
+              ease: "easeInOut", 
+              duration: 1.0 
+            }}
           >
-            {/* תצוגת המערך המשוכפל ליצירת לופ אינסופי */}
-            {storeChains?.map((store, index) => (
+            {displayItems.map((store) => (
               <div 
-                key={`${store.id}-${index}`} 
-                className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center",
-                  `w-[${100 / visibleLogos}%]`
-                )}
-                style={{ width: `${100 / visibleLogos}%` }}
-              >
-                <div className="h-16 w-full bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center">
-                  <StoreLogo 
-                    storeName={store.name} 
-                    className="max-h-12 max-w-full object-contain" 
-                  />
-                </div>
-                <span className="mt-2 text-sm text-center text-gray-700">
-                  {store.name}
-                </span>
-              </div>
-            ))}
-            
-            {/* שכפול המערך הראשון כדי ליצור תחושת המשכיות */}
-            {storeChains?.map((store, index) => (
-              <div 
-                key={`${store.id}-dup-${index}`} 
-                className={cn(
-                  "flex-shrink-0 flex flex-col items-center justify-center",
-                  `w-[${100 / visibleLogos}%]`
-                )}
+                key={store.key} 
+                className="flex-shrink-0 flex flex-col items-center justify-center"
                 style={{ width: `${100 / visibleLogos}%` }}
               >
                 <div className="h-16 w-full bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center">
