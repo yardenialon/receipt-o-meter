@@ -189,7 +189,9 @@ export default function ShoppingList() {
         </Button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
+      {/* שינוי היחס בין העמודות - רשימות קניות יקבלו 1/3 והשוואת מחירים תקבל 2/3 */}
+      <div className="grid gap-8 md:grid-cols-3">
+        {/* עמודת רשימות קניות - עכשיו תופסת 1/3 */}
         <div className="space-y-8 px-4 md:px-0">
           {lists?.map((list) => (
             <div key={list.id} className="space-y-4">
@@ -208,7 +210,8 @@ export default function ShoppingList() {
           ))}
         </div>
 
-        <div className="space-y-8 sticky top-8 px-4 md:px-0">
+        {/* עמודת השוואת מחירים - עכשיו תופסת 2/3 */}
+        <div className="col-span-2 space-y-8 sticky top-8 px-4 md:px-0">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">השוואת מחירים כוללת</h2>
             <ShoppingListPriceComparison 
