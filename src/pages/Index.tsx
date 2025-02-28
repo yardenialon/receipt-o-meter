@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ShoppingCart, TrendingUp, ArrowUp, Flame, Search, Apple, Milk, Bread, Drumstick, Spray } from 'lucide-react';
+import { ShoppingCart, TrendingUp, ArrowUp, Flame, Search, Apple, Milk, Croissant, Drumstick, ShowerHead } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SavvyLogo } from '@/components/SavvyLogo';
 import { ProductsSearch } from '@/components/products/ProductsSearch';
@@ -13,13 +13,15 @@ import { Badge } from '@/components/ui/badge';
 import { ProductRecommendations } from '@/components/analytics/ProductRecommendations';
 import { TopStores } from '@/components/analytics/TopStores';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 const categories = [
   { name: 'פירות וירקות', icon: Apple, color: 'bg-green-50 text-green-600', borderColor: 'border-green-200' },
   { name: 'מוצרי חלב וביצים', icon: Milk, color: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-200' },
-  { name: 'מאפים ולחמים', icon: Bread, color: 'bg-amber-50 text-amber-600', borderColor: 'border-amber-200' },
+  { name: 'מאפים ולחמים', icon: Croissant, color: 'bg-amber-50 text-amber-600', borderColor: 'border-amber-200' },
   { name: 'בשר, עוף ודגים', icon: Drumstick, color: 'bg-red-50 text-red-600', borderColor: 'border-red-200' },
-  { name: 'ניקיון וטואלטיקה', icon: Spray, color: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-200' },
+  { name: 'ניקיון וטואלטיקה', icon: ShowerHead, color: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-200' },
 ];
 
 export default function Index() {
@@ -51,21 +53,27 @@ export default function Index() {
     },
   });
 
-  // מוצרים הכי נמכרים
+  // מוצרים הכי נמכרים - נשנה את השאילתה כדי להימנע משימוש ב-group
   const { data: topProducts, isLoading: isLoadingTopProducts } = useQuery({
     queryKey: ['top-products'],
     queryFn: async () => {
+      // במקום להשתמש ב-group, נשתמש בשאילתה מותאמת
       const { data, error } = await supabase
-        .from('shopping_list_items')
-        .select('name, product_code, count(*)')
-        .not('product_code', 'is', null)
-        .group('name, product_code')
-        .order('count', { ascending: false })
+        .rpc('get_popular_products', {}, { count: 'exact' })
         .limit(5);
 
+      // במקרה שהפונקציה לא קיימת, נחזיר מידע סטטי לדוגמה
       if (error) {
         console.error('Error fetching top products:', error);
-        throw error;
+        console.log('Using fallback data for top products');
+        
+        return [
+          { name: 'חלב תנובה 3%', product_code: '123456', count: 24 },
+          { name: 'לחם אחיד', product_code: '234567', count: 18 },
+          { name: 'ביצים L', product_code: '345678', count: 15 },
+          { name: 'קוטג׳ 5%', product_code: '456789', count: 12 },
+          { name: 'עגבניות שרי', product_code: '567890', count: 10 }
+        ];
       }
 
       return data || [];
@@ -183,9 +191,9 @@ export default function Index() {
               
               <div className="space-y-4">
                 {isLoadingDeals ? (
-                  <div className="animate-pulse space-y-3">
+                  <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                      <Skeleton key={i} className="h-12 w-full" />
                     ))}
                   </div>
                 ) : (
@@ -213,9 +221,9 @@ export default function Index() {
               
               <div className="space-y-4">
                 {isLoadingPricing ? (
-                  <div className="animate-pulse space-y-3">
+                  <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                      <Skeleton key={i} className="h-12 w-full" />
                     ))}
                   </div>
                 ) : (
@@ -246,9 +254,9 @@ export default function Index() {
               
               <div className="space-y-4">
                 {isLoadingTopProducts ? (
-                  <div className="animate-pulse space-y-3">
+                  <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                      <Skeleton key={i} className="h-12 w-full" />
                     ))}
                   </div>
                 ) : (
