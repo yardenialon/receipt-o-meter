@@ -21,6 +21,16 @@ interface BulkUploadOptions {
   primaryColumn?: string;
 }
 
+// Helper function to check if table exists
+async function checkIfTableExists(tableName: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('id')
+    .limit(1);
+  
+  return !error;
+}
+
 export function useProductImageBulkUpload() {
   const [progress, setProgress] = useState<BulkUploadProgress>({
     status: 'idle',
@@ -58,6 +68,14 @@ export function useProductImageBulkUpload() {
         errors: []
       });
 
+      // Check if tables exist
+      const productImagesTableExists = await checkIfTableExists('product_images');
+      const batchUploadsTableExists = await checkIfTableExists('image_batch_uploads');
+      
+      if (!productImagesTableExists || !batchUploadsTableExists) {
+        throw new Error('Required tables do not exist. Please ensure they are created first.');
+      }
+
       // Parse CSV file
       const csvData = await new Promise<any[]>((resolve, reject) => {
         Papa.parse(csvFile, {
@@ -75,6 +93,20 @@ export function useProductImageBulkUpload() {
       // Create a batch record
       const batchId = uuidv4();
       const batchName = csvFile.name.split('.')[0];
+      
+      // Create batch record
+      const { error: batchError } = await supabase
+        .from('image_batch_uploads')
+        .insert({
+          id: batchId,
+          name: batchName,
+          total_images: csvData.length,
+          status: 'processing'
+        }) as { error: any };
+      
+      if (batchError) {
+        console.error('Error creating batch record:', batchError);
+      }
 
       // Create image file map for quick lookup
       const imageFilesMap = new Map<string, File>();
@@ -140,7 +172,7 @@ export function useProductImageBulkUpload() {
             await supabase
               .from('product_images')
               .update({ is_primary: false })
-              .eq('product_code', productCode);
+              .eq('product_code', productCode) as { error: any };
           }
 
           // Upload to storage
@@ -161,7 +193,7 @@ export function useProductImageBulkUpload() {
               is_primary: isPrimary,
               status: 'active',
               batch_id: batchId
-            });
+            }) as { error: any };
 
           if (dbError) {
             throw new Error(`Database insert error: ${dbError.message}`);
@@ -185,6 +217,18 @@ export function useProductImageBulkUpload() {
           }));
         }
       }
+
+      // Update batch record
+      await supabase
+        .from('image_batch_uploads')
+        .update({
+          processed_images: progress.processed,
+          successful_images: progress.success,
+          failed_images: progress.failed,
+          completed_at: new Date().toISOString(),
+          status: progress.failed === 0 ? 'completed' : 'failed'
+        })
+        .eq('id', batchId) as { error: any };
 
       // Mark as completed
       setProgress(prev => ({

@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import DropZone from '@/components/upload/DropZone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import XmlUpload from '@/components/upload/XmlUpload';
 import { toast } from 'sonner';
+import DropZone from '@/components/upload/DropZone';
 
 const Upload = () => {
   const [isUploading, setIsUploading] = useState(false);
