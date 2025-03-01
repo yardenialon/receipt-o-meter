@@ -76,9 +76,6 @@ export function useProductImageBulkUpload() {
       const batchId = uuidv4();
       const batchName = csvFile.name.split('.')[0];
 
-      // Check if product_images and image_batch_uploads tables exist
-      await ensureTablesExist();
-
       // Create image file map for quick lookup
       const imageFilesMap = new Map<string, File>();
       imageFiles.forEach(file => {
@@ -212,35 +209,6 @@ export function useProductImageBulkUpload() {
       return false;
     }
   };
-
-  // Helper function to ensure required tables exist
-  async function ensureTablesExist() {
-    try {
-      // Check if product_images table exists, create it if not
-      const { error: checkError } = await supabase
-        .from('product_images')
-        .select('id')
-        .limit(1);
-      
-      if (checkError && checkError.message.includes('does not exist')) {
-        // Create the product_images table
-        await supabase.rpc('create_product_images_table');
-      }
-      
-      // Check if image_batch_uploads table exists, create it if not
-      const { error: batchCheckError } = await supabase
-        .from('image_batch_uploads')
-        .select('id')
-        .limit(1);
-      
-      if (batchCheckError && batchCheckError.message.includes('does not exist')) {
-        // Create the image_batch_uploads table
-        await supabase.rpc('create_image_batch_uploads_table');
-      }
-    } catch (error) {
-      console.error('Error ensuring tables exist:', error);
-    }
-  }
 
   return {
     progress,

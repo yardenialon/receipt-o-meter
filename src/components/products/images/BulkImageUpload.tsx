@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -80,7 +79,6 @@ export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  // Determine file type icon
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     
@@ -97,7 +95,6 @@ export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  // Progress status message and icon
   const getStatusInfo = () => {
     switch (progress.status) {
       case 'processing':

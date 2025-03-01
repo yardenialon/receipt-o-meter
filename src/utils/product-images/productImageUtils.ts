@@ -14,9 +14,6 @@ export interface ProductImage {
 
 export async function fetchProductImages(productCode: string): Promise<ProductImage[]> {
   try {
-    // First, ensure the product_images table exists
-    await ensureTablesExist();
-    
     const { data, error } = await supabase
       .from('product_images')
       .select('*')
@@ -28,6 +25,7 @@ export async function fetchProductImages(productCode: string): Promise<ProductIm
       return [];
     }
 
+    // Type assertion - we know the structure matches our ProductImage interface
     return data as ProductImage[];
   } catch (error) {
     console.error('Error in fetchProductImages:', error);
@@ -49,9 +47,6 @@ export async function getImageUrl(imagePath: string): Promise<string> {
 
 export async function setAsPrimaryImage(imageId: string, productCode: string): Promise<boolean> {
   try {
-    // First, ensure the product_images table exists
-    await ensureTablesExist();
-    
     // Set all images of this product to not primary
     const { error: updateError } = await supabase
       .from('product_images')
@@ -117,9 +112,6 @@ export async function uploadProductImage(
   isPrimary: boolean = false
 ): Promise<ProductImage | null> {
   try {
-    // First, ensure the product_images table exists
-    await ensureTablesExist();
-    
     const fileName = `${uuidv4()}-${file.name}`;
     const filePath = `${productCode}/${fileName}`;
     
@@ -162,34 +154,5 @@ export async function uploadProductImage(
   } catch (error) {
     console.error('Error in uploadProductImage:', error);
     return null;
-  }
-}
-
-// Helper function to ensure required tables exist
-async function ensureTablesExist() {
-  try {
-    // Check if product_images table exists, create it if not
-    const { error: checkError } = await supabase
-      .from('product_images')
-      .select('id')
-      .limit(1);
-    
-    if (checkError && checkError.message.includes('does not exist')) {
-      // Create the product_images table
-      await supabase.rpc('create_product_images_table');
-    }
-    
-    // Check if image_batch_uploads table exists, create it if not
-    const { error: batchCheckError } = await supabase
-      .from('image_batch_uploads')
-      .select('id')
-      .limit(1);
-    
-    if (batchCheckError && batchCheckError.message.includes('does not exist')) {
-      // Create the image_batch_uploads table
-      await supabase.rpc('create_image_batch_uploads_table');
-    }
-  } catch (error) {
-    console.error('Error ensuring tables exist:', error);
   }
 }
