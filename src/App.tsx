@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
 import ProductImages from './pages/ProductImages';
-import { Sidebar } from './components/sidebar/Sidebar';
+import { Sidebar } from '@/components/sidebar/Sidebar';
 import { SiteHeader } from './components/SiteHeader';
 import Upload from './pages/Upload';
 

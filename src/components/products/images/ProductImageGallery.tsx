@@ -20,11 +20,20 @@ interface ProductImageGalleryProps {
 export function ProductImageGallery({ productCode }: ProductImageGalleryProps) {
   const [images, setImages] = useState<ProductImage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   const loadImages = async () => {
     setIsLoading(true);
     const productImages = await fetchProductImages(productCode);
     setImages(productImages);
+    
+    // Load image URLs
+    const urls: Record<string, string> = {};
+    for (const image of productImages) {
+      urls[image.id] = await getImageUrl(image.image_path);
+    }
+    setImageUrls(urls);
+    
     setIsLoading(false);
   };
 
@@ -81,7 +90,7 @@ export function ProductImageGallery({ productCode }: ProductImageGalleryProps) {
               <CardContent className="p-0">
                 <div className="relative aspect-square">
                   <img 
-                    src={getImageUrl(image.image_path)} 
+                    src={imageUrls[image.id] || '/placeholder.svg'} 
                     alt="תמונת מוצר" 
                     className="w-full h-full object-contain"
                   />

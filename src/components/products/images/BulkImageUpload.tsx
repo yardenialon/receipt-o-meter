@@ -15,7 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDropzone } from 'react-dropzone';
 import { useProductImageBulkUpload } from '@/hooks/useProductImageBulkUpload';
-import { UploadCloud, AlertCircle, CheckCircle, FileCsv, ImageIcon, FileQuestion } from 'lucide-react';
+import { UploadCloud, AlertCircle, CheckCircle, FileText, ImageIcon, FileQuestion } from 'lucide-react';
 
 export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -91,7 +91,7 @@ export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
       case 'webp':
         return <ImageIcon className="h-4 w-4 text-blue-500" />;
       case 'csv':
-        return <FileCsv className="h-4 w-4 text-green-500" />;
+        return <FileText className="h-4 w-4 text-green-500" />;
       default:
         return <FileQuestion className="h-4 w-4 text-gray-500" />;
     }
@@ -162,7 +162,7 @@ export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
                     className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     <input {...getCsvInputProps()} />
-                    <FileCsv className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">
                       גרור ושחרר קובץ CSV כאן, או לחץ לבחירת קובץ
                     </p>
@@ -173,7 +173,7 @@ export function BulkImageUpload({ onSuccess }: { onSuccess?: () => void }) {
                 ) : (
                   <div className="border rounded-lg p-3 flex items-center justify-between">
                     <div className="flex items-center">
-                      <FileCsv className="h-5 w-5 text-green-500 mr-2" />
+                      <FileText className="h-5 w-5 text-green-500 mr-2" />
                       <span className="text-sm">{csvFile.name}</span>
                     </div>
                     <Button

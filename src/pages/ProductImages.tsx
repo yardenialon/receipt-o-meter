@@ -1,252 +1,193 @@
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { ProductImageGallery } from '@/components/products/images/ProductImageGallery';
 import { BulkImageUpload } from '@/components/products/images/BulkImageUpload';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Search, ImageIcon, Package, UploadCloud } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-export default function ProductImages() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProductCode, setSelectedProductCode] = useState<string | null>(null);
+const ProductImages = () => {
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [productList, setProductList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Query to search products
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['products-search', searchQuery],
-    queryFn: async () => {
-      if (!searchQuery || searchQuery.length < 3) return [];
+  // Function to load products
+  const loadProducts = async (search?: string) => {
+    setIsLoading(true);
+    try {
+      let query = supabase.from('products').select('id, name, product_code');
       
-      let query = supabase
-        .from('store_products')
-        .select('product_code, product_name, manufacturer')
-        .order('product_name');
-      
-      if (searchQuery) {
-        query = query.or(`product_name.ilike.%${searchQuery}%,product_code.ilike.%${searchQuery}%`);
+      // Add search filter if provided
+      if (search && search.trim() !== '') {
+        query = query.or(`name.ilike.%${search}%,product_code.ilike.%${search}%`);
       }
       
-      query = query.limit(20);
+      // Limit to recent products
+      query = query.order('created_at', { ascending: false }).limit(100);
       
       const { data, error } = await query;
       
       if (error) {
         console.error('Error fetching products:', error);
-        throw error;
+        return;
       }
       
-      // Remove duplicates (by product_code)
-      const uniqueProducts = Array.from(
-        new Map(data.map(item => [item.product_code, item])).values()
-      );
-      
-      return uniqueProducts;
-    },
-    enabled: searchQuery.length >= 3
-  });
-
-  // Query to get statistics
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
-    queryKey: ['product-images-stats'],
-    queryFn: async () => {
-      // Get total products count
-      const { count: totalProducts, error: countError } = await supabase
-        .from('store_products')
-        .select('*', { count: 'exact', head: true });
-      
-      if (countError) {
-        console.error('Error fetching product count:', countError);
-        throw countError;
-      }
-      
-      // Get products with images count
-      const { data: imageStats, error: statsError } = await supabase
-        .from('product_images')
-        .select('product_code')
-        .eq('status', 'active');
-      
-      if (statsError) {
-        console.error('Error fetching image stats:', statsError);
-        throw statsError;
-      }
-      
-      // Count unique product codes
-      const uniqueProductsWithImages = new Set(imageStats.map(item => item.product_code)).size;
-      
-      return {
-        totalProducts: totalProducts || 0,
-        productsWithImages: uniqueProductsWithImages,
-        coveragePercentage: totalProducts 
-          ? Math.round((uniqueProductsWithImages / totalProducts) * 100) 
-          : 0
-      };
+      setProductList(data || []);
+    } catch (error) {
+      console.error('Error in loadProducts:', error);
+    } finally {
+      setIsLoading(false);
     }
-  });
-
-  const handleProductSelect = (productCode: string) => {
-    setSelectedProductCode(productCode);
   };
 
-  const refreshStats = () => {
-    // Invalidate the stats query to refresh data
-    // You could access the queryClient here to invalidate the query
+  // Load products on mount and search term change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadProducts(searchTerm);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Handle product selection
+  const handleSelectProduct = (productCode: string) => {
+    setSelectedProduct(productCode);
+  };
+
+  // Handle search submit
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadProducts(searchTerm);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="container mx-auto space-y-6">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">ניהול תמונות מוצר</h1>
-          <p className="text-muted-foreground mt-1">
-            העלה, ערוך ונהל תמונות עבור מוצרים
-          </p>
+          <h1 className="text-2xl font-bold">ניהול תמונות מוצרים</h1>
+          <p className="text-gray-500">הוסף, ערוך או מחק תמונות למוצרים</p>
         </div>
-        <BulkImageUpload onSuccess={refreshStats} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* סטטיסטיקות */}
-        {isLoadingStats ? (
-          <>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </>
-        ) : (
-          <>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>סה"כ מוצרים</CardDescription>
-                <CardTitle className="text-2xl">{stats?.totalProducts.toLocaleString()}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Package className="h-5 w-5 text-gray-400" />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>מוצרים עם תמונות</CardDescription>
-                <CardTitle className="text-2xl">{stats?.productsWithImages.toLocaleString()}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageIcon className="h-5 w-5 text-gray-400" />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>אחוז כיסוי</CardDescription>
-                <CardTitle className="text-2xl">{stats?.coveragePercentage}%</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-2 bg-gray-200 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-500 rounded-full" 
-                    style={{ width: `${stats?.coveragePercentage || 0}%` }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
+        <BulkImageUpload onSuccess={() => loadProducts(searchTerm)} />
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* חיפוש מוצרים */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>חיפוש מוצרים</CardTitle>
-            <CardDescription>
-              חפש מוצרים לפי שם או קוד מוצר
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="הקלד לפחות 3 תווים לחיפוש..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <div className="border rounded-lg max-h-96 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-4 space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>מוצרים</CardTitle>
+              <CardDescription>חפש מוצר כדי לנהל את התמונות שלו</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSearchSubmit} className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="חפש לפי שם או קוד מוצר"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="pl-10"
+                  />
                 </div>
-              ) : searchQuery.length < 3 ? (
-                <div className="p-8 text-center text-gray-500">
-                  <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                  הקלד לפחות 3 תווים לחיפוש
-                </div>
-              ) : products && products.length > 0 ? (
-                <ul className="divide-y">
-                  {products.map((product) => (
-                    <li key={product.product_code}>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start px-4 py-3 h-auto"
-                        onClick={() => handleProductSelect(product.product_code)}
-                      >
-                        <div className="text-right w-full">
-                          <p className="font-medium truncate">{product.product_name}</p>
-                          <div className="flex justify-between text-sm text-gray-500">
-                            <span>{product.manufacturer}</span>
-                            <span>#{product.product_code}</span>
-                          </div>
-                        </div>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <Package className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                  לא נמצאו מוצרים תואמים
-                </div>
-              )}
-            </div>
-            
-            <p className="text-sm text-gray-500">
-              לחץ על מוצר כדי לנהל את התמונות שלו
-            </p>
-          </CardContent>
-        </Card>
+              </form>
 
-        {/* תצוגת תמונות */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>תמונות מוצר</CardTitle>
-            <CardDescription>
-              {selectedProductCode 
-                ? `ניהול תמונות עבור מוצר #${selectedProductCode}` 
-                : 'בחר מוצר מהרשימה כדי לנהל את התמונות שלו'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!selectedProductCode ? (
-              <div className="border border-dashed rounded-lg p-10 text-center">
-                <UploadCloud className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium mb-1">בחר מוצר להתחלה</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  חפש וסנן מוצרים מהרשימה בצד שמאל, ולחץ על מוצר כדי לנהל את התמונות שלו
-                </p>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>קוד מוצר</TableHead>
+                      <TableHead>שם מוצר</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-4">
+                          טוען מוצרים...
+                        </TableCell>
+                      </TableRow>
+                    ) : productList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-4">
+                          לא נמצאו מוצרים
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      productList.map((product) => (
+                        <TableRow 
+                          key={product.id}
+                          className={selectedProduct === product.product_code ? "bg-blue-50" : ""}
+                        >
+                          <TableCell className="font-mono">{product.product_code}</TableCell>
+                          <TableCell className="max-w-[150px] truncate">{product.name}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleSelectProduct(product.product_code)}
+                            >
+                              בחר
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            ) : (
-              <ProductImageGallery productCode={selectedProductCode} />
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-2">
+          {selectedProduct ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>תמונות למוצר #{selectedProduct}</CardTitle>
+                <CardDescription>נהל את תמונות המוצר</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ProductImageGallery productCode={selectedProduct} />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Search className="h-16 w-16 text-gray-300 mb-4" />
+                <h3 className="text-lg font-medium">בחר מוצר כדי לנהל את התמונות שלו</h3>
+                <p className="text-gray-500 text-center max-w-md mt-2">
+                  חפש מוצר ברשימה משמאל ולחץ על "בחר" כדי לצפות ולנהל את התמונות שלו
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ProductImages;
