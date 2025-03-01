@@ -1,198 +1,157 @@
 
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
+// Define the type for product images
 export interface ProductImage {
   id: string;
   product_code: string;
   image_path: string;
   created_at: string;
   is_primary: boolean;
-  source?: string;
-  status: 'active' | 'pending' | 'deleted';
+  status: string;
 }
 
-export interface ImageBatchUpload {
-  id: string;
-  fileName: string;
-  totalImages: number;
-  processedImages: number;
-  successCount: number;
-  failedCount: number;
-  status: 'processing' | 'completed' | 'failed';
-  errorLog?: any;
-  createdAt: string;
-  completedAt?: string;
-}
-
-/**
- * Fetches all images for a specific product
- */
 export async function fetchProductImages(productCode: string): Promise<ProductImage[]> {
-  const { data, error } = await supabase
-    .from('product_images')
-    .select('*')
-    .eq('product_code', productCode)
-    .eq('status', 'active')
-    .order('is_primary', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching product images:', error);
-    toast.error('שגיאה בטעינת תמונות המוצר');
+  try {
+    const { data, error } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_code', productCode)
+      .order('is_primary', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching product images:', error);
+      return [];
+    }
+
+    return data as ProductImage[];
+  } catch (error) {
+    console.error('Error in fetchProductImages:', error);
     return [];
   }
-  
-  return data as ProductImage[];
 }
 
-/**
- * Uploads a single image for a product
- */
-export async function uploadProductImage(file: File, productCode: string, isPrimary: boolean = false): Promise<ProductImage | null> {
+export async function getImageUrl(imagePath: string): Promise<string> {
+  if (!imagePath) return '/placeholder.svg';
+  
   try {
-    // 1. Upload the file to storage
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${productCode}_${Date.now()}.${fileExt}`;
-    const filePath = `${productCode}/${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('product_images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
-    
-    if (uploadError) {
-      throw uploadError;
-    }
-    
-    // 2. Get the public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from('product_images')
-      .getPublicUrl(filePath);
-    
-    // 3. If this is the primary image, update any existing primary images
-    if (isPrimary) {
-      await supabase
-        .from('product_images')
-        .update({ is_primary: false })
-        .eq('product_code', productCode)
-        .eq('is_primary', true);
-    }
-    
-    // 4. Save the image reference to the database
-    const { data, error: dbError } = await supabase
-      .from('product_images')
-      .insert({
-        product_code: productCode,
-        image_path: filePath,
-        is_primary: isPrimary,
-        source: 'manual_upload'
-      })
-      .select()
-      .single();
-    
-    if (dbError) {
-      throw dbError;
-    }
-    
-    toast.success('התמונה הועלתה בהצלחה');
-    return data as ProductImage;
-    
+    const { data } = await supabase.storage.from('product-images').getPublicUrl(imagePath);
+    return data.publicUrl;
   } catch (error) {
-    console.error('Error uploading product image:', error);
-    toast.error('שגיאה בהעלאת התמונה');
-    return null;
+    console.error('Error getting image URL:', error);
+    return '/placeholder.svg';
   }
 }
 
-/**
- * Sets an image as the primary image for a product
- */
 export async function setAsPrimaryImage(imageId: string, productCode: string): Promise<boolean> {
   try {
-    // First, reset any current primary images
-    await supabase
+    // First, set all images of this product to not primary
+    const { error: updateError } = await supabase
       .from('product_images')
       .update({ is_primary: false })
-      .eq('product_code', productCode)
-      .eq('is_primary', true);
-    
+      .eq('product_code', productCode);
+
+    if (updateError) {
+      console.error('Error updating primary images:', updateError);
+      return false;
+    }
+
     // Then set the selected image as primary
     const { error } = await supabase
       .from('product_images')
       .update({ is_primary: true })
       .eq('id', imageId);
-    
-    if (error) throw error;
-    
-    toast.success('התמונה הראשית עודכנה בהצלחה');
+
+    if (error) {
+      console.error('Error setting primary image:', error);
+      return false;
+    }
+
     return true;
   } catch (error) {
-    console.error('Error setting primary image:', error);
-    toast.error('שגיאה בעדכון התמונה הראשית');
+    console.error('Error in setAsPrimaryImage:', error);
     return false;
   }
 }
 
-/**
- * Deletes a product image
- */
 export async function deleteProductImage(imageId: string, imagePath: string): Promise<boolean> {
   try {
-    // First delete from storage
+    // Delete the image file from storage
     const { error: storageError } = await supabase.storage
-      .from('product_images')
+      .from('product-images')
       .remove([imagePath]);
-    
+
     if (storageError) {
       console.error('Error deleting image from storage:', storageError);
+      return false;
     }
-    
-    // Then delete from database
+
+    // Delete the image record from the database
     const { error: dbError } = await supabase
       .from('product_images')
       .delete()
       .eq('id', imageId);
-    
-    if (dbError) throw dbError;
-    
-    toast.success('התמונה נמחקה בהצלחה');
+
+    if (dbError) {
+      console.error('Error deleting image record:', dbError);
+      return false;
+    }
+
     return true;
   } catch (error) {
-    console.error('Error deleting product image:', error);
-    toast.error('שגיאה במחיקת התמונה');
+    console.error('Error in deleteProductImage:', error);
     return false;
   }
 }
 
-/**
- * Returns the primary image for a product, or the first available image
- */
-export async function getProductMainImage(productCode: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('product_images')
-    .select('*')
-    .eq('product_code', productCode)
-    .eq('status', 'active')
-    .order('is_primary', { ascending: false })
-    .limit(1);
-  
-  if (error || !data || data.length === 0) {
+export async function uploadProductImage(
+  file: File,
+  productCode: string,
+  isPrimary: boolean = false
+): Promise<ProductImage | null> {
+  try {
+    const fileName = `${uuidv4()}-${file.name}`;
+    const filePath = `${productCode}/${fileName}`;
+    
+    // Upload to storage
+    const { error: uploadError } = await supabase.storage
+      .from('product-images')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      return null;
+    }
+
+    // If this is the first image or marked as primary, set other images as non-primary
+    if (isPrimary) {
+      await supabase
+        .from('product_images')
+        .update({ is_primary: false })
+        .eq('product_code', productCode);
+    }
+
+    // Create record in database
+    const { data, error: insertError } = await supabase
+      .from('product_images')
+      .insert({
+        product_code: productCode,
+        image_path: filePath,
+        is_primary: isPrimary,
+        status: 'active'
+      })
+      .select('*')
+      .single();
+
+    if (insertError) {
+      console.error('Error inserting image record:', insertError);
+      return null;
+    }
+
+    return data as ProductImage;
+  } catch (error) {
+    console.error('Error in uploadProductImage:', error);
     return null;
   }
-  
-  const { data: { publicUrl } } = supabase.storage
-    .from('product_images')
-    .getPublicUrl(data[0].image_path);
-  
-  return publicUrl;
-}
-
-export function getImageUrl(imagePath: string): string {
-  const { data: { publicUrl } } = supabase.storage
-    .from('product_images')
-    .getPublicUrl(imagePath);
-  
-  return publicUrl;
 }

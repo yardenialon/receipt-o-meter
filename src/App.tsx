@@ -1,11 +1,12 @@
+
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { SiteHeader } from '@/components/SiteHeader';
-import { Sidebar } from '@/components/sidebar/Sidebar';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Products from './pages/Products';
-import { ShoppingList } from './pages/ShoppingList';
-import { Upload } from './pages/Upload';
+import ShoppingList from './pages/ShoppingList';
 import ProductImages from './pages/ProductImages';
+import { Sidebar } from './components/sidebar/Sidebar';
+import { SiteHeader } from './components/SiteHeader';
+import Upload from './pages/Upload';
 
 function App() {
   const isLoggedIn = true; // Replace with your actual authentication logic
