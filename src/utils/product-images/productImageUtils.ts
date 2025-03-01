@@ -1,23 +1,7 @@
-
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductImage } from '@/types/product-images';
-
-// Helper function to check if table exists
-async function checkIfTableExists(tableName: string): Promise<boolean> {
-  try {
-    // Use a dynamic approach that works with TypeScript
-    const { data, error } = await supabase
-      .from(tableName as any)
-      .select('id')
-      .limit(1);
-    
-    return !error;
-  } catch (error) {
-    console.error(`Error checking if table ${tableName} exists:`, error);
-    return false;
-  }
-}
+import { checkIfTableExists } from './tableUtils';
 
 export async function fetchProductImages(productCode: string): Promise<ProductImage[]> {
   try {
@@ -39,7 +23,7 @@ export async function fetchProductImages(productCode: string): Promise<ProductIm
       return [];
     }
 
-    return data as ProductImage[] || [];
+    return (data || []) as ProductImage[];
   } catch (error) {
     console.error('Error in fetchProductImages:', error);
     return [];
@@ -184,7 +168,7 @@ export async function uploadProductImage(
       return null;
     }
 
-    return data as ProductImage;
+    return data as unknown as ProductImage;
   } catch (error) {
     console.error('Error in uploadProductImage:', error);
     return null;

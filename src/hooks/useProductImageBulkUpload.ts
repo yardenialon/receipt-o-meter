@@ -1,24 +1,11 @@
 
 import { useState } from 'react';
-import Papa from 'papaparse';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/lib/supabase';
-import { BulkUploadProgress, BulkUploadOptions } from '@/types/product-images';
-
-// Helper function to check if table exists
-async function checkIfTableExists(tableName: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from(tableName as any)
-      .select('id')
-      .limit(1);
-    
-    return !error;
-  } catch (error) {
-    console.error(`Error checking if table ${tableName} exists:`, error);
-    return false;
-  }
-}
+import { BulkUploadProgress, BulkUploadOptions, BulkUploadError } from '@/types/bulk-upload';
+import { checkIfTableExists } from '@/utils/product-images/tableUtils';
+import { parseCSVFile } from '@/utils/product-images/csvParsingUtils';
+import { createBatchUploadRecord, updateBatchUploadRecord } from '@/utils/product-images/batchUploadUtils';
+import { uploadImageFile } from '@/utils/product-images/imageUploadUtils';
 
 export function useProductImageBulkUpload() {
   const [progress, setProgress] = useState<BulkUploadProgress>({
@@ -39,6 +26,22 @@ export function useProductImageBulkUpload() {
       failed: 0,
       errors: []
     });
+  };
+
+  const addError = (error: BulkUploadError) => {
+    setProgress(prev => ({
+      ...prev,
+      failed: prev.failed + 1,
+      errors: [...prev.errors, error]
+    }));
+  };
+
+  const updateProgress = (processed: number, success?: number) => {
+    setProgress(prev => ({
+      ...prev,
+      processed,
+      success: success !== undefined ? success : prev.success
+    }));
   };
 
   const processBulkUpload = async (
@@ -66,36 +69,14 @@ export function useProductImageBulkUpload() {
       }
 
       // Parse CSV file
-      const csvData = await new Promise<any[]>((resolve, reject) => {
-        Papa.parse(csvFile, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            resolve(results.data);
-          },
-          error: (error) => {
-            reject(error);
-          }
-        });
-      });
+      const csvData = await parseCSVFile(csvFile);
 
       // Create a batch record
       const batchId = uuidv4();
       const batchName = csvFile.name.split('.')[0];
       
       // Create batch record
-      const { error: batchError } = await supabase
-        .from('image_batch_uploads' as any)
-        .insert({
-          id: batchId,
-          name: batchName,
-          total_images: csvData.length,
-          status: 'processing'
-        });
-      
-      if (batchError) {
-        console.error('Error creating batch record:', batchError);
-      }
+      await createBatchUploadRecord(batchId, batchName, csvData.length);
 
       // Create image file map for quick lookup
       const imageFilesMap = new Map<string, File>();
@@ -117,107 +98,61 @@ export function useProductImageBulkUpload() {
         const isPrimary = options.primaryColumn && row[options.primaryColumn] === 'true';
 
         // Update progress
-        setProgress(prev => ({
-          ...prev,
-          processed: i + 1
-        }));
+        updateProgress(i + 1);
 
         // Skip if no product code or image file
         if (!productCode || !imageFileName) {
-          setProgress(prev => ({
-            ...prev,
-            failed: prev.failed + 1,
-            errors: [...prev.errors, {
-              productCode: productCode || 'unknown',
-              fileName: imageFileName || 'unknown',
-              error: 'Missing product code or image file name'
-            }]
-          }));
+          addError({
+            productCode: productCode || 'unknown',
+            fileName: imageFileName || 'unknown',
+            error: 'Missing product code or image file name'
+          });
           continue;
         }
 
         // Find the image file
         const imageFile = imageFilesMap.get(imageFileName);
         if (!imageFile) {
-          setProgress(prev => ({
-            ...prev,
-            failed: prev.failed + 1,
-            errors: [...prev.errors, {
-              productCode,
-              fileName: imageFileName,
-              error: 'Image file not found in uploaded files'
-            }]
-          }));
+          addError({
+            productCode,
+            fileName: imageFileName,
+            error: 'Image file not found in uploaded files'
+          });
           continue;
         }
 
         try {
           // Upload image
-          const fileName = `${uuidv4()}-${imageFile.name}`;
-          const filePath = `${productCode}/${fileName}`;
-
-          // If primary, update other images
-          if (isPrimary) {
-            await supabase
-              .from('product_images' as any)
-              .update({ is_primary: false })
-              .eq('product_code', productCode);
+          const result = await uploadImageFile(imageFile, productCode, isPrimary, batchId);
+          
+          if (result.success) {
+            // Update progress for success
+            setProgress(prev => ({
+              ...prev,
+              success: prev.success + 1
+            }));
+          } else {
+            throw new Error(result.error);
           }
-
-          // Upload to storage
-          const { error: uploadError } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, imageFile);
-
-          if (uploadError) {
-            throw new Error(`Storage upload error: ${uploadError.message}`);
-          }
-
-          // Add to database
-          const { error: dbError } = await supabase
-            .from('product_images' as any)
-            .insert({
-              product_code: productCode,
-              image_path: filePath,
-              is_primary: isPrimary,
-              status: 'active',
-              batch_id: batchId
-            });
-
-          if (dbError) {
-            throw new Error(`Database insert error: ${dbError.message}`);
-          }
-
-          // Update progress for success
-          setProgress(prev => ({
-            ...prev,
-            success: prev.success + 1
-          }));
         } catch (error) {
           // Handle error
-          setProgress(prev => ({
-            ...prev,
-            failed: prev.failed + 1,
-            errors: [...prev.errors, {
-              productCode,
-              fileName: imageFileName,
-              error: error instanceof Error ? error.message : 'Unknown error'
-            }]
-          }));
+          addError({
+            productCode,
+            fileName: imageFileName,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
         }
       }
 
-      // Update batch record
-      await supabase
-        .from('image_batch_uploads' as any)
-        .update({
-          processed_images: progress.processed,
-          successful_images: progress.success,
-          failed_images: progress.failed,
-          completed_at: new Date().toISOString(),
-          status: progress.failed === 0 ? 'completed' : 'failed'
-        })
-        .eq('id', batchId);
+      // Update batch record with final stats
+      const finalStatus = progress.failed === 0 ? 'completed' : 'failed';
+      await updateBatchUploadRecord(
+        batchId, 
+        progress.processed, 
+        progress.success, 
+        progress.failed, 
+        finalStatus as 'completed' | 'failed'
+      );
 
       // Mark as completed
       setProgress(prev => ({
