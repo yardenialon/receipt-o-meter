@@ -6,8 +6,9 @@ import { ProductImage } from '@/types/product-images';
 // Helper function to check if table exists
 async function checkIfTableExists(tableName: string): Promise<boolean> {
   try {
+    // Use a dynamic approach that works with TypeScript
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('id')
       .limit(1);
     
@@ -28,7 +29,7 @@ export async function fetchProductImages(productCode: string): Promise<ProductIm
     }
     
     const { data, error } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .select('*')
       .eq('product_code', productCode)
       .order('is_primary', { ascending: false });
@@ -68,7 +69,7 @@ export async function setAsPrimaryImage(imageId: string, productCode: string): P
     
     // Set all images of this product to not primary
     const { error: updateError } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .update({ is_primary: false })
       .eq('product_code', productCode);
 
@@ -79,7 +80,7 @@ export async function setAsPrimaryImage(imageId: string, productCode: string): P
 
     // Then set the selected image as primary
     const { error } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .update({ is_primary: true })
       .eq('id', imageId);
 
@@ -116,7 +117,7 @@ export async function deleteProductImage(imageId: string, imagePath: string): Pr
 
     // Delete the image record from the database
     const { error: dbError } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .delete()
       .eq('id', imageId);
 
@@ -161,14 +162,14 @@ export async function uploadProductImage(
     // If this is the first image or marked as primary, set other images as non-primary
     if (isPrimary) {
       await supabase
-        .from('product_images')
+        .from('product_images' as any)
         .update({ is_primary: false })
         .eq('product_code', productCode);
     }
 
     // Create record in database
     const { data, error: insertError } = await supabase
-      .from('product_images')
+      .from('product_images' as any)
       .insert({
         product_code: productCode,
         image_path: filePath,

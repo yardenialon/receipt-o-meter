@@ -5,11 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   fetchProductImages, 
-  ProductImage, 
   setAsPrimaryImage, 
   deleteProductImage, 
   getImageUrl 
 } from '@/utils/product-images/productImageUtils';
+import { ProductImage } from '@/types/product-images';
 import { ProductImageUpload } from './ProductImageUpload';
 import { Star, StarOff, Trash2, Image as ImageIcon } from 'lucide-react';
 

@@ -9,7 +9,7 @@ import { BulkUploadProgress, BulkUploadOptions } from '@/types/product-images';
 async function checkIfTableExists(tableName: string): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .select('id')
       .limit(1);
     
@@ -85,7 +85,7 @@ export function useProductImageBulkUpload() {
       
       // Create batch record
       const { error: batchError } = await supabase
-        .from('image_batch_uploads')
+        .from('image_batch_uploads' as any)
         .insert({
           id: batchId,
           name: batchName,
@@ -159,7 +159,7 @@ export function useProductImageBulkUpload() {
           // If primary, update other images
           if (isPrimary) {
             await supabase
-              .from('product_images')
+              .from('product_images' as any)
               .update({ is_primary: false })
               .eq('product_code', productCode);
           }
@@ -175,7 +175,7 @@ export function useProductImageBulkUpload() {
 
           // Add to database
           const { error: dbError } = await supabase
-            .from('product_images')
+            .from('product_images' as any)
             .insert({
               product_code: productCode,
               image_path: filePath,
@@ -209,7 +209,7 @@ export function useProductImageBulkUpload() {
 
       // Update batch record
       await supabase
-        .from('image_batch_uploads')
+        .from('image_batch_uploads' as any)
         .update({
           processed_images: progress.processed,
           successful_images: progress.success,
