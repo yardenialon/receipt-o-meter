@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductImage } from '@/types/product-images';
@@ -23,7 +24,8 @@ export async function fetchProductImages(productCode: string): Promise<ProductIm
       return [];
     }
 
-    return (data || []) as ProductImage[];
+    // Use a type assertion to tell TypeScript about the shape of the data
+    return (data || []) as unknown as ProductImage[];
   } catch (error) {
     console.error('Error in fetchProductImages:', error);
     return [];
@@ -168,6 +170,7 @@ export async function uploadProductImage(
       return null;
     }
 
+    // Use a type assertion for better TypeScript compatibility
     return data as unknown as ProductImage;
   } catch (error) {
     console.error('Error in uploadProductImage:', error);

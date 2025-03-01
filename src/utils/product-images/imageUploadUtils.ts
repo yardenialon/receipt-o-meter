@@ -1,44 +1,38 @@
 
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { checkIfTableExists } from './tableUtils';
+
+interface UploadResult {
+  success: boolean;
+  error?: string;
+}
 
 /**
- * Upload an image file for a specific product
+ * Upload a single image file for a product
  */
 export async function uploadImageFile(
-  imageFile: File,
+  file: File,
   productCode: string,
   isPrimary: boolean = false,
   batchId?: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<UploadResult> {
   try {
-    // Check if product_images table exists
-    const tableExists = await checkIfTableExists('product_images');
-    if (!tableExists) {
-      return { 
-        success: false, 
-        error: 'product_images table does not exist' 
-      };
-    }
-
-    // Generate unique filename
-    const fileName = `${uuidv4()}-${imageFile.name}`;
+    const fileName = `${uuidv4()}-${file.name}`;
     const filePath = `${productCode}/${fileName}`;
     
     // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from('product-images')
-      .upload(filePath, imageFile);
+      .upload(filePath, file);
 
     if (uploadError) {
-      return { 
-        success: false, 
-        error: `Storage upload error: ${uploadError.message}` 
+      return {
+        success: false,
+        error: `Storage error: ${uploadError.message}`
       };
     }
 
-    // If primary, update other images
+    // If this is the first image or marked as primary, set other images as non-primary
     if (isPrimary) {
       await supabase
         .from('product_images' as any)
@@ -58,18 +52,17 @@ export async function uploadImageFile(
       });
 
     if (insertError) {
-      return { 
-        success: false, 
-        error: `Database insert error: ${insertError.message}` 
+      return {
+        success: false,
+        error: `Database error: ${insertError.message}`
       };
     }
 
     return { success: true };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return { 
-      success: false, 
-      error: errorMessage 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
 }
