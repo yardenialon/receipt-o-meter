@@ -3,32 +3,21 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabase';
-
-interface BulkUploadProgress {
-  status: 'idle' | 'processing' | 'completed' | 'failed';
-  total: number;
-  processed: number;
-  success: number;
-  failed: number;
-  errors: Array<{
-    productCode: string;
-    fileName: string;
-    error: string;
-  }>;
-}
-
-interface BulkUploadOptions {
-  primaryColumn?: string;
-}
+import { BulkUploadProgress, BulkUploadOptions } from '@/types/product-images';
 
 // Helper function to check if table exists
 async function checkIfTableExists(tableName: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('id')
-    .limit(1);
-  
-  return !error;
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id')
+      .limit(1);
+    
+    return !error;
+  } catch (error) {
+    console.error(`Error checking if table ${tableName} exists:`, error);
+    return false;
+  }
 }
 
 export function useProductImageBulkUpload() {
@@ -102,7 +91,7 @@ export function useProductImageBulkUpload() {
           name: batchName,
           total_images: csvData.length,
           status: 'processing'
-        }) as { error: any };
+        });
       
       if (batchError) {
         console.error('Error creating batch record:', batchError);
@@ -172,7 +161,7 @@ export function useProductImageBulkUpload() {
             await supabase
               .from('product_images')
               .update({ is_primary: false })
-              .eq('product_code', productCode) as { error: any };
+              .eq('product_code', productCode);
           }
 
           // Upload to storage
@@ -193,7 +182,7 @@ export function useProductImageBulkUpload() {
               is_primary: isPrimary,
               status: 'active',
               batch_id: batchId
-            }) as { error: any };
+            });
 
           if (dbError) {
             throw new Error(`Database insert error: ${dbError.message}`);
@@ -228,7 +217,7 @@ export function useProductImageBulkUpload() {
           completed_at: new Date().toISOString(),
           status: progress.failed === 0 ? 'completed' : 'failed'
         })
-        .eq('id', batchId) as { error: any };
+        .eq('id', batchId);
 
       // Mark as completed
       setProgress(prev => ({

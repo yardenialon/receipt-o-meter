@@ -1,25 +1,21 @@
 
 import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-
-// Define the type for product images
-export interface ProductImage {
-  id: string;
-  product_code: string;
-  image_path: string;
-  created_at: string;
-  is_primary: boolean;
-  status: string;
-}
+import { ProductImage } from '@/types/product-images';
 
 // Helper function to check if table exists
 async function checkIfTableExists(tableName: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('id')
-    .limit(1);
-  
-  return !error;
+  try {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('id')
+      .limit(1);
+    
+    return !error;
+  } catch (error) {
+    console.error(`Error checking if table ${tableName} exists:`, error);
+    return false;
+  }
 }
 
 export async function fetchProductImages(productCode: string): Promise<ProductImage[]> {
@@ -35,14 +31,14 @@ export async function fetchProductImages(productCode: string): Promise<ProductIm
       .from('product_images')
       .select('*')
       .eq('product_code', productCode)
-      .order('is_primary', { ascending: false }) as { data: ProductImage[] | null, error: any };
+      .order('is_primary', { ascending: false });
 
     if (error) {
       console.error('Error fetching product images:', error);
       return [];
     }
 
-    return data || [];
+    return data as ProductImage[] || [];
   } catch (error) {
     console.error('Error in fetchProductImages:', error);
     return [];
@@ -74,7 +70,7 @@ export async function setAsPrimaryImage(imageId: string, productCode: string): P
     const { error: updateError } = await supabase
       .from('product_images')
       .update({ is_primary: false })
-      .eq('product_code', productCode) as { error: any };
+      .eq('product_code', productCode);
 
     if (updateError) {
       console.error('Error updating primary images:', updateError);
@@ -85,7 +81,7 @@ export async function setAsPrimaryImage(imageId: string, productCode: string): P
     const { error } = await supabase
       .from('product_images')
       .update({ is_primary: true })
-      .eq('id', imageId) as { error: any };
+      .eq('id', imageId);
 
     if (error) {
       console.error('Error setting primary image:', error);
@@ -122,7 +118,7 @@ export async function deleteProductImage(imageId: string, imagePath: string): Pr
     const { error: dbError } = await supabase
       .from('product_images')
       .delete()
-      .eq('id', imageId) as { error: any };
+      .eq('id', imageId);
 
     if (dbError) {
       console.error('Error deleting image record:', dbError);
@@ -167,7 +163,7 @@ export async function uploadProductImage(
       await supabase
         .from('product_images')
         .update({ is_primary: false })
-        .eq('product_code', productCode) as { error: any };
+        .eq('product_code', productCode);
     }
 
     // Create record in database
@@ -179,15 +175,15 @@ export async function uploadProductImage(
         is_primary: isPrimary,
         status: 'active'
       })
-      .select('*')
-      .single() as { data: ProductImage | null, error: any };
+      .select()
+      .single();
 
     if (insertError) {
       console.error('Error inserting image record:', insertError);
       return null;
     }
 
-    return data;
+    return data as ProductImage;
   } catch (error) {
     console.error('Error in uploadProductImage:', error);
     return null;
