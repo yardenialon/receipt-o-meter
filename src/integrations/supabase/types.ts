@@ -95,42 +95,6 @@ export type Database = {
         }
         Relationships: []
       }
-      image_batch_uploads: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          failed_images: number | null
-          id: string
-          name: string
-          processed_images: number | null
-          status: string | null
-          successful_images: number | null
-          total_images: number | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          failed_images?: number | null
-          id?: string
-          name: string
-          processed_images?: number | null
-          status?: string | null
-          successful_images?: number | null
-          total_images?: number | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          failed_images?: number | null
-          id?: string
-          name?: string
-          processed_images?: number | null
-          status?: string | null
-          successful_images?: number | null
-          total_images?: number | null
-        }
-        Relationships: []
-      }
       price_file_uploads: {
         Row: {
           completed_at: string | null
@@ -287,36 +251,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      product_images: {
-        Row: {
-          batch_id: string | null
-          created_at: string
-          id: string
-          image_path: string
-          is_primary: boolean | null
-          product_code: string
-          status: string | null
-        }
-        Insert: {
-          batch_id?: string | null
-          created_at?: string
-          id?: string
-          image_path: string
-          is_primary?: boolean | null
-          product_code: string
-          status?: string | null
-        }
-        Update: {
-          batch_id?: string | null
-          created_at?: string
-          id?: string
-          image_path?: string
-          is_primary?: boolean | null
-          product_code?: string
-          status?: string | null
-        }
-        Relationships: []
       }
       products: {
         Row: {

@@ -1,70 +1,87 @@
-import { NavLink } from 'react-router-dom';
+
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
-import { 
-  Home, 
-  Package, 
-  ListChecks, 
-  Settings,
-  LogOut,
-  ImageIcon,
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-interface NavItemProps {
-  to: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
+interface NavLinkProps {
+  href: string;
+  label: string;
+  icon: any;
 }
 
-function NavItem({ to, icon, children }: NavItemProps) {
+export const NavLink = ({ href, label, icon: Icon }: NavLinkProps) => {
+  const location = useLocation();
+  const isActive = location.pathname === href;
+
   return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        cn(
-          "group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-          isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
-        )
-      }
+    <Button
+      variant={isActive ? 'secondary' : 'ghost'}
+      className={cn(
+        'w-full justify-start gap-3 transition-all duration-300',
+        'relative overflow-hidden',
+        isActive && 'bg-gradient-to-r from-primary-400 to-primary-500 text-white'
+      )}
+      asChild
     >
-      {icon}
-      {children}
-    </NavLink>
+      <Link to={href}>
+        <Icon className="h-5 w-5" />
+        <span>{label}</span>
+        {isActive && (
+          <motion.div
+            className="absolute inset-0 bg-white/10"
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{
+              repeat: Infinity,
+              duration: 1.5,
+              ease: 'linear',
+            }}
+          />
+        )}
+      </Link>
+    </Button>
   );
-}
+};
 
-export function NavLinks() {
+export const NavLinks = () => {
   const { signOut } = useAuth();
-  
-  return (
-    <div className="flex flex-col gap-1">
-      <NavItem to="/" icon={<Home className="mr-2 h-4 w-4" />}>
-        דף הבית
-      </NavItem>
-      
-      <NavItem to="/products" icon={<Package className="mr-2 h-4 w-4" />}>
-        מוצרים
-      </NavItem>
-      
-      <NavItem to="/shopping-list" icon={<ListChecks className="mr-2 h-4 w-4" />}>
-        רשימת קניות
-      </NavItem>
-      
-      <NavItem to="/settings" icon={<Settings className="mr-2 h-4 w-4" />}>
-        הגדרות
-      </NavItem>
-      
-      <NavItem to="/product-images" icon={<ImageIcon className="mr-2 h-4 w-4" />}>
-        ניהול תמונות מוצרים
-      </NavItem>
+  const navigate = useNavigate();
 
-      <button
-        onClick={signOut}
-        className="group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+      toast.success('התנתקת בהצלחה');
+    } catch (error) {
+      toast.error('אירעה שגיאה בהתנתקות');
+    }
+  };
+
+  const links = [
+    { href: '/', label: 'ראשי', icon: Home },
+    { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
+    { href: '/products', label: 'מוצרים', icon: Package2 },
+    { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },
+  ];
+
+  return (
+    <div className="space-y-1">
+      {links.map((link) => (
+        <NavLink key={link.href} {...link} />
+      ))}
+      <Button
+        variant="ghost"
+        className="w-full justify-start gap-3 text-red-500 hover:bg-red-50 hover:text-red-500"
+        onClick={handleLogout}
       >
-        <LogOut className="mr-2 h-4 w-4" />
-        התנתק
-      </button>
+        <LogOut className="h-5 w-5" />
+        <span>התנתק</span>
+      </Button>
     </div>
   );
-}
+};
