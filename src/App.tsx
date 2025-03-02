@@ -31,6 +31,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   const { user } = useAuth();
 
+  console.log("Current authenticated user:", user);
+
   return (
     <Router>
       <SidebarProvider>
@@ -67,6 +69,8 @@ function App() {
                     <ShoppingList />
                   </ProtectedRoute>
                 } />
+                {/* Add a catch-all route to redirect to home */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </main>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,24 +32,29 @@ export default function Index() {
   const { data: weeklyDeals, isLoading: isLoadingDeals } = useQuery({
     queryKey: ['weekly-deals'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('store_products')
-        .select(`
-          product_code,
-          product_name,
-          price,
-          store_chain,
-          price_update_date
-        `)
-        .order('price', { ascending: true })
-        .limit(5);
+      try {
+        const { data, error } = await supabase
+          .from('store_products')
+          .select(`
+            product_code,
+            product_name,
+            price,
+            store_chain,
+            price_update_date
+          `)
+          .order('price', { ascending: true })
+          .limit(5);
 
-      if (error) {
-        console.error('Error fetching weekly deals:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching weekly deals:', error);
+          throw error;
+        }
+
+        return data || [];
+      } catch (error) {
+        console.error('Failed to fetch weekly deals:', error);
+        return [];
       }
-
-      return data || [];
     },
   });
 
@@ -58,17 +62,50 @@ export default function Index() {
   const { data: topProducts, isLoading: isLoadingTopProducts } = useQuery({
     queryKey: ['top-products'],
     queryFn: async () => {
-      // במקום להשתמש בפונקציה RPC, נשתמש בשאילתה רגילה
-      const { data, error } = await supabase
-        .from('shopping_list_items')
-        .select('name, product_code')
-        .not('product_code', 'is', null)
-        .limit(50);
+      try {
+        // במקום להשתמש בפונקציה RPC, נשתמש בשאילתה רגילה
+        const { data, error } = await supabase
+          .from('shopping_list_items')
+          .select('name, product_code')
+          .not('product_code', 'is', null)
+          .limit(50);
 
-      if (error) {
-        console.error('Error fetching top products:', error);
-        console.log('Using fallback data for top products');
+        if (error) {
+          console.error('Error fetching top products:', error);
+          console.log('Using fallback data for top products');
+          
+          return [
+            { name: 'חלב תנובה 3%', product_code: '123456', count: 24 },
+            { name: 'לחם אחיד', product_code: '234567', count: 18 },
+            { name: 'ביצים L', product_code: '345678', count: 15 },
+            { name: 'קוטג׳ 5%', product_code: '456789', count: 12 },
+            { name: 'עגבניות שרי', product_code: '567890', count: 10 }
+          ];
+        }
+
+        // עיבוד המידע בצד הלקוח - ספירת המופעים של כל מוצר
+        const productCounts: Record<string, { name: string; product_code: string; count: number }> = {};
         
+        data.forEach(item => {
+          const key = item.product_code || '';
+          if (!productCounts[key]) {
+            productCounts[key] = { 
+              name: item.name, 
+              product_code: item.product_code || '', 
+              count: 0 
+            };
+          }
+          productCounts[key].count += 1;
+        });
+
+        // המרה למערך וסידור לפי כמות יורדת
+        const sortedProducts = Object.values(productCounts)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        return sortedProducts;
+      } catch (error) {
+        console.error('Failed to fetch top products:', error);
         return [
           { name: 'חלב תנובה 3%', product_code: '123456', count: 24 },
           { name: 'לחם אחיד', product_code: '234567', count: 18 },
@@ -77,28 +114,6 @@ export default function Index() {
           { name: 'עגבניות שרי', product_code: '567890', count: 10 }
         ];
       }
-
-      // עיבוד המידע בצד הלקוח - ספירת המופעים של כל מוצר
-      const productCounts: Record<string, { name: string; product_code: string; count: number }> = {};
-      
-      data.forEach(item => {
-        const key = item.product_code || '';
-        if (!productCounts[key]) {
-          productCounts[key] = { 
-            name: item.name, 
-            product_code: item.product_code || '', 
-            count: 0 
-          };
-        }
-        productCounts[key].count += 1;
-      });
-
-      // המרה למערך וסידור לפי כמות יורדת
-      const sortedProducts = Object.values(productCounts)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      return sortedProducts;
     },
   });
 
@@ -106,32 +121,36 @@ export default function Index() {
   const { data: pricingTrends, isLoading: isLoadingPricing } = useQuery({
     queryKey: ['pricing-trends'],
     queryFn: async () => {
-      // במציאות, נרצה לבדוק מוצרים שעלו במחיר לאחרונה
-      // כרגע נציג פשוט מוצרים יקרים להדגמה
-      const { data, error } = await supabase
-        .from('store_products')
-        .select(`
-          product_code,
-          product_name,
-          price,
-          store_chain,
-          price_update_date
-        `)
-        .order('price', { ascending: false })
-        .limit(5);
+      try {
+        // במציאות, נרצה לבדוק מוצרים שעלו במחיר לאחרונה
+        // כרגע נציג פשוט מוצרים יקרים להדגמה
+        const { data, error } = await supabase
+          .from('store_products')
+          .select(`
+            product_code,
+            product_name,
+            price,
+            store_chain,
+            price_update_date
+          `)
+          .order('price', { ascending: false })
+          .limit(5);
 
-      if (error) {
-        console.error('Error fetching pricing trends:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching pricing trends:', error);
+          throw error;
+        }
+
+        return data || [];
+      } catch (error) {
+        console.error('Failed to fetch pricing trends:', error);
+        return [];
       }
-
-      return data || [];
     },
   });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // ניתן להוסיף ניווט לדף חיפוש עם הפרמטר searchQuery
     console.log('Searching for:', searchQuery);
   };
 
