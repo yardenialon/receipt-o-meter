@@ -16,7 +16,7 @@ interface NavLinkProps {
 
 export const NavLink = ({ href, label, icon: Icon }: NavLinkProps) => {
   const location = useLocation();
-  const isActive = location.pathname === href;
+  const isActive = location.pathname === href || location.pathname.startsWith(`${href}/`);
 
   return (
     <Button

@@ -1,58 +1,56 @@
-import { useCallback } from 'react';
+
+import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, File } from 'lucide-react';
+import { Upload } from 'lucide-react';
 
 interface DropZoneProps {
-  onFileDrop: (file: Blob) => Promise<void>;
-  isUploading: boolean;
+  onFileDrop: (file: Blob) => void;
+  isUploading?: boolean;
+  maxFiles?: number;
+  accept?: Record<string, string[]>;
+  className?: string;
 }
 
-const DropZone = ({ onFileDrop, isUploading }: DropZoneProps) => {
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      onFileDrop(acceptedFiles[0]);
-    }
-  }, [onFileDrop]);
+const DropZone: React.FC<DropZoneProps> = ({
+  onFileDrop,
+  isUploading = false,
+  maxFiles = 1,
+  accept = {
+    'image/*': ['.jpeg', '.jpg', '.png', '.gif']
+  },
+  className
+}) => {
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        onFileDrop(acceptedFiles[0]);
+      }
+    },
+    [onFileDrop]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png'],
-      'application/pdf': ['.pdf']
-    },
-    maxFiles: 1
+    disabled: isUploading,
+    maxFiles,
+    accept
   });
 
   return (
     <div
       {...getRootProps()}
-      className={`
-        w-full max-w-md mx-auto p-6 border-2 border-dashed rounded-xl
-        transition-all duration-200 ease-in-out cursor-pointer backdrop-blur-sm
-        ${isDragActive ? 'border-primary-400 bg-primary-50/50' : 'border-gray-200 hover:border-primary-200'}
-        ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
-      `}
+      className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors ${
+        isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary'
+      } ${className}`}
     >
       <input {...getInputProps()} />
-      <div className="flex flex-col items-center justify-center space-y-2">
-        {isUploading ? (
-          <div className="animate-pulse">
-            <File className="w-8 h-8 text-primary-500" />
-          </div>
-        ) : (
-          <Upload className="w-8 h-8 text-gray-400" />
-        )}
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-600">
-            {isDragActive
-              ? "שחרר את הקבלה כאן"
-              : "או גרור קבלה לכאן"}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            קבצים נתמכים: JPG, PNG, PDF
-          </p>
-        </div>
-      </div>
+      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+      <p className="mt-2 text-sm font-medium">
+        {isDragActive ? 'שחרר כדי להעלות' : 'גרור קובץ לכאן או לחץ לבחירה'}
+      </p>
+      <p className="mt-1 text-xs text-gray-500">
+        {isUploading ? 'מעלה...' : 'גודל מקסימלי: 5MB'}
+      </p>
     </div>
   );
 };

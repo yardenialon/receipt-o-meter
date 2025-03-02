@@ -3,14 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image as ImageIcon, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ProductImageUpload } from './ProductImageUpload';
-
-interface ProductImage {
-  id: string;
-  product_code: string;
-  image_path: string;
-  is_primary: boolean;
-  created_at: string;
-}
+import { ProductImage } from '@/hooks/useProductImageUpload';
 
 interface ProductImagesProps {
   productCode: string;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProductImages } from './ProductImages';
 
@@ -9,16 +10,15 @@ interface Product {
   // other product fields
 }
 
-interface ProductDetailsProps {
-  productCode: string;
-}
-
-export const ProductDetails = ({ productCode }: ProductDetailsProps) => {
+export const ProductDetails = () => {
+  const { productCode } = useParams<{ productCode: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!productCode) return;
+      
       setLoading(true);
       try {
         const { data, error } = await supabase
@@ -40,27 +40,24 @@ export const ProductDetails = ({ productCode }: ProductDetailsProps) => {
       }
     };
 
-    if (productCode) {
-      fetchProduct();
-    }
+    fetchProduct();
   }, [productCode]);
 
   if (loading) {
-    return <div>טוען פרטי מוצר...</div>;
+    return <div className="p-8 text-center">טוען פרטי מוצר...</div>;
   }
 
   if (!product) {
-    return <div>לא נמצא מוצר עם הקוד {productCode}</div>;
+    return <div className="p-8 text-center">לא נמצא מוצר עם הקוד {productCode}</div>;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-8">
       <div>
         <h2 className="text-2xl font-bold">{product.name}</h2>
         <p className="text-gray-500">קוד מוצר: {product.code}</p>
       </div>
 
-      {/* Add the ProductImages component */}
       <ProductImages productCode={product.code} />
 
       {/* Other product details */}

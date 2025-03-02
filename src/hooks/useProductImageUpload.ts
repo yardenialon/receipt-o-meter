@@ -8,6 +8,14 @@ export interface UploadProductImageParams {
   file: File;
 }
 
+export interface ProductImage {
+  id: string;
+  product_code: string;
+  image_path: string;
+  is_primary: boolean;
+  created_at: string;
+}
+
 export const useProductImageUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
 

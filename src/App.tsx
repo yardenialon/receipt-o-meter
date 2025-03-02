@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -8,6 +9,7 @@ import Login from './pages/Login';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
+import { ProductDetails } from './components/products/ProductDetails';
 
 // Protected Route component to handle auth checks
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -53,6 +55,11 @@ function App() {
                 <Route path="/products" element={
                   <ProtectedRoute>
                     <Products />
+                  </ProtectedRoute>
+                } />
+                <Route path="/products/:productCode" element={
+                  <ProtectedRoute>
+                    <ProductDetails />
                   </ProtectedRoute>
                 } />
                 <Route path="/shopping-list" element={
