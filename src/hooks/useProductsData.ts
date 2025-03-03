@@ -75,22 +75,21 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       let totalCount = 0;
       if (searchTerm) {
         // Fix: Use the proper syntax for count with Supabase
-        const { count: searchCount, error: countError } = await query
-          .select('*', { count: 'exact', head: true });
+        const { count, error: countError } = await query.count();
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
-          totalCount = searchCount || 0;
+          totalCount = count || 0;
         }
       } else {
         // Fix: Use the proper syntax for count with Supabase
-        const { count: allCount, error: countError } = await supabase
+        const { count, error: countError } = await supabase
           .from('store_products')
-          .select('*', { count: 'exact', head: true });
+          .count();
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
-          totalCount = allCount || 0;
+          totalCount = count || 0;
         }
       }
       
@@ -198,14 +197,14 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
         setProducts(processedProductsData);
         
         // Number of products in products table
-        const { count: productsCount, error: countError } = await supabase
+        const { count, error: countError } = await supabase
           .from('products')
-          .select('*', { count: 'exact', head: true });
+          .count();
         
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
-          setTotalProducts(productsCount || 0);
+          setTotalProducts(count || 0);
         }
       }
     } catch (error) {
