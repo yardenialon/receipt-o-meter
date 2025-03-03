@@ -34,16 +34,22 @@ export const ProductImageUpload = ({ productCode, onSuccess }: ProductImageUploa
       return;
     }
     
-    await uploadProductImage({
-      productCode,
-      file
-    });
-    
-    if (onSuccess) {
-      onSuccess();
+    try {
+      const result = await uploadProductImage({
+        productCode,
+        file
+      });
+      
+      if (result) {
+        if (onSuccess) {
+          onSuccess();
+        }
+        setIsOpen(false);
+      }
+    } catch (error) {
+      console.error('Error in handleFileDrop:', error);
+      toast.error('שגיאה בהעלאת התמונה');
     }
-    
-    setIsOpen(false);
   };
   
   return (

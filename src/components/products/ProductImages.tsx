@@ -4,6 +4,7 @@ import { Image as ImageIcon, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ProductImageUpload } from './ProductImageUpload';
 import { ProductImage } from '@/hooks/useProductImageUpload';
+import { toast } from 'sonner';
 
 interface ProductImagesProps {
   productCode: string;
@@ -24,12 +25,14 @@ export const ProductImages = ({ productCode }: ProductImagesProps) => {
 
       if (error) {
         console.error('Error fetching product images:', error);
+        toast.error('שגיאה בטעינת תמונות המוצר');
         return;
       }
 
       setImages(data as ProductImage[] || []);
     } catch (error) {
       console.error('Failed to fetch product images:', error);
+      toast.error('שגיאה בטעינת תמונות המוצר');
     } finally {
       setLoading(false);
     }
@@ -51,6 +54,7 @@ export const ProductImages = ({ productCode }: ProductImagesProps) => {
 
       if (dbError) {
         console.error('Error deleting image from database:', dbError);
+        toast.error('שגיאה במחיקת התמונה מהמסד נתונים');
         return;
       }
 
@@ -61,12 +65,16 @@ export const ProductImages = ({ productCode }: ProductImagesProps) => {
 
       if (storageError) {
         console.error('Error deleting image from storage:', storageError);
+        toast.error('שגיאה במחיקת התמונה מהאחסון');
+      } else {
+        toast.success('התמונה נמחקה בהצלחה');
       }
 
       // Update local state
       setImages(prevImages => prevImages.filter(img => img.id !== id));
     } catch (error) {
       console.error('Failed to delete image:', error);
+      toast.error('שגיאה במחיקת התמונה');
     }
   };
 
@@ -87,16 +95,27 @@ export const ProductImages = ({ productCode }: ProductImagesProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {images.length > 0 ? (
           images.map((image) => {
-            const imageUrl = supabase.storage
-              .from('product_images')
-              .getPublicUrl(image.image_path).data.publicUrl;
+            // Ensure we're handling URL generation safely
+            let imageUrl = '';
+            try {
+              imageUrl = supabase.storage
+                .from('product_images')
+                .getPublicUrl(image.image_path).data.publicUrl;
+            } catch (error) {
+              console.error('Error generating public URL:', error);
+              return null; // Skip this image if we can't get a URL
+            }
 
             return (
               <div key={image.id} className="relative group rounded-md overflow-hidden border border-gray-200">
                 <img 
                   src={imageUrl} 
                   alt={`מוצר ${productCode}`} 
-                  className="w-full h-48 object-contain bg-white" 
+                  className="w-full h-48 object-contain bg-white"
+                  onError={(e) => {
+                    console.error('Image failed to load:', image.image_path);
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
                 
                 <button
