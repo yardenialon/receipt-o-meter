@@ -15,7 +15,17 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = () => {
-    onSearch(searchTerm);
+    // וודא שהחיפוש לא מבוצע עם מחרוזת ריקה כדי למנוע תוצאות מיותרות
+    if (searchTerm.trim() !== '') {
+      onSearch(searchTerm.trim());
+    }
+  };
+
+  // מאזין לאירוע של לחיצה על Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchTerm.trim() !== '') {
+      handleSearch();
+    }
   };
 
   return (
@@ -26,7 +36,7 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
           placeholder="חפש לפי שם או מק״ט..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          onKeyDown={handleKeyDown}
           className="pl-10"
           dir="rtl"
         />
@@ -35,6 +45,7 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
           onClick={handleSearch} 
           className="mr-2"
           variant="secondary"
+          disabled={searchTerm.trim() === ''}
         >
           חפש
         </Button>

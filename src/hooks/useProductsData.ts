@@ -61,10 +61,12 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       
       // Apply search filter if needed
       if (searchTerm) {
+        console.log(`מחפש מוצרים לפי ביטוי: "${searchTerm}"`);
         // Check if searchTerm is a product code (typically numeric)
         if (/^\d+$/.test(searchTerm)) {
           query = query.ilike('product_code', `%${searchTerm}%`);
         } else {
+          // שיפור החיפוש בשם המוצר - ודא שהחיפוש מדויק יותר
           query = query.ilike('product_name', `%${searchTerm}%`);
         }
       }
@@ -95,7 +97,8 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       
       // Get paginated results
       const { data: storeProductsData, error: storeProductsError } = await query
-        .range((currentPage - 1) * productsPerPage, currentPage * productsPerPage - 1);
+        .range((currentPage - 1) * productsPerPage, currentPage * productsPerPage - 1)
+        .order('product_name', { ascending: true }); // מיון לפי שם מוצר - לשיפור איכות התוצאות
       
       if (storeProductsError) {
         console.error('שגיאה במשיכת מוצרים מ-store_products:', storeProductsError);
@@ -110,6 +113,12 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
         
         // Collect products by code
         const productsByCode = storeProductsData.reduce((acc, product) => {
+          // ודא שיש שם מוצר תקין לפני הוספה
+          if (!product.product_name || product.product_name.trim() === '') {
+            console.warn(`מוצר ללא שם נמצא, קוד: ${product.product_code}`);
+            return acc; // דלג על מוצרים ללא שם
+          }
+          
           const key = product.product_code;
           if (!acc[key]) {
             acc[key] = [];
@@ -172,8 +181,13 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       } else {
         console.log(`נמצאו ${productsData?.length || 0} מוצרים בטבלת products`);
         
+        // סינון מוצרים ללא שם
+        const validProducts = (productsData || []).filter(product => 
+          product.name && product.name.trim() !== ''
+        );
+        
         // Process the products data to ensure valid dates
-        const processedProductsData = (productsData || []).map(product => ({
+        const processedProductsData = validProducts.map(product => ({
           ...product,
           updated_at: product.updated_at ? safeParseDate(product.updated_at).toISOString() : new Date().toISOString(),
           created_at: product.created_at ? safeParseDate(product.created_at).toISOString() : new Date().toISOString()
