@@ -74,17 +74,19 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       // Get total count
       let totalCount = 0;
       if (searchTerm) {
+        // Fix: Use the proper syntax for count with Supabase
         const { count: searchCount, error: countError } = await query
-          .select('product_code', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true });
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
           totalCount = searchCount || 0;
         }
       } else {
+        // Fix: Use the proper syntax for count with Supabase
         const { count: allCount, error: countError } = await supabase
           .from('store_products')
-          .select('product_code', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true });
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
