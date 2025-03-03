@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
 import { ProductsTable } from '@/components/products/ProductsTable';
+import { ProductsGrid } from '@/components/products/ProductsGrid';
+import { ProductsSearchBar } from '@/components/products/ProductsSearchBar';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -38,32 +40,47 @@ const Products = () => {
   const [expandedProducts, setExpandedProducts] = useState<Record<string, { expanded: boolean }>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, searchTerm]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // מושך מוצרים מטבלת store_products במקום טבלת products
-      // מכיוון שזה היכן שנמצאים המוצרים העדכניים
       console.log('פותח חיבור ל-Supabase ומושך מוצרים מטבלת store_products');
       
-      // קודם נבדוק מה המספר הכולל של מוצרים
-      const countQuery = await supabase
+      // Build the query based on search term
+      let query = supabase
         .from('store_products')
-        .select('product_code', { count: 'exact', head: true });
+        .select('product_code, product_name, manufacturer, price, price_update_date, store_chain, store_id');
+      
+      // Apply search filter if needed
+      if (searchTerm) {
+        // Check if searchTerm is a product code (typically numeric)
+        if (/^\d+$/.test(searchTerm)) {
+          query = query.ilike('product_code', `%${searchTerm}%`);
+        } else {
+          query = query.ilike('product_name', `%${searchTerm}%`);
+        }
+      }
+      
+      // Get total count
+      const countQuery = searchTerm 
+        ? query.count('exact', { head: true })
+        : await supabase
+            .from('store_products')
+            .select('product_code', { count: 'exact', head: true });
       
       const totalCount = countQuery.count || 0;
       setTotalProducts(totalCount);
       console.log(`סך הכל ${totalCount} מוצרים`);
       
-      // מושכים את המוצרים עם דילוג (offset) בהתאם לעמוד הנוכחי
-      const { data: storeProductsData, error: storeProductsError } = await supabase
-        .from('store_products')
-        .select('product_code, product_name, manufacturer, price, price_update_date, store_chain, store_id')
+      // Get paginated results
+      const { data: storeProductsData, error: storeProductsError } = await query
         .range((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE - 1);
       
       if (storeProductsError) {
@@ -107,9 +124,24 @@ const Products = () => {
       
       // אם אין מוצרים ב-store_products, ננסה למשוך מטבלת המוצרים הרגילה
       console.log('מושך מוצרים מטבלת products כגיבוי');
-      const { data: productsData, error: productsError } = await supabase
+      
+      // Build the query based on search term for products table
+      let productsQuery = supabase
         .from('products')
-        .select('*')
+        .select('*');
+      
+      // Apply search filter if needed
+      if (searchTerm) {
+        // Check if searchTerm is a product code (typically numeric)
+        if (/^\d+$/.test(searchTerm)) {
+          productsQuery = productsQuery.ilike('code', `%${searchTerm}%`);
+        } else {
+          productsQuery = productsQuery.ilike('name', `%${searchTerm}%`);
+        }
+      }
+      
+      // Get paginated results
+      const { data: productsData, error: productsError } = await productsQuery
         .range((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE - 1)
         .order('name', { ascending: true });
 
@@ -149,6 +181,15 @@ const Products = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     setExpandedProducts({}); // ריקון מצב ההרחבה בעת החלפת עמוד
+  };
+  
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+  
+  const handleViewChange = (view: 'list' | 'grid') => {
+    setViewMode(view);
   };
 
   // חישוב מספר העמודים הכולל
@@ -205,10 +246,19 @@ const Products = () => {
       products: productsArray
     });
   });
+  
+  // Flatten products for grid view
+  const flattenedProducts = Object.values(productsByCategory).flat();
 
   return (
     <div className="p-6 space-y-6">
       <ProductsHeader />
+      
+      <ProductsSearchBar 
+        onSearch={handleSearch}
+        onViewChange={handleViewChange}
+        currentView={viewMode}
+      />
       
       {loading ? (
         <div className="text-center py-10">
@@ -220,19 +270,26 @@ const Products = () => {
           <p className="text-gray-500">לא נמצאו מוצרים</p>
           <Button 
             className="mt-4"
-            onClick={fetchProducts}
+            onClick={() => {
+              setSearchTerm('');
+              fetchProducts();
+            }}
           >
             נסה שוב
           </Button>
         </div>
       ) : (
         <>
-          <ProductsTable 
-            productsByCategory={productsByCategory} 
-            expandedProducts={expandedProducts}
-            onToggleExpand={handleToggleExpand}
-            onRowClick={handleRowClick}
-          />
+          {viewMode === 'list' ? (
+            <ProductsTable 
+              productsByCategory={productsByCategory} 
+              expandedProducts={expandedProducts}
+              onToggleExpand={handleToggleExpand}
+              onRowClick={handleRowClick}
+            />
+          ) : (
+            <ProductsGrid products={flattenedProducts} />
+          )}
           
           {totalPages > 1 && (
             <Pagination className="mt-6 flex justify-center">
