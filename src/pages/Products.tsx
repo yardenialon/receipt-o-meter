@@ -69,13 +69,25 @@ const Products = () => {
       }
       
       // Get total count
-      const countQuery = searchTerm 
-        ? query.count('exact', { head: true })
-        : await supabase
-            .from('store_products')
-            .select('product_code', { count: 'exact', head: true });
+      let totalCount = 0;
+      if (searchTerm) {
+        const { count: searchCount, error: countError } = await query.select('product_code', { count: 'exact', head: true });
+        if (countError) {
+          console.error('שגיאה בספירת מוצרים:', countError);
+        } else {
+          totalCount = searchCount || 0;
+        }
+      } else {
+        const { count: allCount, error: countError } = await supabase
+          .from('store_products')
+          .select('product_code', { count: 'exact', head: true });
+        if (countError) {
+          console.error('שגיאה בספירת מוצרים:', countError);
+        } else {
+          totalCount = allCount || 0;
+        }
+      }
       
-      const totalCount = countQuery.count || 0;
       setTotalProducts(totalCount);
       console.log(`סך הכל ${totalCount} מוצרים`);
       
@@ -153,11 +165,15 @@ const Products = () => {
         setProducts(productsData || []);
         
         // מספר המוצרים הכולל בטבלת products
-        const { count } = await supabase
+        const { count: productsCount, error: countError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true });
         
-        setTotalProducts(count || 0);
+        if (countError) {
+          console.error('שגיאה בספירת מוצרים:', countError);
+        } else {
+          setTotalProducts(productsCount || 0);
+        }
       }
     } catch (error) {
       console.error('שגיאה כללית בטעינת המוצרים:', error);

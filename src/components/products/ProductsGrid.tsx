@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -18,6 +18,49 @@ interface ProductsGridProps {
 export const ProductsGrid = ({ products }: ProductsGridProps) => {
   const navigate = useNavigate();
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [productImages, setProductImages] = useState<Record<string, string | null>>({});
+
+  // Fetch product images on component mount
+  useEffect(() => {
+    const fetchImages = async () => {
+      const imagePromises = products.map(async ({ productCode }) => {
+        try {
+          const { data, error } = await supabase
+            .from('product_images')
+            .select('image_path')
+            .eq('product_code', productCode)
+            .eq('is_primary', true)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Error fetching product image:', error);
+            return [productCode, null];
+          }
+
+          if (!data) return [productCode, null];
+
+          const { data: urlData } = supabase.storage
+            .from('product_images')
+            .getPublicUrl(data.image_path);
+
+          return [productCode, urlData.publicUrl];
+        } catch (error) {
+          console.error('Error getting product image:', error);
+          return [productCode, null];
+        }
+      });
+
+      const results = await Promise.all(imagePromises);
+      const imagesMap = results.reduce((acc, [code, url]) => {
+        acc[code as string] = url;
+        return acc;
+      }, {} as Record<string, string | null>);
+
+      setProductImages(imagesMap);
+    };
+
+    fetchImages();
+  }, [products]);
 
   const handleImageError = (productCode: string) => {
     setImageErrors(prev => ({ ...prev, [productCode]: true }));
@@ -25,33 +68,6 @@ export const ProductsGrid = ({ products }: ProductsGridProps) => {
 
   const handleCardClick = (productCode: string) => {
     navigate(`/products/${productCode}`);
-  };
-
-  const fetchProductImage = async (productCode: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('product_images')
-        .select('image_path')
-        .eq('product_code', productCode)
-        .eq('is_primary', true)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching product image:', error);
-        return null;
-      }
-
-      if (!data) return null;
-
-      const { data: urlData } = supabase.storage
-        .from('product_images')
-        .getPublicUrl(data.image_path);
-
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error('Error getting product image:', error);
-      return null;
-    }
   };
 
   return (
@@ -74,7 +90,7 @@ export const ProductsGrid = ({ products }: ProductsGridProps) => {
             <div className="relative h-40 bg-gray-100">
               {!imageErrors[productCode] ? (
                 <img
-                  src={fetchProductImage(productCode) || '/placeholder.svg'}
+                  src={productImages[productCode] || '/placeholder.svg'}
                   alt={baseProduct.product_name}
                   className="w-full h-full object-contain p-2"
                   onError={() => handleImageError(productCode)}

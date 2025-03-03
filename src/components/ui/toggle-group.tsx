@@ -18,7 +18,10 @@ ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName
 
 const ToggleGroupItem = React.forwardRef<
   React.ElementRef<typeof ToggleGroupPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item>
+  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> & {
+    variant?: "default" | "outline";
+    size?: "default" | "sm" | "lg";
+  }
 >(({ className, children, variant = "default", size = "default", ...props }, ref) => (
   <ToggleGroupPrimitive.Item
     ref={ref}
