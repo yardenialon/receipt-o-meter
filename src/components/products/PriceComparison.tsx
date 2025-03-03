@@ -5,17 +5,17 @@ import { calculateDistance, parseCoordinates } from '@/utils/distance';
 import { StorePrice } from '@/components/shopping/comparison/StorePrice';
 import { DistanceFilter } from '@/components/shopping/comparison/DistanceFilter';
 
-interface StorePrice {
+interface StoreProduct {
   store_chain: string;
   store_id: string | null;
   store_name?: string | null;
-  store_address: string | null;
+  store_address?: string | null;
   price: number;
   price_update_date: string;
 }
 
 interface PriceComparisonProps {
-  prices: StorePrice[];
+  prices: StoreProduct[];
 }
 
 export const PriceComparison = ({ prices }: PriceComparisonProps) => {
@@ -31,7 +31,7 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
 
     // נרמל את רשימת המחירים - נסיר כפילויות של אותה רשת
     // בחנויות ספציפיות נשמור על מחירים זולים יותר
-    const normalizedPrices = new Map<string, StorePrice>();
+    const normalizedPrices = new Map<string, StoreProduct>();
     
     prices.forEach(price => {
       // נרמול שמות רשתות
@@ -65,7 +65,8 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
       if (!normalizedPrices.has(storeKey) || normalizedPrices.get(storeKey)!.price > price.price) {
         normalizedPrices.set(storeKey, {
           ...price,
-          store_chain: displayChain
+          store_chain: displayChain,
+          store_address: price.store_address || null
         });
       }
     });
@@ -135,7 +136,10 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
           return (
             <StorePrice
               key={`${price.store_chain}-${price.store_id}-${index}`}
-              store={price}
+              store={{
+                ...price,
+                store_address: price.store_address || null
+              }}
               isLowestPrice={isLowestPrice}
               priceDiff={priceDiff}
             />

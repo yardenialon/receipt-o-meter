@@ -24,7 +24,7 @@ interface StoreProduct {
   store_chain: string;
   store_id: string;
   store_name?: string;
-  store_address?: string;
+  store_address?: string | null;
 }
 
 export const ProductDetails = () => {
