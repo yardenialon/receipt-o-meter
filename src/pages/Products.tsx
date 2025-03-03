@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
@@ -102,11 +101,11 @@ const Products = () => {
         return;
       }
       
-      // אם יש מוצרים בטבלת store_products, נשתמש בהם
+      // If there are products in store_products, use them
       if (storeProductsData && storeProductsData.length > 0) {
         console.log(`נמצאו ${storeProductsData.length} מוצרים בטבלת store_products בעמוד ${currentPage}`);
         
-        // קיבוץ המוצרים לפי קוד מוצר
+        // Collect products by code
         const productsByCode = storeProductsData.reduce((acc, product) => {
           const key = product.product_code;
           if (!acc[key]) {
@@ -116,7 +115,7 @@ const Products = () => {
           return acc;
         }, {} as Record<string, any[]>);
         
-        // המרה למבנה הנדרש עבור component Products
+        // Convert to the required structure for Products component
         const processedProducts = Object.values(productsByCode).map(productsGroup => {
           const baseProduct = productsGroup[0];
           return {
@@ -134,7 +133,7 @@ const Products = () => {
         return;
       }
       
-      // אם אין מוצרים ב-store_products, ננסה למשוך מטבלת המוצרים הרגילה
+      // If no products in store_products, try fetching from products table as backup
       console.log('מושך מוצרים מטבלת products כגיבוי');
       
       // Build the query based on search term for products table
@@ -164,7 +163,7 @@ const Products = () => {
         console.log(`נמצאו ${productsData?.length || 0} מוצרים בטבלת products`);
         setProducts(productsData || []);
         
-        // מספר המוצרים הכולל בטבלת products
+        // Number of products in products table
         const { count: productsCount, error: countError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true });
@@ -196,7 +195,7 @@ const Products = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    setExpandedProducts({}); // ריקון מצב ההרחבה בעת החלפת עמוד
+    setExpandedProducts({}); // Reset expanded state when changing page
   };
   
   const handleSearch = (term: string) => {
@@ -208,21 +207,17 @@ const Products = () => {
     setViewMode(view);
   };
 
-  // חישוב מספר העמודים הכולל
   const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
   
-  // יצירת מערך עם מספרי העמודים להצגה (עד 5 עמודים)
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxPagesToShow = 5;
     
     if (totalPages <= maxPagesToShow) {
-      // אם יש פחות מ-5 עמודים, נציג את כולם
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
       }
     } else {
-      // אחרת נציג את העמוד הנוכחי ועד 2 עמודים לפני ואחרי
       const startPage = Math.max(1, currentPage - 2);
       const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
       
@@ -234,36 +229,30 @@ const Products = () => {
     return pageNumbers;
   };
 
-  // הוספת לוג על תוצאות הנתונים מהשאילתה
   console.log('מציג מוצרים:', products);
 
-  // יצירת מבנה נתונים תואם לרכיב ProductsTable
   const productsByCategory: Record<string, Array<{ productCode: string, products: any[] }>> = {};
   
-  // קיבוץ המוצרים לפי קטגוריה עבור ProductsTable
   products.forEach(product => {
     const category = product.category_id || 'כללי';
     if (!productsByCategory[category]) {
       productsByCategory[category] = [];
     }
     
-    // בדיקה אם יש פרטי מוצרים מפורטים (מחירים בחנויות שונות)
     const productsArray = product.productDetails || [{
       product_code: product.code,
       product_name: product.name,
       manufacturer: product.manufacturer || '',
-      price: 0, // ערך ברירת מחדל
+      price: 0,
       price_update_date: product.updated_at || new Date().toISOString()
     }];
     
-    // התאמה למבנה הנדרש על ידי ProductsTable
     productsByCategory[category].push({
       productCode: product.code,
       products: productsArray
     });
   });
   
-  // Flatten products for grid view
   const flattenedProducts = Object.values(productsByCategory).flat();
 
   return (
