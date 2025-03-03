@@ -42,20 +42,6 @@ export const useProductImageUpload = () => {
         fileType: file.type
       });
 
-      // Check if the bucket exists by trying to get its details
-      const { data: bucketData, error: bucketError } = await supabase
-        .storage
-        .getBucket('product_images');
-      
-      if (bucketError) {
-        console.error('Bucket error:', bucketError);
-        // If the bucket doesn't exist, we'll show a more helpful error
-        toast.error('שגיאת מערכת: אחסון התמונות אינו מוגדר כראוי');
-        return null;
-      }
-
-      console.log('Bucket exists:', bucketData);
-
       // Upload the file to Supabase Storage
       const { data: storageData, error: storageError } = await supabase.storage
         .from('product_images')
@@ -66,7 +52,13 @@ export const useProductImageUpload = () => {
 
       if (storageError) {
         console.error('Storage error:', storageError);
-        toast.error('שגיאה בהעלאת התמונה: ' + storageError.message);
+        
+        // Check if it's a bucket not found error
+        if (storageError.message?.includes('not found') || storageError.statusCode === 404) {
+          toast.error('שגיאת מערכת: מאגר התמונות לא קיים');
+        } else {
+          toast.error('שגיאה בהעלאת התמונה: ' + storageError.message);
+        }
         return null;
       }
 

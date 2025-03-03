@@ -27,7 +27,7 @@ interface Product {
   description?: string;
   is_weighted?: boolean;
   unit_type?: string;
-  productDetails?: any[]; // Adding the missing property
+  productDetails?: any[]; // Adding the property for product details
 }
 
 const PRODUCTS_PER_PAGE = 50;
