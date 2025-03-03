@@ -28,6 +28,23 @@ export const ProductsTable = ({
   // Debug: Log the data received in this component
   console.log('Products by category in ProductsTable:', productsByCategory);
   
+  // Helper function to safely format date
+  const safeFormatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'לא ידוע';
+    
+    try {
+      const date = new Date(dateStr);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'לא ידוע';
+      }
+      return format(date, 'dd/MM/yyyy HH:mm', { locale: he });
+    } catch (error) {
+      console.error('Invalid date format:', dateStr, error);
+      return 'לא ידוע';
+    }
+  };
+
   return (
     <div className="space-y-8">
       {Object.entries(productsByCategory).length === 0 ? (
@@ -55,7 +72,21 @@ export const ProductsTable = ({
                   const isExpanded = expandedProducts[productCode]?.expanded;
                   const prices = products.map(p => p.price).filter(price => price > 0);
                   const lowestPrice = prices.length > 0 ? Math.min(...prices) : null;
-                  const latestUpdate = new Date(Math.max(...products.map(p => new Date(p.price_update_date).getTime())));
+
+                  // Safely calculate latest update date
+                  let latestUpdate;
+                  try {
+                    const validDates = products
+                      .map(p => new Date(p.price_update_date))
+                      .filter(date => !isNaN(date.getTime()));
+                    
+                    latestUpdate = validDates.length > 0 
+                      ? new Date(Math.max(...validDates.map(d => d.getTime())))
+                      : new Date();
+                  } catch(e) {
+                    console.error('Error calculating latest update date:', e);
+                    latestUpdate = new Date();
+                  }
 
                   return (
                     <>
@@ -92,7 +123,7 @@ export const ProductsTable = ({
                           {lowestPrice ? `₪${lowestPrice.toFixed(2)}` : 'לא זמין'}
                         </TableCell>
                         <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
-                          {format(latestUpdate, 'dd/MM/yyyy HH:mm', { locale: he })}
+                          {safeFormatDate(latestUpdate.toISOString())}
                         </TableCell>
                       </TableRow>
                       {isExpanded && (

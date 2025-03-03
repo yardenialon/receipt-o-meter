@@ -20,6 +20,23 @@ export const ProductsGrid = ({ products }: ProductsGridProps) => {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [productImages, setProductImages] = useState<Record<string, string | null>>({});
 
+  // Helper function to safely format date
+  const safeFormatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'לא ידוע';
+    
+    try {
+      const date = new Date(dateStr);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'לא ידוע';
+      }
+      return format(date, 'dd/MM/yy', { locale: he });
+    } catch (error) {
+      console.error('Invalid date format:', dateStr, error);
+      return 'לא ידוע';
+    }
+  };
+
   // Fetch product images on component mount
   useEffect(() => {
     const fetchImages = async () => {
@@ -76,7 +93,23 @@ export const ProductsGrid = ({ products }: ProductsGridProps) => {
         const baseProduct = products[0];
         const prices = products.map(p => p.price).filter(price => price > 0);
         const lowestPrice = prices.length > 0 ? Math.min(...prices) : null;
-        const latestUpdate = new Date(Math.max(...products.map(p => new Date(p.price_update_date).getTime())));
+        
+        // Safely calculate latest update date
+        let latestUpdateString;
+        try {
+          const validDates = products
+            .map(p => new Date(p.price_update_date))
+            .filter(date => !isNaN(date.getTime()));
+            
+          const latestUpdate = validDates.length > 0 
+            ? new Date(Math.max(...validDates.map(d => d.getTime())))
+            : new Date();
+            
+          latestUpdateString = safeFormatDate(latestUpdate.toISOString());
+        } catch(e) {
+          console.error('Error calculating latest update date:', e);
+          latestUpdateString = 'לא ידוע';
+        }
         
         // Calculate number of stores with this product
         const storeCount = new Set(products.map(p => p.store_chain)).size;
@@ -118,7 +151,7 @@ export const ProductsGrid = ({ products }: ProductsGridProps) => {
                 <p className="text-xs text-gray-400">מתוך {storeCount} חנויות</p>
               </div>
               <Badge variant="outline" className="text-xs">
-                {format(latestUpdate, 'dd/MM/yy', { locale: he })}
+                {latestUpdateString}
               </Badge>
             </CardFooter>
           </Card>

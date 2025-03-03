@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductsHeader } from '@/components/products/ProductsHeader';
@@ -47,6 +48,23 @@ const Products = () => {
     fetchProducts();
   }, [currentPage, searchTerm]);
 
+  // Helper function to safely parse date strings
+  const safeParseDate = (dateStr: string | null | undefined): Date => {
+    if (!dateStr) return new Date();
+    
+    try {
+      const date = new Date(dateStr);
+      // Check if valid date
+      if (isNaN(date.getTime())) {
+        return new Date(); // Return current date if invalid
+      }
+      return date;
+    } catch (error) {
+      console.error('Invalid date format:', dateStr, error);
+      return new Date(); // Return current date if parsing fails
+    }
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -71,7 +89,7 @@ const Products = () => {
       let totalCount = 0;
       if (searchTerm) {
         const { count: searchCount, error: countError } = await query
-          .select('product_code', { count: 'exact', head: true });
+          .select('product_code', { head: true, count: 'exact' });
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
@@ -80,7 +98,7 @@ const Products = () => {
       } else {
         const { count: allCount, error: countError } = await supabase
           .from('store_products')
-          .select('product_code', { count: 'exact', head: true });
+          .select('product_code', { head: true, count: 'exact' });
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
@@ -112,7 +130,14 @@ const Products = () => {
           if (!acc[key]) {
             acc[key] = [];
           }
-          acc[key].push(product);
+          
+          // Ensure price_update_date is always valid
+          const safeProduct = {
+            ...product,
+            price_update_date: product.price_update_date ? safeParseDate(product.price_update_date).toISOString() : new Date().toISOString()
+          };
+          
+          acc[key].push(safeProduct);
           return acc;
         }, {} as Record<string, any[]>);
         
@@ -162,12 +187,20 @@ const Products = () => {
         toast.error('שגיאה בטעינת המוצרים');
       } else {
         console.log(`נמצאו ${productsData?.length || 0} מוצרים בטבלת products`);
-        setProducts(productsData || []);
+        
+        // Process the products data to ensure valid dates
+        const processedProductsData = (productsData || []).map(product => ({
+          ...product,
+          updated_at: product.updated_at ? safeParseDate(product.updated_at).toISOString() : new Date().toISOString(),
+          created_at: product.created_at ? safeParseDate(product.created_at).toISOString() : new Date().toISOString()
+        }));
+        
+        setProducts(processedProductsData);
         
         // Number of products in products table
         const { count: productsCount, error: countError } = await supabase
           .from('products')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { head: true, count: 'exact' });
         
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
