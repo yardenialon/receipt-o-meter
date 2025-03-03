@@ -32,24 +32,60 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // Debug: Log the supabase connection and request
-      console.log('Fetching products from Supabase');
+      // מושך מוצרים מטבלת store_products במקום טבלת products
+      // מכיוון שזה היכן שנמצאים המוצרים העדכניים
+      console.log('פותח חיבור ל-Supabase ומושך מוצרים מטבלת store_products');
       
-      const { data, error } = await supabase
+      const { data: storeProductsData, error: storeProductsError } = await supabase
+        .from('store_products')
+        .select('product_code, product_name, manufacturer, price, store_chain, store_id')
+        .limit(1000);
+      
+      if (storeProductsError) {
+        console.error('שגיאה במשיכת מוצרים מ-store_products:', storeProductsError);
+        toast.error('שגיאה בטעינת המוצרים');
+        setLoading(false);
+        return;
+      }
+      
+      // אם יש מוצרים בטבלת store_products, נשתמש בהם
+      if (storeProductsData && storeProductsData.length > 0) {
+        console.log(`נמצאו ${storeProductsData.length} מוצרים בטבלת store_products`);
+        
+        // המרה למבנה הנדרש עבור component Products
+        const processedProducts = storeProductsData.map(product => ({
+          id: product.product_code,
+          code: product.product_code,
+          name: product.product_name,
+          manufacturer: product.manufacturer || '',
+        }));
+        
+        // הסרת כפילויות לפי קוד מוצר
+        const uniqueProducts = Array.from(
+          new Map(processedProducts.map(item => [item.code, item])).values()
+        );
+        
+        setProducts(uniqueProducts);
+        setLoading(false);
+        return;
+      }
+      
+      // אם אין מוצרים ב-store_products, ננסה למשוך מטבלת המוצרים הרגילה
+      console.log('מושך מוצרים מטבלת products כגיבוי');
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching products:', error);
+      if (productsError) {
+        console.error('שגיאה במשיכת מוצרים מ-products:', productsError);
         toast.error('שגיאה בטעינת המוצרים');
-        return;
+      } else {
+        console.log(`נמצאו ${productsData?.length || 0} מוצרים בטבלת products`);
+        setProducts(productsData || []);
       }
-
-      console.log('Products fetched successfully:', data?.length);
-      setProducts(data || []);
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      console.error('שגיאה כללית בטעינת המוצרים:', error);
       toast.error('שגיאה בטעינת המוצרים');
     } finally {
       setLoading(false);
@@ -68,7 +104,7 @@ const Products = () => {
   };
 
   // הוספת לוג על תוצאות הנתונים מהשאילתה
-  console.log('Rendering products:', products);
+  console.log('מציג מוצרים:', products);
 
   // יצירת מבנה נתונים תואם לרכיב ProductsTable
   const productsByCategory: Record<string, Array<{ productCode: string, products: any[] }>> = {};
