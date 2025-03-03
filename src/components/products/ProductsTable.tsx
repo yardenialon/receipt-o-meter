@@ -16,9 +16,15 @@ interface ProductsTableProps {
   productsByCategory: Record<string, Array<{ productCode: string, products: any[] }>>;
   expandedProducts: Record<string, { expanded: boolean }>;
   onToggleExpand: (productCode: string) => void;
+  onRowClick?: (productCode: string) => void;
 }
 
-export const ProductsTable = ({ productsByCategory, expandedProducts, onToggleExpand }: ProductsTableProps) => {
+export const ProductsTable = ({ 
+  productsByCategory, 
+  expandedProducts, 
+  onToggleExpand,
+  onRowClick
+}: ProductsTableProps) => {
   // Debug: Log the data received in this component
   console.log('Products by category in ProductsTable:', productsByCategory);
   
@@ -47,7 +53,8 @@ export const ProductsTable = ({ productsByCategory, expandedProducts, onToggleEx
                 {categoryProducts.map(({ productCode, products }) => {
                   const baseProduct = products[0];
                   const isExpanded = expandedProducts[productCode]?.expanded;
-                  const lowestPrice = Math.min(...products.map(p => p.price));
+                  const prices = products.map(p => p.price).filter(price => price > 0);
+                  const lowestPrice = prices.length > 0 ? Math.min(...prices) : null;
                   const latestUpdate = new Date(Math.max(...products.map(p => new Date(p.price_update_date).getTime())));
 
                   return (
@@ -55,22 +62,36 @@ export const ProductsTable = ({ productsByCategory, expandedProducts, onToggleEx
                       <TableRow 
                         key={productCode}
                         className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => onToggleExpand(productCode)}
                       >
-                        <TableCell>
+                        <TableCell onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleExpand(productCode);
+                        }}>
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4" />
                           ) : (
                             <ChevronDown className="h-4 w-4" />
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{baseProduct.product_code}</TableCell>
-                        <TableCell>{baseProduct.product_name}</TableCell>
-                        <TableCell>{baseProduct.manufacturer}</TableCell>
-                        <TableCell className="font-bold text-red-600">
-                          ₪{lowestPrice.toFixed(2)}
+                        <TableCell 
+                          className="font-medium"
+                          onClick={() => onRowClick && onRowClick(productCode)}
+                        >
+                          {baseProduct.product_code}
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
+                          {baseProduct.product_name}
+                        </TableCell>
+                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
+                          {baseProduct.manufacturer}
+                        </TableCell>
+                        <TableCell 
+                          className="font-bold text-red-600"
+                          onClick={() => onRowClick && onRowClick(productCode)}
+                        >
+                          {lowestPrice ? `₪${lowestPrice.toFixed(2)}` : 'לא זמין'}
+                        </TableCell>
+                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
                           {format(latestUpdate, 'dd/MM/yyyy HH:mm', { locale: he })}
                         </TableCell>
                       </TableRow>
