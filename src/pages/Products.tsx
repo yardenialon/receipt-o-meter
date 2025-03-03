@@ -70,7 +70,8 @@ const Products = () => {
       // Get total count
       let totalCount = 0;
       if (searchTerm) {
-        const { count: searchCount, error: countError } = await query.select('product_code', { count: 'exact', head: true });
+        const { count: searchCount, error: countError } = await query
+          .select('product_code', { count: 'exact', head: true });
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
