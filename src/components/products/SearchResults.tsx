@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Store, Plus, MapPin } from 'lucide-react';
@@ -106,7 +107,11 @@ export const SearchResults = ({ results, isLoading, onSelect }: SearchResultsPro
       {Object.entries(groupedResults).map(([itemCode, items]) => {
         const mainItem = items[0];
         
+        // Create properly typed objects for PriceComparison
         const prices = items.map(item => ({
+          product_code: item.product_code || '',
+          product_name: item.product_name || '',
+          manufacturer: item.manufacturer || '',
           store_chain: item.store_chain || '',
           store_id: item.store_id || '',
           store_name: item.store_name || '',

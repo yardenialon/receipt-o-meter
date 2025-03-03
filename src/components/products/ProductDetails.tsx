@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -66,11 +65,19 @@ export const ProductDetails = () => {
             manufacturer: baseProduct.manufacturer
           });
           
-          // שמירת כל המחירים
-          setPrices(storeProductsData.map(product => ({
-            ...product,
-            store_address: product.store_id
-          })));
+          // Convert to StoreProduct type with all required fields
+          const storeProducts: StoreProduct[] = storeProductsData.map(product => ({
+            product_code: product.product_code,
+            product_name: product.product_name,
+            manufacturer: product.manufacturer,
+            price: product.price,
+            price_update_date: product.price_update_date,
+            store_chain: product.store_chain,
+            store_id: product.store_id,
+            store_address: product.store_id // Use store_id as address if not available
+          }));
+          
+          setPrices(storeProducts);
           setLoading(false);
           return;
         }
@@ -133,14 +140,14 @@ export const ProductDetails = () => {
       </Button>
       
       <div>
-        <h2 className="text-2xl font-bold">{product.name}</h2>
-        <p className="text-gray-500">קוד מוצר: {product.code}</p>
-        {product.manufacturer && (
+        <h2 className="text-2xl font-bold">{product?.name}</h2>
+        <p className="text-gray-500">קוד מוצר: {product?.code}</p>
+        {product?.manufacturer && (
           <p className="text-gray-500">יצרן: {product.manufacturer}</p>
         )}
       </div>
 
-      <ProductImages productCode={product.code} />
+      <ProductImages productCode={product?.code || ''} />
       
       <div className="mt-6">
         <h3 className="text-xl font-semibold mb-4">השוואת מחירים</h3>

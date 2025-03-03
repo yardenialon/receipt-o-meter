@@ -53,8 +53,9 @@ export const useProductImageUpload = () => {
       if (storageError) {
         console.error('Storage error:', storageError);
         
-        // Check if it's a bucket not found error
-        if (storageError.message?.includes('not found') || storageError.statusCode === 404) {
+        // Check if it's a bucket not found error - statusCode doesn't exist on StorageError
+        // Use the error message instead
+        if (storageError.message?.includes('not found') || storageError.message?.includes('404')) {
           toast.error('שגיאת מערכת: מאגר התמונות לא קיים');
         } else {
           toast.error('שגיאה בהעלאת התמונה: ' + storageError.message);
