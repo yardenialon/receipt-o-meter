@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { searchProductsByName, searchProductsByWords } from '@/utils/shopping/productSearchUtils';
 
 interface Product {
   id: string;
@@ -54,37 +55,78 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
     try {
       console.log('פותח חיבור ל-Supabase ומושך מוצרים מטבלת store_products');
       
-      // Build the query based on search term
-      let query = supabase
-        .from('store_products')
-        .select('product_code, product_name, manufacturer, price, price_update_date, store_chain, store_id');
-      
-      // Apply search filter if needed
       if (searchTerm) {
         console.log(`מחפש מוצרים לפי ביטוי: "${searchTerm}"`);
-        // Check if searchTerm is a product code (typically numeric)
-        if (/^\d+$/.test(searchTerm)) {
-          query = query.ilike('product_code', `%${searchTerm}%`);
-        } else {
-          // שיפור החיפוש בשם המוצר - ודא שהחיפוש מדויק יותר
-          query = query.ilike('product_name', `%${searchTerm}%`);
-        }
-      }
-      
-      // Get total count
-      let totalCount = 0;
-      if (searchTerm) {
-        // Fix: Use the proper syntax for count with Supabase
-        const countQuery = query.select('product_code');
-        const { data: countData, error: countError } = await countQuery;
         
-        if (countError) {
-          console.error('שגיאה בספירת מוצרים:', countError);
+        // שימוש במנגנון החיפוש המשופר מהשופינג ליסט
+        let storeProductsData;
+        
+        // חיפוש לפי שם מוצר
+        const productsByName = await searchProductsByName(searchTerm);
+        
+        if (productsByName.length > 0) {
+          storeProductsData = productsByName;
+          console.log(`נמצאו ${storeProductsData.length} מוצרים לחיפוש "${searchTerm}"`);
         } else {
-          totalCount = countData?.length || 0;
+          // אם לא נמצאו תוצאות, ננסה לחפש לפי מילים
+          console.log(`לא נמצאו תוצאות ל-"${searchTerm}", מנסה חיפוש לפי מילים`);
+          const productsByWords = await searchProductsByWords(searchTerm);
+          storeProductsData = productsByWords;
+          console.log(`נמצאו ${storeProductsData.length} מוצרים בחיפוש לפי מילים`);
+        }
+        
+        setTotalProducts(storeProductsData.length);
+        
+        // Get paginated slice of results
+        const pageStart = (currentPage - 1) * productsPerPage;
+        const pageEnd = pageStart + productsPerPage;
+        const paginatedResults = storeProductsData.slice(pageStart, pageEnd);
+        
+        // Process the results into the format expected by our components
+        if (paginatedResults.length > 0) {
+          // Collect products by code
+          const productsByCode = paginatedResults.reduce((acc, product) => {
+            // ודא שיש שם מוצר תקין לפני הוספה
+            if (!product.product_name || product.product_name.trim() === '') {
+              console.warn(`מוצר ללא שם נמצא, קוד: ${product.product_code}`);
+              return acc; // דלג על מוצרים ללא שם
+            }
+            
+            const key = product.product_code;
+            if (!acc[key]) {
+              acc[key] = [];
+            }
+            
+            // Ensure price_update_date is always valid
+            const safeProduct = {
+              ...product,
+              price_update_date: product.price_update_date ? safeParseDate(product.price_update_date).toISOString() : new Date().toISOString()
+            };
+            
+            acc[key].push(safeProduct);
+            return acc;
+          }, {} as Record<string, any[]>);
+          
+          // Convert to the required structure for Products component
+          const processedProducts = Object.values(productsByCode).map(productsGroup => {
+            const baseProduct = productsGroup[0];
+            return {
+              id: baseProduct.product_code,
+              code: baseProduct.product_code,
+              name: baseProduct.product_name,
+              manufacturer: baseProduct.manufacturer || '',
+              productDetails: productsGroup
+            };
+          });
+          
+          console.log(`עיבוד ${processedProducts.length} מוצרים ייחודיים לתצוגה`);
+          setProducts(processedProducts);
+          setLoading(false);
+          return;
         }
       } else {
-        // Fix: Use the proper syntax for count with Supabase
+        // אם אין חיפוש, משוך את כל המוצרים
+        // Get total count
         const { data: countData, error: countError } = await supabase
           .from('store_products')
           .select('product_code');
@@ -92,71 +134,70 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
         if (countError) {
           console.error('שגיאה בספירת מוצרים:', countError);
         } else {
-          totalCount = countData?.length || 0;
+          setTotalProducts(countData?.length || 0);
+        }
+        
+        // Get paginated results
+        const { data: storeProductsData, error: storeProductsError } = await supabase
+          .from('store_products')
+          .select('*')
+          .range((currentPage - 1) * productsPerPage, currentPage * productsPerPage - 1)
+          .order('product_name', { ascending: true }); // מיון לפי שם מוצר
+        
+        if (storeProductsError) {
+          console.error('שגיאה במשיכת מוצרים מ-store_products:', storeProductsError);
+          toast.error('שגיאה בטעינת המוצרים');
+          setLoading(false);
+          return;
+        }
+        
+        // If there are products in store_products, use them
+        if (storeProductsData && storeProductsData.length > 0) {
+          console.log(`נמצאו ${storeProductsData.length} מוצרים בטבלת store_products בעמוד ${currentPage}`);
+          
+          // Collect products by code
+          const productsByCode = storeProductsData.reduce((acc, product) => {
+            // ודא שיש שם מוצר תקין לפני הוספה
+            if (!product.product_name || product.product_name.trim() === '') {
+              console.warn(`מוצר ללא שם נמצא, קוד: ${product.product_code}`);
+              return acc; // דלג על מוצרים ללא שם
+            }
+            
+            const key = product.product_code;
+            if (!acc[key]) {
+              acc[key] = [];
+            }
+            
+            // Ensure price_update_date is always valid
+            const safeProduct = {
+              ...product,
+              price_update_date: product.price_update_date ? safeParseDate(product.price_update_date).toISOString() : new Date().toISOString()
+            };
+            
+            acc[key].push(safeProduct);
+            return acc;
+          }, {} as Record<string, any[]>);
+          
+          // Convert to the required structure for Products component
+          const processedProducts = Object.values(productsByCode).map(productsGroup => {
+            const baseProduct = productsGroup[0];
+            return {
+              id: baseProduct.product_code,
+              code: baseProduct.product_code,
+              name: baseProduct.product_name,
+              manufacturer: baseProduct.manufacturer || '',
+              productDetails: productsGroup
+            };
+          });
+          
+          console.log(`עיבוד ${processedProducts.length} מוצרים ייחודיים לתצוגה`);
+          setProducts(processedProducts);
+          setLoading(false);
+          return;
         }
       }
       
-      setTotalProducts(totalCount);
-      console.log(`סך הכל ${totalCount} מוצרים`);
-      
-      // Get paginated results
-      const { data: storeProductsData, error: storeProductsError } = await query
-        .range((currentPage - 1) * productsPerPage, currentPage * productsPerPage - 1)
-        .order('product_name', { ascending: true }); // מיון לפי שם מוצר - לשיפור איכות התוצאות
-      
-      if (storeProductsError) {
-        console.error('שגיאה במשיכת מוצרים מ-store_products:', storeProductsError);
-        toast.error('שגיאה בטעינת המוצרים');
-        setLoading(false);
-        return;
-      }
-      
-      // If there are products in store_products, use them
-      if (storeProductsData && storeProductsData.length > 0) {
-        console.log(`נמצאו ${storeProductsData.length} מוצרים בטבלת store_products בעמוד ${currentPage}`);
-        
-        // Collect products by code
-        const productsByCode = storeProductsData.reduce((acc, product) => {
-          // ודא שיש שם מוצר תקין לפני הוספה
-          if (!product.product_name || product.product_name.trim() === '') {
-            console.warn(`מוצר ללא שם נמצא, קוד: ${product.product_code}`);
-            return acc; // דלג על מוצרים ללא שם
-          }
-          
-          const key = product.product_code;
-          if (!acc[key]) {
-            acc[key] = [];
-          }
-          
-          // Ensure price_update_date is always valid
-          const safeProduct = {
-            ...product,
-            price_update_date: product.price_update_date ? safeParseDate(product.price_update_date).toISOString() : new Date().toISOString()
-          };
-          
-          acc[key].push(safeProduct);
-          return acc;
-        }, {} as Record<string, any[]>);
-        
-        // Convert to the required structure for Products component
-        const processedProducts = Object.values(productsByCode).map(productsGroup => {
-          const baseProduct = productsGroup[0];
-          return {
-            id: baseProduct.product_code,
-            code: baseProduct.product_code,
-            name: baseProduct.product_name,
-            manufacturer: baseProduct.manufacturer || '',
-            productDetails: productsGroup
-          };
-        });
-        
-        console.log(`עיבוד ${processedProducts.length} מוצרים ייחודיים לתצוגה`);
-        setProducts(processedProducts);
-        setLoading(false);
-        return;
-      }
-      
-      // If no products in store_products, try fetching from products table as backup
+      // If we got here, try fetching from products table as backup
       console.log('מושך מוצרים מטבלת products כגיבוי');
       
       // Build the query based on search term for products table

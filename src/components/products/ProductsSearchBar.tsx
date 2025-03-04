@@ -4,6 +4,10 @@ import { Search, Grid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SearchResults } from './SearchResults';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface ProductsSearchBarProps {
   onSearch: (searchTerm: string) => void;
@@ -13,6 +17,36 @@ interface ProductsSearchBarProps {
 
 export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: ProductsSearchBarProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  const { data: results = [], isLoading } = useQuery({
+    queryKey: ['products-search', debouncedSearch],
+    queryFn: async () => {
+      if (!debouncedSearch || debouncedSearch.length < 2) return [];
+
+      const { data, error } = await supabase
+        .from('store_products')
+        .select(`
+          product_code,
+          product_name,
+          price,
+          price_update_date,
+          store_chain,
+          store_id,
+          manufacturer
+        `)
+        .ilike('product_name', `%${debouncedSearch}%`)
+        .limit(50);
+
+      if (error) {
+        console.error('Error searching products:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: debouncedSearch.length > 1
+  });
 
   const handleSearch = () => {
     // וודא שהחיפוש לא מבוצע עם מחרוזת ריקה כדי למנוע תוצאות מיותרות
@@ -25,6 +59,13 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchTerm.trim() !== '') {
       handleSearch();
+    }
+  };
+
+  const handleProductSelect = (product: any) => {
+    if (product && product.product_name) {
+      setSearchTerm(product.product_name);
+      onSearch(product.product_name);
     }
   };
 
@@ -49,6 +90,15 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
         >
           חפש
         </Button>
+      </div>
+      
+      {/* תוצאות חיפוש */}
+      <div className="relative">
+        <SearchResults
+          results={results}
+          isLoading={isLoading}
+          onSelect={handleProductSelect}
+        />
       </div>
       
       <div className="flex justify-between items-center">
