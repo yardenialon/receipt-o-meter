@@ -41,8 +41,8 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // קידום רגיל, עם טיפול במעבר חלק בין סופו של המערך לתחילתו
-      return (prevIndex + 1) % storeChains.length;
+      const maxIndex = storeChains.length - 1;
+      return prevIndex >= maxIndex ? 0 : prevIndex + 1;
     });
   };
 
@@ -50,8 +50,8 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // נסיגה אחורה, עם טיפול במעבר חלק בין תחילת המערך לסופו
-      return (prevIndex - 1 + storeChains.length) % storeChains.length;
+      const maxIndex = storeChains.length - 1;
+      return prevIndex <= 0 ? maxIndex : prevIndex - 1;
     });
   };
 
@@ -70,19 +70,21 @@ export function useLogoSlider() {
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // חישוב אורך המערך 
-    const totalItems = storeChains.length;
+    // בונים מערך מעגלי של כל הפריטים להצגה רציפה
+    const displayItems = [];
+    const totalStores = storeChains.length;
     
-    // בניית מערך עם הפריטים הנוכחיים
-    let visibleItems = [];
-    
-    // מכפילים את מספר הלוגואים להצגה כדי למנוע רווחים
-    for (let i = 0; i < visibleLogos * 3; i++) {
-      const idx = (currentIndex + i) % totalItems;
-      visibleItems.push({...storeChains[idx], key: `visible-${idx}-${i}`});
+    // הוספה של מספיק פריטים כדי למלא את כל החלון הנראה
+    // ולמנוע חללים ריקים
+    for (let i = 0; i < totalStores; i++) {
+      const realIndex = (currentIndex + i) % totalStores;
+      displayItems.push({
+        ...storeChains[realIndex],
+        key: `store-${realIndex}-${i}`
+      });
     }
     
-    return visibleItems;
+    return displayItems;
   };
 
   // במידה ואין מספיק רשתות להציג

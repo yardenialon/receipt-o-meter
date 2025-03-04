@@ -9,7 +9,6 @@ import { LogoItem } from './LogoItem';
 export function LogoSlider() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { 
-    currentIndex, 
     visibleLogos, 
     goToNext, 
     goToPrev, 
@@ -21,7 +20,7 @@ export function LogoSlider() {
   const displayItems = getDisplayItems();
 
   return (
-    <div className="relative py-8">
+    <div className="relative py-4">
       <div className="flex items-center justify-between">
         {showControls && (
           <Button
@@ -38,32 +37,15 @@ export function LogoSlider() {
           ref={containerRef}
           className="overflow-hidden mx-10 w-full"
         >
-          <motion.div 
-            className="flex items-center justify-start"
-            initial={false}
-            animate={{ 
-              x: `calc(-${(currentIndex * 100) / visibleLogos}%)` 
-            }}
-            transition={{ 
-              ease: "easeInOut", 
-              duration: 0.8 
-            }}
-          >
-            {displayItems.length > 0 ? (
-              displayItems.map((store) => (
-                <LogoItem 
-                  key={store.key} 
-                  store={store} 
-                  visibleLogos={visibleLogos} 
-                />
-              ))
-            ) : (
-              // Fallback if no items are available
-              <div className="w-full flex justify-center items-center h-16">
-                <p className="text-gray-500">טוען רשתות...</p>
-              </div>
-            )}
-          </motion.div>
+          <div className="flex">
+            {displayItems.slice(0, visibleLogos).map((store) => (
+              <LogoItem 
+                key={store.key} 
+                store={store} 
+                visibleLogos={visibleLogos} 
+              />
+            ))}
+          </div>
         </div>
 
         {showControls && (

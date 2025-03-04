@@ -30,7 +30,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return (words[0][0] + words[1][0]).toUpperCase();
   };
   
-  const normalizedName = storeName.toLowerCase().trim();
+  // Create the placeholder with initials
   const logoPlaceholder = (
     <div className={cn(
       "flex items-center justify-center rounded-full",
@@ -45,16 +45,20 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
   // Check if there's a direct logoUrl provided
   if (logoUrl) {
-    return (
-      <img 
-        src={logoUrl} 
-        alt={`${storeName} logo`}
-        className={cn("h-6 w-auto object-contain", className)}
-        onError={() => console.log(`Failed to load custom logo for ${storeName}`)}
-      />
-    );
+    try {
+      return (
+        <img 
+          src={logoUrl} 
+          alt={`${storeName} logo`}
+          className={cn("h-6 w-auto object-contain", className)}
+          onError={() => console.log(`Failed to load custom logo for ${storeName}`)}
+        />
+      );
+    } catch (e) {
+      return logoPlaceholder;
+    }
   }
 
-  // Return the placeholder for all stores
+  // Always return the placeholder to avoid 404 errors with missing images
   return logoPlaceholder;
 };
