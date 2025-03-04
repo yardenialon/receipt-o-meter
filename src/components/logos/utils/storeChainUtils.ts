@@ -107,11 +107,16 @@ export async function fetchStoreChains() {
         store => store.name.trim().toLowerCase() === storeName.trim().toLowerCase()
       );
       
+      // Use a direct URL instead of placeholder when possible
+      const logoUrl = fallbackStore?.logo_url || 
+                      `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
+                      
+      console.log(`Created store from product data: ${storeName}, Logo URL: ${logoUrl}`);
+      
       return {
         name: storeName,
         id: storeName.toLowerCase().replace(/\s+/g, '-'),
-        logo_url: fallbackStore?.logo_url || 
-                 `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`
+        logo_url: logoUrl
       };
     });
     

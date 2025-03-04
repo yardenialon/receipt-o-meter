@@ -11,7 +11,9 @@ export function useLogoSlider() {
   const { data: storeChains, isLoading } = useQuery({
     queryKey: ['store-chains'],
     queryFn: fetchStoreChains,
-    initialData: fallbackStoreChains
+    initialData: fallbackStoreChains,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false // Disable refetching when window regains focus
   });
 
   // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
@@ -68,10 +70,13 @@ export function useLogoSlider() {
 
   // יצירת מערך עזר לתצוגה חלקה של הלוגואים
   const getDisplayItems = () => {
-    if (!storeChains || storeChains.length === 0) return [];
+    if (!storeChains || storeChains.length === 0) {
+      console.log('No store chains to display');
+      return [];
+    }
     
     // Log store chains to debug
-    console.log('Store chains for display:', storeChains);
+    console.log(`Preparing to display ${storeChains.length} store chains, showing ${totalToShow} at index ${currentIndex}`);
     
     // חישוב כמה פריטים יש להציג
     const totalToShow = Math.min(visibleLogos, storeChains.length);
@@ -80,10 +85,13 @@ export function useLogoSlider() {
     const result = [];
     for (let i = 0; i < totalToShow; i++) {
       const index = (currentIndex + i) % storeChains.length;
-      result.push({
+      const store = {
         ...storeChains[index],
         key: `store-${index}-${i}`
-      });
+      };
+      
+      console.log(`Display item ${i}: ${store.name} with logo ${store.logo_url}`);
+      result.push(store);
     }
     
     return result;

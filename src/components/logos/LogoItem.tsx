@@ -19,7 +19,7 @@ export function LogoItem({ store, visibleLogos }: LogoItemProps) {
         <StoreLogo 
           storeName={store.name} 
           className="h-12 w-12 object-contain"
-          logoUrl={store.logo_url}
+          logoUrl={store.logo_url} 
         />
       </div>
       <span className="mt-2 text-sm text-center text-gray-700 truncate w-full">

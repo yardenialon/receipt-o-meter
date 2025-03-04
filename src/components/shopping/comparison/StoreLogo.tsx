@@ -27,9 +27,16 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   const shouldAttemptImageLoad = (url?: string | null): boolean => {
     if (!url) return false;
     
-    // Check if it's a valid URL format
+    // Check if it's a valid URL format and not a placeholder
     try {
-      new URL(url);
+      const urlObj = new URL(url);
+      console.log(`Valid URL format for ${storeName}: ${url}`);
+      
+      // If URL is from placeholder.com, it's already a fallback
+      if (urlObj.hostname === 'via.placeholder.com') {
+        console.log(`Using placeholder URL for ${storeName}`);
+      }
+      
       return true;
     } catch (e) {
       console.log(`Invalid URL format for ${storeName}: ${url}`);
@@ -41,13 +48,19 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     ? logoUrl 
     : getGenericLogoUrl();
 
+  console.log(`StoreLogo render for ${storeName}:`, { 
+    originalUrl: logoUrl, 
+    hasError: imgError, 
+    finalSrc: logoSrc 
+  });
+
   return (
     <img 
       src={logoSrc}
       alt={`${storeName} logo`}
       className={cn("object-contain", className)}
       onError={() => {
-        console.log(`Failed to load logo for ${storeName} from URL: ${logoUrl}, using placeholder instead`);
+        console.error(`Failed to load logo for ${storeName} from URL: ${logoUrl}, using placeholder instead`);
         setImgError(true);
       }}
     />
