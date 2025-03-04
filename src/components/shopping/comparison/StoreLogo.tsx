@@ -41,7 +41,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   };
   
   // Create the placeholder with initials
-  const LogoPlaceholder = () => (
+  const renderPlaceholder = () => (
     <div className={cn(
       "flex items-center justify-center rounded-full",
       getInitialBgColor(storeName),
@@ -70,5 +70,5 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   }
 
   // Return the placeholder when no logo URL is available or loading failed
-  return <LogoPlaceholder />;
+  return renderPlaceholder();
 };

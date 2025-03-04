@@ -7,7 +7,7 @@ export function useLogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
 
-  // שליפת נתוני רשתות
+  // שליפת נתוני רשתות מהדאטהבייס
   const { data: storeChains, isLoading } = useQuery({
     queryKey: ['store-chains'],
     queryFn: fetchStoreChains,
