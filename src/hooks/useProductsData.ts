@@ -108,14 +108,14 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
           }, {} as Record<string, any[]>);
           
           // Convert to the required structure for Products component
-          const processedProducts = Object.values(productsByCode).map(productsGroup => {
+          const processedProducts: Product[] = Object.values(productsByCode).map(productsGroup => {
             const baseProduct = productsGroup[0];
             return {
               id: baseProduct.product_code,
               code: baseProduct.product_code,
               name: baseProduct.product_name,
               manufacturer: baseProduct.manufacturer || '',
-              productDetails: productsGroup
+              productDetails: productsGroup // Ensure this is always an array
             };
           });
           
@@ -179,14 +179,14 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
           }, {} as Record<string, any[]>);
           
           // Convert to the required structure for Products component
-          const processedProducts = Object.values(productsByCode).map(productsGroup => {
+          const processedProducts: Product[] = Object.values(productsByCode).map(productsGroup => {
             const baseProduct = productsGroup[0];
             return {
               id: baseProduct.product_code,
               code: baseProduct.product_code,
               name: baseProduct.product_name,
               manufacturer: baseProduct.manufacturer || '',
-              productDetails: productsGroup
+              productDetails: productsGroup // Ensure this is always an array
             };
           });
           
@@ -232,10 +232,11 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
         );
         
         // Process the products data to ensure valid dates
-        const processedProductsData = validProducts.map(product => ({
+        const processedProductsData: Product[] = validProducts.map(product => ({
           ...product,
           updated_at: product.updated_at ? safeParseDate(product.updated_at).toISOString() : new Date().toISOString(),
-          created_at: product.created_at ? safeParseDate(product.created_at).toISOString() : new Date().toISOString()
+          created_at: product.created_at ? safeParseDate(product.created_at).toISOString() : new Date().toISOString(),
+          productDetails: [] // Initialize as empty array to match Product type
         }));
         
         setProducts(processedProductsData);
