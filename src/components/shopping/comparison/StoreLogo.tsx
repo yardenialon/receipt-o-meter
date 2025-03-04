@@ -53,18 +53,24 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       return '/lovable-uploads/aa066a09-13b1-4652-80be-10ca0aae90c4.png';
     }
     
-    return logoUrl || null;
+    // Fallback to an icon if no logo is found
+    if (logoUrl) return logoUrl;
+    
+    // Default placeholder logo
+    return '/placeholder.svg';
   };
 
   const logo = getLogo(storeName);
-  
-  if (!logo) return null;
 
   return (
     <img 
       src={logo} 
       alt={`${storeName} logo`}
       className={cn("h-6 w-auto object-contain", className)}
+      onError={(e) => {
+        // Fallback to placeholder if image fails to load
+        e.currentTarget.src = '/placeholder.svg';
+      }}
     />
   );
 };

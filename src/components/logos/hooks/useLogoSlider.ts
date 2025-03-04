@@ -64,37 +64,24 @@ export function useLogoSlider() {
     }, 3000); // 3 שניות לגלילה
 
     return () => clearInterval(interval);
-  }, [visibleLogos, storeChains, goToNext]);
+  }, [visibleLogos, storeChains]);
 
   // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי למנוע חללים ריקים
-    const additionalItems = visibleLogos;
+    // חישוב אורך המערך במקום להשתמש במספר קבוע
+    const totalItems = storeChains.length;
     
-    let items = [];
+    // בניית מערך עם הפריטים הנוכחיים
+    let visibleItems = [];
     
-    // הוספת פריטים מהסוף להתחלה (לטיפול בגלילה אחורה)
-    for (let i = additionalItems; i > 0; i--) {
-      const idx = (currentIndex - i + storeChains.length) % storeChains.length;
-      items.push({...storeChains[idx], key: `pre-${idx}`});
+    for (let i = 0; i < visibleLogos + 1; i++) { // הוספת 1 לוגו נוסף כדי שלא יהיה רווח
+      const idx = (currentIndex + i) % totalItems;
+      visibleItems.push({...storeChains[idx], key: `visible-${idx}`});
     }
     
-    // הוספת הפריטים הנוכחיים
-    for (let i = 0; i < storeChains.length; i++) {
-      const idx = (currentIndex + i) % storeChains.length;
-      items.push({...storeChains[idx], key: `main-${idx}`});
-    }
-    
-    // הוספת פריטים מההתחלה (כולל הפריט הראשון) כדי ליצור לופ חלק
-    // הוספת מספיק פריטים כדי למנוע רווחים בקצוות
-    for (let i = 0; i < additionalItems; i++) {
-      const idx = (currentIndex + storeChains.length + i) % storeChains.length;
-      items.push({...storeChains[idx], key: `post-${idx}`});
-    }
-    
-    return items;
+    return visibleItems;
   };
 
   // במידה ואין מספיק רשתות להציג

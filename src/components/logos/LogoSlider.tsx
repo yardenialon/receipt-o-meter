@@ -49,13 +49,20 @@ export function LogoSlider() {
               duration: 0.8 
             }}
           >
-            {displayItems.map((store) => (
-              <LogoItem 
-                key={store.key} 
-                store={store} 
-                visibleLogos={visibleLogos} 
-              />
-            ))}
+            {displayItems.length > 0 ? (
+              displayItems.map((store) => (
+                <LogoItem 
+                  key={store.key} 
+                  store={store} 
+                  visibleLogos={visibleLogos} 
+                />
+              ))
+            ) : (
+              // Fallback if no items are available
+              <div className="w-full flex justify-center items-center h-16">
+                <p className="text-gray-500">טוען רשתות...</p>
+              </div>
+            )}
           </motion.div>
         </div>
 

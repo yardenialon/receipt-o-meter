@@ -20,23 +20,32 @@ export const normalizeChainName = (storeName: string): string => {
 
   const shufersalVariations = [
     'שופרסל', 'shufersal', 'שופרסל אונליין',
-    'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
+    'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס',
+    'shufersul', 'shufersual', 'shuffersal'
   ];
 
   const tiVTaamVariations = [
-    'טיב טעם', 'tiv taam', 'טיב טעם סניף', 'tiv-taam'
+    'טיב טעם', 'tiv taam', 'טיב טעם סניף', 'tiv-taam',
+    'tiv taam', 'tivtaam', 'טיבטעם'
   ];
 
   const hatziHinamVariations = [
-    'חצי חינם', 'hatzi hinam', 'חצי חינם סניף', 'hatzi-hinam'
+    'חצי חינם', 'hatzi hinam', 'חצי חינם סניף', 'hatzi-hinam',
+    'hatzihinam', 'חציחינם'
   ];
 
   const mishnatYosefVariations = [
-    'משנת יוסף', 'mishnat yosef', 'משנת יוסף סניף', 'mishnat-yosef'
+    'משנת יוסף', 'mishnat yosef', 'משנת יוסף סניף', 'mishnat-yosef',
+    'mishnatyosef', 'משנתיוסף'
   ];
 
   const yeinotBitanVariations = [
-    'יינות ביתן', 'yeinot bitan', 'יינות ביתן סניף', 'yeinot-bitan'
+    'יינות ביתן', 'yeinot bitan', 'יינות ביתן סניף', 'yeinot-bitan',
+    'yeinotbitan', 'יינותביתן'
+  ];
+
+  const carrefourVariations = [
+    'קרפור', 'carrefour', 'קרפור סניף', 'קארפור', 'carrefore'
   ];
 
   if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
@@ -53,7 +62,7 @@ export const normalizeChainName = (storeName: string): string => {
     return 'משנת יוסף';
   } else if (yeinotBitanVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'יינות ביתן';
-  } else if (normalizedName.includes('קרפור') || normalizedName.includes('carrefour')) {
+  } else if (carrefourVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'קרפור';
   }
 
