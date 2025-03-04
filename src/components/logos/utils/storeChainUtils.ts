@@ -12,23 +12,23 @@ export const fallbackStoreChains = [
   { name: 'קרפור', id: 'carrefour', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/1200px-Carrefour_logo.svg.png' },
   { name: 'אושר עד', id: 'osher-ad', logo_url: 'https://www.osheradmarket.co.il/images/Header/Osher_Ad_Logo.jpg' },
   { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: 'https://www.hatzi-hinam.co.il/wp-content/uploads/2021/10/HHlogo.png' },
-  { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: null },
-  { name: 'סופר יהודה', id: 'super-yehuda', logo_url: null },
-  { name: 'פרש מרקט', id: 'fresh-market', logo_url: null },
-  { name: 'פוליצר', id: 'politzer', logo_url: null },
-  { name: 'ברקת', id: 'bareket', logo_url: null },
-  { name: 'שוק העיר', id: 'shuk-hair', logo_url: null },
+  { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: 'https://via.placeholder.com/100x100?text=קשת+טעמים' },
+  { name: 'סופר יהודה', id: 'super-yehuda', logo_url: 'https://via.placeholder.com/100x100?text=סופר+יהודה' },
+  { name: 'פרש מרקט', id: 'fresh-market', logo_url: 'https://via.placeholder.com/100x100?text=פרש+מרקט' },
+  { name: 'פוליצר', id: 'politzer', logo_url: 'https://via.placeholder.com/100x100?text=פוליצר' },
+  { name: 'ברקת', id: 'bareket', logo_url: 'https://via.placeholder.com/100x100?text=ברקת' },
+  { name: 'שוק העיר', id: 'shuk-hair', logo_url: 'https://via.placeholder.com/100x100?text=שוק+העיר' },
   { name: 'סופר פארם', id: 'super-pharm', logo_url: 'https://www.super-pharm.co.il/on/demandware.static/-/Sites/default/dw5bab13d9/superpharm-Logo-header.png' },
-  { name: 'סופר ספיר', id: 'super-sapir', logo_url: null },
-  { name: 'סיטי מרקט', id: 'city-market', logo_url: null },
-  { name: 'גוד פארם', id: 'good-pharm', logo_url: null },
-  { name: 'סטופ מרקט', id: 'stop-market', logo_url: null },
-  { name: 'היפר כהן', id: 'hyper-cohen', logo_url: null },
+  { name: 'סופר ספיר', id: 'super-sapir', logo_url: 'https://via.placeholder.com/100x100?text=סופר+ספיר' },
+  { name: 'סיטי מרקט', id: 'city-market', logo_url: 'https://via.placeholder.com/100x100?text=סיטי+מרקט' },
+  { name: 'גוד פארם', id: 'good-pharm', logo_url: 'https://via.placeholder.com/100x100?text=גוד+פארם' },
+  { name: 'סטופ מרקט', id: 'stop-market', logo_url: 'https://via.placeholder.com/100x100?text=סטופ+מרקט' },
+  { name: 'היפר כהן', id: 'hyper-cohen', logo_url: 'https://via.placeholder.com/100x100?text=היפר+כהן' },
   { name: 'טיב טעם', id: 'tiv-taam', logo_url: 'https://www.tivtaam.co.il/wp-content/uploads/2018/10/tiv.png' },
-  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: null },
-  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: null },
-  { name: 'קינג סטור', id: 'king-store', logo_url: null },
-  { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: null }
+  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: 'https://via.placeholder.com/100x100?text=זול+ובגדול' },
+  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: 'https://via.placeholder.com/100x100?text=משנת+יוסף' },
+  { name: 'קינג סטור', id: 'king-store', logo_url: 'https://via.placeholder.com/100x100?text=קינג+סטור' },
+  { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: 'https://via.placeholder.com/100x100?text=נתיב+החסד' }
 ];
 
 export interface StoreChain {
@@ -58,12 +58,20 @@ export async function fetchStoreChains() {
       console.log(`Found ${storeChains.length} store chains in database`);
       console.log('Store chains from DB:', storeChains);
       
-      // המרה לפורמט הנדרש
-      const formattedStores = storeChains.map(store => ({
-        name: store.name,
-        id: store.id,
-        logo_url: store.logo_url
-      }));
+      // המרה לפורמט הנדרש ווידוא שיש תמיד URL של לוגו
+      const formattedStores = storeChains.map(store => {
+        // Find matching fallback store to ensure we have a logo URL
+        const fallbackStore = fallbackStoreChains.find(
+          fb => fb.name.trim().toLowerCase() === store.name.trim().toLowerCase()
+        );
+        
+        return {
+          name: store.name,
+          id: store.id,
+          logo_url: store.logo_url || fallbackStore?.logo_url || 
+                   `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`
+        };
+      });
       
       return formattedStores;
     }
@@ -94,7 +102,8 @@ export async function fetchStoreChains() {
       return {
         name: storeName,
         id: storeName.toLowerCase().replace(/\s+/g, '-'),
-        logo_url: fallbackStore?.logo_url || null
+        logo_url: fallbackStore?.logo_url || 
+                 `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`
       };
     });
     
