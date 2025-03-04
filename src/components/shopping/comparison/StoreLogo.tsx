@@ -1,5 +1,6 @@
 
 import { cn } from "@/lib/utils";
+import { useState, useEffect, ReactNode } from "react";
 
 interface StoreLogoProps {
   storeName: string;
@@ -8,6 +9,15 @@ interface StoreLogoProps {
 }
 
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
+  const [showPlaceholder, setShowPlaceholder] = useState(!logoUrl);
+  const [imgError, setImgError] = useState(false);
+
+  // Reset the error state when logoUrl changes
+  useEffect(() => {
+    setShowPlaceholder(!logoUrl);
+    setImgError(false);
+  }, [logoUrl]);
+
   // Default color for store initials
   const getInitialBgColor = (name: string) => {
     const colors = [
@@ -31,7 +41,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   };
   
   // Create the placeholder with initials
-  const logoPlaceholder = (
+  const LogoPlaceholder = () => (
     <div className={cn(
       "flex items-center justify-center rounded-full",
       getInitialBgColor(storeName),
@@ -44,23 +54,21 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   );
 
   // Check if there's a valid logoUrl provided
-  if (logoUrl) {
+  if (!showPlaceholder && logoUrl && !imgError) {
     return (
       <img 
         src={logoUrl} 
         alt={`${storeName} logo`}
         className={cn("h-6 w-auto object-contain", className)}
-        onError={(e) => {
+        onError={() => {
           console.log(`Failed to load logo for ${storeName}, using placeholder instead`);
-          // Replace with placeholder on error
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          target.parentElement?.appendChild(logoPlaceholder as Node);
+          setImgError(true);
+          setShowPlaceholder(true);
         }}
       />
     );
   }
 
-  // Return the placeholder when no logo URL is available
-  return logoPlaceholder;
+  // Return the placeholder when no logo URL is available or loading failed
+  return <LogoPlaceholder />;
 };

@@ -3,32 +3,32 @@ import { supabase } from '@/lib/supabase';
 
 // רשימה סטטית של רשתות במקרה שאין תוצאות מה-API
 export const fallbackStoreChains = [
-  { name: 'רמי לוי', id: 'rami-levy' },
-  { name: 'שופרסל', id: 'shufersal' },
-  { name: 'יינות ביתן', id: 'yeinot-bitan' },
-  { name: 'ויקטורי', id: 'victory' },
-  { name: 'יוחננוף', id: 'yochananof' },
-  { name: 'מחסני השוק', id: 'machsanei-hashuk' },
-  { name: 'קרפור', id: 'carrefour' },
-  { name: 'אושר עד', id: 'osher-ad' },
-  { name: 'חצי חינם', id: 'hatzi-hinam' },
-  { name: 'קשת טעמים', id: 'keshet-teamim' },
-  { name: 'סופר יהודה', id: 'super-yehuda' },
-  { name: 'פרש מרקט', id: 'fresh-market' },
-  { name: 'פוליצר', id: 'politzer' },
-  { name: 'ברקת', id: 'bareket' },
-  { name: 'שוק העיר', id: 'shuk-hair' },
-  { name: 'סופר פארם', id: 'super-pharm' },
-  { name: 'סופר ספיר', id: 'super-sapir' },
-  { name: 'סיטי מרקט', id: 'city-market' },
-  { name: 'גוד פארם', id: 'good-pharm' },
-  { name: 'סטופ מרקט', id: 'stop-market' },
-  { name: 'היפר כהן', id: 'hyper-cohen' },
-  { name: 'טיב טעם', id: 'tiv-taam' },
-  { name: 'זול ובגדול', id: 'zol-vbgadol' },
-  { name: 'משנת יוסף', id: 'mishnat-yosef' },
-  { name: 'קינג סטור', id: 'king-store' },
-  { name: 'נתיב החסד', id: 'netiv-hachesed' }
+  { name: 'רמי לוי', id: 'rami-levy', logo_url: null },
+  { name: 'שופרסל', id: 'shufersal', logo_url: null },
+  { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: null },
+  { name: 'ויקטורי', id: 'victory', logo_url: null },
+  { name: 'יוחננוף', id: 'yochananof', logo_url: null },
+  { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: null },
+  { name: 'קרפור', id: 'carrefour', logo_url: null },
+  { name: 'אושר עד', id: 'osher-ad', logo_url: null },
+  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: null },
+  { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: null },
+  { name: 'סופר יהודה', id: 'super-yehuda', logo_url: null },
+  { name: 'פרש מרקט', id: 'fresh-market', logo_url: null },
+  { name: 'פוליצר', id: 'politzer', logo_url: null },
+  { name: 'ברקת', id: 'bareket', logo_url: null },
+  { name: 'שוק העיר', id: 'shuk-hair', logo_url: null },
+  { name: 'סופר פארם', id: 'super-pharm', logo_url: null },
+  { name: 'סופר ספיר', id: 'super-sapir', logo_url: null },
+  { name: 'סיטי מרקט', id: 'city-market', logo_url: null },
+  { name: 'גוד פארם', id: 'good-pharm', logo_url: null },
+  { name: 'סטופ מרקט', id: 'stop-market', logo_url: null },
+  { name: 'היפר כהן', id: 'hyper-cohen', logo_url: null },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: null },
+  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: null },
+  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: null },
+  { name: 'קינג סטור', id: 'king-store', logo_url: null },
+  { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: null }
 ];
 
 export interface StoreChain {
@@ -68,7 +68,8 @@ export async function fetchStoreChains() {
       // המרה לפורמט הנדרש
       const storesFromDB = uniqueStores.map(storeName => ({
         name: storeName,
-        id: storeName.toLowerCase().replace(/\s+/g, '-')
+        id: storeName.toLowerCase().replace(/\s+/g, '-'),
+        logo_url: null
       }));
       
       // שילוב הרשימה הסטטית עם התוצאות מהדאטהבייס
