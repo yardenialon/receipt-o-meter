@@ -19,10 +19,12 @@ export function useLogoSlider() {
     const handleResize = () => {
       const width = window.innerWidth;
       if (width < 640) {
-        setVisibleLogos(3);
+        setVisibleLogos(2);
       } else if (width < 768) {
-        setVisibleLogos(4);
+        setVisibleLogos(3);
       } else if (width < 1024) {
+        setVisibleLogos(4);
+      } else if (width < 1280) {
         setVisibleLogos(5);
       } else {
         setVisibleLogos(6);
@@ -53,23 +55,23 @@ export function useLogoSlider() {
     });
   };
 
-  // הפעלת הסליידר אוטומטית באופן איטי
+  // הפעלת הסליידר אוטומטית באופן מתון
   useEffect(() => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     const interval = setInterval(() => {
       goToNext();
-    }, 5000); // 5 שניות לגלילה
+    }, 3000); // 3 שניות לגלילה
 
     return () => clearInterval(interval);
-  }, [visibleLogos, storeChains]);
+  }, [visibleLogos, storeChains, goToNext]);
 
   // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
     // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי למנוע חללים ריקים
-    const additionalItems = Math.ceil(visibleLogos / 2);
+    const additionalItems = visibleLogos;
     
     let items = [];
     
@@ -86,7 +88,7 @@ export function useLogoSlider() {
     }
     
     // הוספת פריטים מההתחלה (כולל הפריט הראשון) כדי ליצור לופ חלק
-    // הוספת אותו מספר פריטים כמו שיש ב-additionalItems כדי לוודא שאין רווחים מיותרים
+    // הוספת מספיק פריטים כדי למנוע רווחים בקצוות
     for (let i = 0; i < additionalItems; i++) {
       const idx = (currentIndex + storeChains.length + i) % storeChains.length;
       items.push({...storeChains[idx], key: `post-${idx}`});

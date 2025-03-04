@@ -23,12 +23,38 @@ export const normalizeChainName = (storeName: string): string => {
     'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
   ];
 
+  const tiVTaamVariations = [
+    'טיב טעם', 'tiv taam', 'טיב טעם סניף', 'tiv-taam'
+  ];
+
+  const hatziHinamVariations = [
+    'חצי חינם', 'hatzi hinam', 'חצי חינם סניף', 'hatzi-hinam'
+  ];
+
+  const mishnatYosefVariations = [
+    'משנת יוסף', 'mishnat yosef', 'משנת יוסף סניף', 'mishnat-yosef'
+  ];
+
+  const yeinotBitanVariations = [
+    'יינות ביתן', 'yeinot bitan', 'יינות ביתן סניף', 'yeinot-bitan'
+  ];
+
   if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'יוחננוף';
   } else if (ramiLevyVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'רמי לוי';
   } else if (shufersalVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'שופרסל';
+  } else if (tiVTaamVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'טיב טעם';
+  } else if (hatziHinamVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'חצי חינם';
+  } else if (mishnatYosefVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'משנת יוסף';
+  } else if (yeinotBitanVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'יינות ביתן';
+  } else if (normalizedName.includes('קרפור') || normalizedName.includes('carrefour')) {
+    return 'קרפור';
   }
 
   return storeName;

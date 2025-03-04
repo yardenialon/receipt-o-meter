@@ -11,16 +11,17 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   const getLogo = (name: string) => {
     const normalizedName = name.toLowerCase().trim();
     
+    // Basic chains
     if (normalizedName.includes('רמי לוי') || normalizedName.includes('rami levy')) {
       return '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png';
     }
     
     if (normalizedName.includes('carrefour') || normalizedName.includes('קרפור')) {
-      return '/lovable-uploads/d81dbda8-194c-49d2-93fe-4cfbe17c10db.png';
+      return '/lovable-uploads/f8ee6e35-8e69-4cfb-a8d3-3d187c046d15.png';
     }
     
     if (normalizedName.includes('shufersal') || normalizedName.includes('שופרסל')) {
-      return '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png';
+      return '/lovable-uploads/796394e4-6471-452f-aa58-53d715e4baf2.png';
     }
 
     if (normalizedName.includes('machsanei') || normalizedName.includes('מחסני השוק')) {
@@ -36,7 +37,20 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
     
     if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
-      return '/lovable-uploads/be320eeb-41fc-47ee-b56c-e856f36b61fd.png';
+      return '/lovable-uploads/6d595a6f-bf31-4435-a836-9f0adb259348.png';
+    }
+    
+    // New additions
+    if (normalizedName.includes('mishnat yosef') || normalizedName.includes('משנת יוסף')) {
+      return '/lovable-uploads/d212e399-fe14-4151-ab24-c7428d85e3d4.png';
+    }
+    
+    if (normalizedName.includes('tiv taam') || normalizedName.includes('טיב טעם')) {
+      return '/lovable-uploads/35b5cbc9-75d7-4c79-8e56-7cd2e643af41.png';
+    }
+    
+    if (normalizedName.includes('hatzi hinam') || normalizedName.includes('חצי חינם')) {
+      return '/lovable-uploads/aa066a09-13b1-4652-80be-10ca0aae90c4.png';
     }
     
     return logoUrl || null;
