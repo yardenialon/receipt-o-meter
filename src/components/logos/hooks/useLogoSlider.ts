@@ -76,9 +76,10 @@ export function useLogoSlider() {
     // בניית מערך עם הפריטים הנוכחיים
     let visibleItems = [];
     
-    for (let i = 0; i < visibleLogos + 1; i++) { // הוספת 1 לוגו נוסף כדי שלא יהיה רווח
+    // הוספת לוגואים למסך + לוגואים נוספים לגלילה חלקה
+    for (let i = 0; i < visibleLogos * 2; i++) {
       const idx = (currentIndex + i) % totalItems;
-      visibleItems.push({...storeChains[idx], key: `visible-${idx}`});
+      visibleItems.push({...storeChains[idx], key: `visible-${idx}-${i}`});
     }
     
     return visibleItems;

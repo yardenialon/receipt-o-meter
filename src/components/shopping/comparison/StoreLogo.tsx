@@ -52,6 +52,11 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     if (normalizedName.includes('hatzi hinam') || normalizedName.includes('חצי חינם')) {
       return '/lovable-uploads/aa066a09-13b1-4652-80be-10ca0aae90c4.png';
     }
+
+    // Add more specific fallbacks for common chains
+    if (normalizedName.includes('super')) {
+      return '/lovable-uploads/f8ee6e35-8e69-4cfb-a8d3-3d187c046d15.png'; // Placeholder for supermarket
+    }
     
     // Fallback to an icon if no logo is found
     if (logoUrl) return logoUrl;
