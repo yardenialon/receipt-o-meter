@@ -70,6 +70,9 @@ export function useLogoSlider() {
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
+    // Log store chains to debug
+    console.log('Store chains for display:', storeChains);
+    
     // חישוב כמה פריטים יש להציג
     const totalToShow = Math.min(visibleLogos, storeChains.length);
     

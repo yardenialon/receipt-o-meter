@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -14,8 +13,12 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
   // Reset the error state when logoUrl changes
   useEffect(() => {
-    setShowPlaceholder(!logoUrl);
-    setImgError(false);
+    if (logoUrl) {
+      setShowPlaceholder(false);
+      setImgError(false);
+    } else {
+      setShowPlaceholder(true);
+    }
   }, [logoUrl]);
 
   // Default color for store initials
@@ -53,22 +56,22 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     </div>
   );
 
-  // Check if there's a valid logoUrl provided
-  if (!showPlaceholder && logoUrl && !imgError) {
-    return (
-      <img 
-        src={logoUrl} 
-        alt={`${storeName} logo`}
-        className={cn("object-contain", className)}
-        onError={() => {
-          console.log(`Failed to load logo for ${storeName}, using placeholder instead`);
-          setImgError(true);
-          setShowPlaceholder(true);
-        }}
-      />
-    );
+  // If we should show the placeholder or if there's an error, render the placeholder
+  if (showPlaceholder || imgError) {
+    return renderPlaceholder();
   }
-
-  // Return the placeholder when no logo URL is available or loading failed
-  return renderPlaceholder();
+  
+  // Otherwise, attempt to render the logo
+  return (
+    <img 
+      src={logoUrl || ''} 
+      alt={`${storeName} logo`}
+      className={cn("object-contain", className)}
+      onError={() => {
+        console.log(`Failed to load logo for ${storeName} from URL: ${logoUrl}, using placeholder instead`);
+        setImgError(true);
+        setShowPlaceholder(true);
+      }}
+    />
+  );
 };
