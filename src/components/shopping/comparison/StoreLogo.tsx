@@ -43,22 +43,24 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     </div>
   );
 
-  // Check if there's a direct logoUrl provided
+  // Check if there's a valid logoUrl provided
   if (logoUrl) {
-    try {
-      return (
-        <img 
-          src={logoUrl} 
-          alt={`${storeName} logo`}
-          className={cn("h-6 w-auto object-contain", className)}
-          onError={() => console.log(`Failed to load custom logo for ${storeName}`)}
-        />
-      );
-    } catch (e) {
-      return logoPlaceholder;
-    }
+    return (
+      <img 
+        src={logoUrl} 
+        alt={`${storeName} logo`}
+        className={cn("h-6 w-auto object-contain", className)}
+        onError={(e) => {
+          console.log(`Failed to load logo for ${storeName}, using placeholder instead`);
+          // Replace with placeholder on error
+          const target = e.target as HTMLImageElement;
+          target.style.display = 'none';
+          target.parentElement?.appendChild(logoPlaceholder as Node);
+        }}
+      />
+    );
   }
 
-  // Always return the placeholder to avoid 404 errors with missing images
+  // Return the placeholder when no logo URL is available
   return logoPlaceholder;
 };

@@ -16,7 +16,8 @@ export function LogoItem({ store, visibleLogos }: LogoItemProps) {
       <div className="h-16 w-16 mx-auto bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center">
         <StoreLogo 
           storeName={store.name} 
-          className="h-12 w-12 object-contain" 
+          className="h-12 w-12 object-contain"
+          logoUrl={store.logo_url}
         />
       </div>
       <span className="mt-2 text-sm text-center text-gray-700 truncate w-full">

@@ -41,7 +41,7 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      const maxIndex = storeChains.length - 1;
+      const maxIndex = storeChains.length - visibleLogos;
       return prevIndex >= maxIndex ? 0 : prevIndex + 1;
     });
   };
@@ -50,7 +50,7 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      const maxIndex = storeChains.length - 1;
+      const maxIndex = storeChains.length - visibleLogos;
       return prevIndex <= 0 ? maxIndex : prevIndex - 1;
     });
   };
@@ -64,27 +64,26 @@ export function useLogoSlider() {
     }, 3000); // 3 שניות לגלילה
 
     return () => clearInterval(interval);
-  }, [visibleLogos, storeChains]);
+  }, [visibleLogos, storeChains, currentIndex]);
 
-  // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
+  // יצירת מערך עזר לתצוגה חלקה של הלוגואים
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // בונים מערך מעגלי של כל הפריטים להצגה רציפה
-    const displayItems = [];
-    const totalStores = storeChains.length;
+    // חישוב כמה פריטים יש להציג
+    const totalToShow = Math.min(visibleLogos, storeChains.length);
     
-    // הוספה של מספיק פריטים כדי למלא את כל החלון הנראה
-    // ולמנוע חללים ריקים
-    for (let i = 0; i < totalStores; i++) {
-      const realIndex = (currentIndex + i) % totalStores;
-      displayItems.push({
-        ...storeChains[realIndex],
-        key: `store-${realIndex}-${i}`
+    // התאמת סידור מעגלי
+    const result = [];
+    for (let i = 0; i < totalToShow; i++) {
+      const index = (currentIndex + i) % storeChains.length;
+      result.push({
+        ...storeChains[index],
+        key: `store-${index}-${i}`
       });
     }
     
-    return displayItems;
+    return result;
   };
 
   // במידה ואין מספיק רשתות להציג

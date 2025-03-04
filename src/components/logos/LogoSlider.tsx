@@ -1,6 +1,5 @@
 
 import { useRef } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLogoSlider } from './hooks/useLogoSlider';
@@ -13,11 +12,16 @@ export function LogoSlider() {
     goToNext, 
     goToPrev, 
     getDisplayItems, 
-    showControls 
+    showControls,
+    isLoading
   } = useLogoSlider();
 
   // החזרת הפריטים לתצוגה
   const displayItems = getDisplayItems();
+
+  if (isLoading) {
+    return <div className="py-4 flex justify-center">טוען נתונים...</div>;
+  }
 
   return (
     <div className="relative py-4">
@@ -37,8 +41,8 @@ export function LogoSlider() {
           ref={containerRef}
           className="overflow-hidden mx-10 w-full"
         >
-          <div className="flex">
-            {displayItems.slice(0, visibleLogos).map((store) => (
+          <div className="flex justify-center">
+            {displayItems.map((store) => (
               <LogoItem 
                 key={store.key} 
                 store={store} 
