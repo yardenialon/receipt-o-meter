@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect } from "react";
 
 interface StoreLogoProps {
   storeName: string;
@@ -59,7 +59,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       <img 
         src={logoUrl} 
         alt={`${storeName} logo`}
-        className={cn("h-6 w-auto object-contain", className)}
+        className={cn("object-contain", className)}
         onError={() => {
           console.log(`Failed to load logo for ${storeName}, using placeholder instead`);
           setImgError(true);
