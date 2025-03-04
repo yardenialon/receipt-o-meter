@@ -15,7 +15,7 @@ interface Product {
   description?: string;
   is_weighted?: boolean;
   unit_type?: string;
-  productDetails?: any[]; 
+  productDetails: any[]; // Explicit array type here
 }
 
 interface UseProductsDataProps {
@@ -115,7 +115,7 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
               code: baseProduct.product_code,
               name: baseProduct.product_name,
               manufacturer: baseProduct.manufacturer || '',
-              productDetails: productsGroup // Ensure this is always an array
+              productDetails: Array.isArray(productsGroup) ? productsGroup : []
             };
           });
           
@@ -127,14 +127,12 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
       } else {
         // אם אין חיפוש, משוך את כל המוצרים
         // Get total count
-        const { data: countData, error: countError } = await supabase
+        const { data: countData } = await supabase
           .from('store_products')
           .select('product_code');
         
-        if (countError) {
-          console.error('שגיאה בספירת מוצרים:', countError);
-        } else {
-          setTotalProducts(countData?.length || 0);
+        if (countData) {
+          setTotalProducts(countData.length || 0);
         }
         
         // Get paginated results
@@ -186,7 +184,7 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
               code: baseProduct.product_code,
               name: baseProduct.product_name,
               manufacturer: baseProduct.manufacturer || '',
-              productDetails: productsGroup // Ensure this is always an array
+              productDetails: Array.isArray(productsGroup) ? productsGroup : []
             };
           });
           
@@ -242,14 +240,12 @@ export const useProductsData = ({ currentPage, searchTerm, productsPerPage = 50 
         setProducts(processedProductsData);
         
         // Number of products in products table
-        const { data: countData, error: countError } = await supabase
+        const { data: countData } = await supabase
           .from('products')
           .select('id');
         
-        if (countError) {
-          console.error('שגיאה בספירת מוצרים:', countError);
-        } else {
-          setTotalProducts(countData?.length || 0);
+        if (countData) {
+          setTotalProducts(countData.length || 0);
         }
       }
     } catch (error) {
