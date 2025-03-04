@@ -56,7 +56,11 @@ export async function fetchStoreChains() {
 
     if (storeChains && storeChains.length > 0) {
       console.log(`Found ${storeChains.length} store chains in database`);
-      console.log('Store chains from DB:', storeChains);
+      
+      // Debug: log each store chain's logo URL
+      storeChains.forEach(store => {
+        console.log(`Store: ${store.name}, Logo URL: ${store.logo_url || 'None'}`);
+      });
       
       // המרה לפורמט הנדרש ווידוא שיש תמיד URL של לוגו
       const formattedStores = storeChains.map(store => {
@@ -65,11 +69,15 @@ export async function fetchStoreChains() {
           fb => fb.name.trim().toLowerCase() === store.name.trim().toLowerCase()
         );
         
+        const logoUrl = store.logo_url || (fallbackStore?.logo_url || 
+                   `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`);
+        
+        console.log(`Formatted store: ${store.name}, Using logo URL: ${logoUrl}`);
+        
         return {
           name: store.name,
           id: store.id,
-          logo_url: store.logo_url || fallbackStore?.logo_url || 
-                   `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`
+          logo_url: logoUrl
         };
       });
       

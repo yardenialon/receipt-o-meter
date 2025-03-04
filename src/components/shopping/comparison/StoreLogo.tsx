@@ -20,13 +20,30 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
   // Get a generic logo placeholder URL
   const getGenericLogoUrl = () => {
-    return "https://via.placeholder.com/100x100?text=" + encodeURIComponent(storeName);
+    return `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
   };
 
-  // Always attempt to render a logo image
+  // Helper to check if URL is valid and should be attempted
+  const shouldAttemptImageLoad = (url?: string | null): boolean => {
+    if (!url) return false;
+    
+    // Check if it's a valid URL format
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      console.log(`Invalid URL format for ${storeName}: ${url}`);
+      return false;
+    }
+  };
+
+  const logoSrc = !imgError && shouldAttemptImageLoad(logoUrl) 
+    ? logoUrl 
+    : getGenericLogoUrl();
+
   return (
     <img 
-      src={imgError || !logoUrl ? getGenericLogoUrl() : logoUrl} 
+      src={logoSrc}
       alt={`${storeName} logo`}
       className={cn("object-contain", className)}
       onError={() => {
