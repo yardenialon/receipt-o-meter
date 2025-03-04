@@ -39,14 +39,14 @@ export function LogoSlider() {
           className="overflow-hidden mx-10 w-full"
         >
           <motion.div 
-            className="flex items-center gap-6"
+            className="flex items-center justify-start"
             initial={false}
             animate={{ 
               x: `calc(-${(currentIndex * 100) / visibleLogos}%)` 
             }}
             transition={{ 
               ease: "easeInOut", 
-              duration: 1.0 
+              duration: 0.8 
             }}
           >
             {displayItems.map((store) => (
