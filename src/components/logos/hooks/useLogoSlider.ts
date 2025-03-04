@@ -70,14 +70,14 @@ export function useLogoSlider() {
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // חישוב אורך המערך במקום להשתמש במספר קבוע
+    // חישוב אורך המערך 
     const totalItems = storeChains.length;
     
     // בניית מערך עם הפריטים הנוכחיים
     let visibleItems = [];
     
-    // הוספת לוגואים למסך + לוגואים נוספים לגלילה חלקה
-    for (let i = 0; i < visibleLogos * 2; i++) {
+    // מכפילים את מספר הלוגואים להצגה כדי למנוע רווחים
+    for (let i = 0; i < visibleLogos * 3; i++) {
       const idx = (currentIndex + i) % totalItems;
       visibleItems.push({...storeChains[idx], key: `visible-${idx}-${i}`});
     }

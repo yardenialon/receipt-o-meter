@@ -10,7 +10,7 @@ export function StoreLogosSection() {
           <SavvyLogo size={28} className="mr-2" />
           <h2 className="text-xl font-bold text-gray-800 text-center">רשתות המזון המובילות</h2>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm">
+        <div className="bg-white p-4 rounded-lg shadow-sm relative">
           <LogoSlider />
         </div>
       </div>
