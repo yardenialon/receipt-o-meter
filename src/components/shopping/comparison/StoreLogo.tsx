@@ -55,7 +55,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       src={logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
-      onError={() => {
+      onError={(e) => {
         console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}, using placeholder instead`);
         setImgError(true);
       }}
