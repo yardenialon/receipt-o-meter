@@ -5,7 +5,7 @@ import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 // Fallback store chains with correct paths that match the database 
 export const fallbackStoreChains = [
   { name: 'רמי לוי', id: 'rami-levy', logo_url: '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png' },
-  { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png' },
+  { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/fa22ac18-3cde-45d4-b04e-16b1d61fe4a8.png' },
   { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png' },
   { name: 'ויקטורי', id: 'victory', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
   { name: 'יוחננוף', id: 'yochananof', logo_url: '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png' },
