@@ -20,6 +20,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
   // Check if we should use a hardcoded path for common stores
   const getHardcodedLogoPath = (name: string): string | null => {
+    // Normalize the store name (trim whitespace and lowercase)
+    const normalizedName = name.trim().toLowerCase();
+    
+    // Map of store names to their image files
     const storeLogos: Record<string, string> = {
       'רמי לוי': '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png',
       'שופרסל': '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png',
@@ -31,17 +35,24 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       'חצי חינם': '/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png',
       'סופר פארם': '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png',
       'טיב טעם': '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png',
+      'קרפור': '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png',
     };
     
-    // Check for the store name in our mapping (handle case variations)
-    const normalizedName = name.trim();
+    // Check for exact matches first
+    if (storeLogos[name]) {
+      console.log(`Found exact logo match for ${name}: ${storeLogos[name]}`);
+      return storeLogos[name];
+    }
+    
+    // Then check for fuzzy matches (if the name includes the key or vice versa)
     for (const [key, value] of Object.entries(storeLogos)) {
-      if (normalizedName === key || normalizedName.includes(key)) {
-        console.log(`Using hardcoded logo for ${name}: ${value}`);
+      if (normalizedName.includes(key.toLowerCase()) || key.toLowerCase().includes(normalizedName)) {
+        console.log(`Found fuzzy logo match for ${name} using ${key}: ${value}`);
         return value;
       }
     }
     
+    console.log(`No hardcoded logo found for ${name}`);
     return null;
   };
 
@@ -54,7 +65,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   const shouldAttemptImageLoad = (url?: string | null): boolean => {
     if (!url) return false;
     
-    // Check if it's a valid URL format and not a placeholder
+    // Check if it's a valid URL format
     try {
       // Check if the URL is a relative path starting with /
       if (url.startsWith('/')) {
@@ -64,12 +75,6 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       
       const urlObj = new URL(url);
       console.log(`Valid URL format for ${storeName}: ${url}`);
-      
-      // If URL is from placeholder.com, it's already a fallback
-      if (urlObj.hostname === 'via.placeholder.com') {
-        console.log(`Using placeholder URL for ${storeName}`);
-      }
-      
       return true;
     } catch (e) {
       console.log(`Invalid URL format for ${storeName}: ${url}`);
@@ -96,7 +101,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       alt={`${storeName} logo`}
       className={cn("object-contain", className)}
       onError={() => {
-        console.error(`Failed to load logo for ${storeName} from URL: ${logoUrl}, using placeholder instead`);
+        console.error(`Failed to load logo for ${storeName} from URL: ${logoSrc}, using placeholder instead`);
         setImgError(true);
       }}
     />

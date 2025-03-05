@@ -12,19 +12,19 @@ export const fallbackStoreChains = [
   { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png' },
   { name: 'אושר עד', id: 'osher-ad', logo_url: '/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png' },
   { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png' },
+  { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png' },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png' },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: 'https://via.placeholder.com/100x100?text=קשת+טעמים' },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: 'https://via.placeholder.com/100x100?text=סופר+יהודה' },
   { name: 'פרש מרקט', id: 'fresh-market', logo_url: 'https://via.placeholder.com/100x100?text=פרש+מרקט' },
   { name: 'פוליצר', id: 'politzer', logo_url: 'https://via.placeholder.com/100x100?text=פוליצר' },
   { name: 'ברקת', id: 'bareket', logo_url: 'https://via.placeholder.com/100x100?text=ברקת' },
   { name: 'שוק העיר', id: 'shuk-hair', logo_url: 'https://via.placeholder.com/100x100?text=שוק+העיר' },
-  { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png' },
   { name: 'סופר ספיר', id: 'super-sapir', logo_url: 'https://via.placeholder.com/100x100?text=סופר+ספיר' },
   { name: 'סיטי מרקט', id: 'city-market', logo_url: 'https://via.placeholder.com/100x100?text=סיטי+מרקט' },
   { name: 'גוד פארם', id: 'good-pharm', logo_url: 'https://via.placeholder.com/100x100?text=גוד+פארם' },
   { name: 'סטופ מרקט', id: 'stop-market', logo_url: 'https://via.placeholder.com/100x100?text=סטופ+מרקט' },
   { name: 'היפר כהן', id: 'hyper-cohen', logo_url: 'https://via.placeholder.com/100x100?text=היפר+כהן' },
-  { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png' },
   { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: 'https://via.placeholder.com/100x100?text=זול+ובגדול' },
   { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: 'https://via.placeholder.com/100x100?text=משנת+יוסף' },
   { name: 'קינג סטור', id: 'king-store', logo_url: 'https://via.placeholder.com/100x100?text=קינג+סטור' },
@@ -36,6 +36,34 @@ export interface StoreChain {
   id: string;
   logo_url?: string | null;
   key?: string;
+}
+
+// Helper function to get the correct logo URL for a store
+export function getStoreLogoUrl(storeName: string): string | null {
+  // Look for exact match first
+  const exactMatch = fallbackStoreChains.find(
+    store => store.name.trim() === storeName.trim()
+  );
+  
+  if (exactMatch?.logo_url) {
+    console.log(`Found exact logo match for ${storeName}: ${exactMatch.logo_url}`);
+    return exactMatch.logo_url;
+  }
+  
+  // Look for partial match
+  const normalizedName = storeName.trim().toLowerCase();
+  const partialMatch = fallbackStoreChains.find(
+    store => normalizedName.includes(store.name.toLowerCase()) || 
+             store.name.toLowerCase().includes(normalizedName)
+  );
+  
+  if (partialMatch?.logo_url) {
+    console.log(`Found partial logo match for ${storeName} using ${partialMatch.name}: ${partialMatch.logo_url}`);
+    return partialMatch.logo_url;
+  }
+  
+  console.log(`No logo match found for ${storeName}`);
+  return null;
 }
 
 // שליפת כל רשתות המזון מהדאטהבייס
@@ -57,20 +85,10 @@ export async function fetchStoreChains() {
     if (storeChains && storeChains.length > 0) {
       console.log(`Found ${storeChains.length} store chains in database`);
       
-      // Debug: log each store chain's logo URL
-      storeChains.forEach(store => {
-        console.log(`Store: ${store.name}, Logo URL: ${store.logo_url || 'None'}`);
-      });
-      
       // המרה לפורמט הנדרש ווידוא שיש תמיד URL של לוגו
       const formattedStores = storeChains.map(store => {
         // Find matching fallback store to ensure we have a logo URL
-        const fallbackStore = fallbackStoreChains.find(
-          fb => fb.name.trim().toLowerCase() === store.name.trim().toLowerCase()
-        );
-        
-        // Use the hardcoded path if available, otherwise use the DB value or a placeholder
-        const logoUrl = fallbackStore?.logo_url || store.logo_url || 
+        const logoUrl = getStoreLogoUrl(store.name) || store.logo_url || 
                    `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`;
         
         console.log(`Formatted store: ${store.name}, Using logo URL: ${logoUrl}`);
@@ -103,13 +121,8 @@ export async function fetchStoreChains() {
     
     // המרה לפורמט הנדרש
     const storesFromDB = uniqueStores.map(storeName => {
-      // Find matching fallback store if available
-      const fallbackStore = fallbackStoreChains.find(
-        store => store.name.trim().toLowerCase() === storeName.trim().toLowerCase()
-      );
-      
-      // Use a direct URL instead of placeholder when possible
-      const logoUrl = fallbackStore?.logo_url || 
+      // Get the appropriate logo URL
+      const logoUrl = getStoreLogoUrl(storeName) || 
                       `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
                       
       console.log(`Created store from product data: ${storeName}, Logo URL: ${logoUrl}`);
