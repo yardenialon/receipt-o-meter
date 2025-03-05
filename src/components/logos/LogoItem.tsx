@@ -8,8 +8,6 @@ interface LogoItemProps {
 }
 
 export function LogoItem({ store, visibleLogos }: LogoItemProps) {
-  console.log('Rendering logo item for:', store.name, 'with logo URL:', store.logo_url);
-  
   return (
     <div 
       className="flex-shrink-0 flex flex-col items-center justify-center px-2"

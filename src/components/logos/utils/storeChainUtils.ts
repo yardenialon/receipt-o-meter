@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
@@ -6,29 +7,29 @@ export const fallbackStoreChains = [
   { name: 'רמי לוי', id: 'rami-levy', logo_url: '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png' },
   { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png' },
   { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png' },
-  { name: 'ויקטורי', id: 'victory', logo_url: '/logos/viktory.png' },
+  { name: 'ויקטורי', id: 'victory', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
   { name: 'יוחננוף', id: 'yochananof', logo_url: '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png' },
   { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: '/lovable-uploads/7382a403-382f-4b83-a2d2-50854e4f83d7.png' },
-  { name: 'אושר עד', id: 'osher-ad', logo_url: '/logos/osherad.png' },
-  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/logos/hatzihinam.png' },
-  { name: 'סופר פארם', id: 'super-pharm', logo_url: '/logos/superpharm.png' },
+  { name: 'אושר עד', id: 'osher-ad', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
   { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png' },
   { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png' },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: 'https://via.placeholder.com/100x100?text=קשת+טעמים' },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: 'https://via.placeholder.com/100x100?text=סופר+יהודה' },
-  { name: 'פרש מרקט', id: 'fresh-market', logo_url: '/logos/freshmarket.png' },
-  { name: 'פוליצר', id: 'politzer', logo_url: '/logos/polizer.png' },
-  { name: 'ברקת', id: 'bareket', logo_url: '/logos/bareket.png' },
+  { name: 'פרש מרקט', id: 'fresh-market', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'פוליצר', id: 'politzer', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'ברקת', id: 'bareket', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
   { name: 'שוק העיר', id: 'shuk-hair', logo_url: 'https://via.placeholder.com/100x100?text=שוק+העיר' },
-  { name: 'סופר ספיר', id: 'super-sapir', logo_url: '/logos/supersapir.png' },
+  { name: 'סופר ספיר', id: 'super-sapir', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
   { name: 'סיטי מרקט', id: 'city-market', logo_url: 'https://via.placeholder.com/100x100?text=סיטי+מרקט' },
   { name: 'גוד פארם', id: 'good-pharm', logo_url: 'https://via.placeholder.com/100x100?text=גוד+פארם' },
   { name: 'סטופ מרקט', id: 'stop-market', logo_url: 'https://via.placeholder.com/100x100?text=סטופ+מרקט' },
   { name: 'היפר כהן', id: 'hyper-cohen', logo_url: 'https://via.placeholder.com/100x100?text=היפר+כהן' },
-  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: '/logos/zolbegadol.png' },
-  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: '/logos/meshna.png' },
-  { name: 'קינג סטור', id: 'king-store', logo_url: '/logos/kingstore.png' },
-  { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: '/logos/netivha.png' }
+  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'קינג סטור', id: 'king-store', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' },
+  { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: '/lovable-uploads/40b5b3db-0b97-40c5-8462-5cc5c4733132.png' }
 ];
 
 export interface StoreChain {
@@ -70,8 +71,6 @@ export async function fetchStoreChains() {
         // Normalize store name
         const normalizedName = normalizeChainName(store.name);
         
-        console.log(`Formatted store: ${normalizedName}, Using logo URL: ${logoUrl}`);
-        
         return {
           name: normalizedName,
           id: store.id,
@@ -109,8 +108,6 @@ export async function fetchStoreChains() {
       
       const logoUrl = fallback?.logo_url || 
                      `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedName)}`;
-                     
-      console.log(`Created store from product data: ${normalizedName}, Logo URL: ${logoUrl}`);
       
       return {
         name: normalizedName,

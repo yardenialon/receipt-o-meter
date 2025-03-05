@@ -34,12 +34,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // Check if it's a valid URL format or a relative path
     try {
       if (url.startsWith('/')) {
-        console.log(`Using relative path for ${normalizedStoreName}: ${url}`);
         return true;
       }
       
-      const urlObj = new URL(url);
-      console.log(`Valid URL format for ${normalizedStoreName}: ${url}`);
+      new URL(url);
       return true;
     } catch (e) {
       console.log(`Invalid URL format for ${normalizedStoreName}: ${url}`);
@@ -51,12 +49,6 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   const logoSrc = (!imgError && shouldAttemptImageLoad(logoUrl)) 
     ? logoUrl 
     : getGenericLogoUrl();
-
-  console.log(`StoreLogo render for ${normalizedStoreName}:`, { 
-    originalUrl: logoUrl, 
-    hasError: imgError, 
-    finalSrc: logoSrc 
-  });
 
   return (
     <img 
