@@ -1,5 +1,5 @@
-
 import { supabase } from '@/lib/supabase';
+import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
 // Fallback store chains with correct paths that match the database 
 export const fallbackStoreChains = [
