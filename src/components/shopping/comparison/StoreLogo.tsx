@@ -1,6 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
 
 interface StoreLogoProps {
   storeName: string;
@@ -18,9 +19,12 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
   }, [logoUrl]);
 
+  // Normalize the store name for consistent matching
+  const normalizedStoreName = normalizeChainName(storeName);
+
   // Get a generic logo placeholder URL
   const getGenericLogoUrl = () => {
-    return `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
+    return `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedStoreName)}`;
   };
 
   // Helper to check if URL is valid and should be attempted
@@ -30,15 +34,15 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // Check if it's a valid URL format or a relative path
     try {
       if (url.startsWith('/')) {
-        console.log(`Using relative path for ${storeName}: ${url}`);
+        console.log(`Using relative path for ${normalizedStoreName}: ${url}`);
         return true;
       }
       
       const urlObj = new URL(url);
-      console.log(`Valid URL format for ${storeName}: ${url}`);
+      console.log(`Valid URL format for ${normalizedStoreName}: ${url}`);
       return true;
     } catch (e) {
-      console.log(`Invalid URL format for ${storeName}: ${url}`);
+      console.log(`Invalid URL format for ${normalizedStoreName}: ${url}`);
       return false;
     }
   };
@@ -48,7 +52,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     ? logoUrl 
     : getGenericLogoUrl();
 
-  console.log(`StoreLogo render for ${storeName}:`, { 
+  console.log(`StoreLogo render for ${normalizedStoreName}:`, { 
     originalUrl: logoUrl, 
     hasError: imgError, 
     finalSrc: logoSrc 
@@ -57,10 +61,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   return (
     <img 
       src={logoSrc}
-      alt={`${storeName} logo`}
+      alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
       onError={() => {
-        console.error(`Failed to load logo for ${storeName} from URL: ${logoSrc}, using placeholder instead`);
+        console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}, using placeholder instead`);
         setImgError(true);
       }}
     />

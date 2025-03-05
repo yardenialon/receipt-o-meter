@@ -67,12 +67,15 @@ export async function fetchStoreChains() {
           logoUrl = '/' + logoUrl;
         }
         
-        console.log(`Formatted store: ${store.name}, Using logo URL: ${logoUrl}`);
+        // Normalize store name
+        const normalizedName = normalizeChainName(store.name);
+        
+        console.log(`Formatted store: ${normalizedName}, Using logo URL: ${logoUrl}`);
         
         return {
-          name: store.name,
+          name: normalizedName,
           id: store.id,
-          logo_url: logoUrl || `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`
+          logo_url: logoUrl || `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedName)}`
         };
       });
       
@@ -97,19 +100,21 @@ export async function fetchStoreChains() {
     
     // המרה לפורמט הנדרש
     const storesFromDB = uniqueStores.map(storeName => {
+      const normalizedName = normalizeChainName(storeName);
+      
       // Find matching fallback logo
       const fallback = fallbackStoreChains.find(s => 
-        s.name.trim().toLowerCase() === storeName.trim().toLowerCase()
+        normalizeChainName(s.name).trim().toLowerCase() === normalizedName.trim().toLowerCase()
       );
       
       const logoUrl = fallback?.logo_url || 
-                     `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
+                     `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedName)}`;
                      
-      console.log(`Created store from product data: ${storeName}, Logo URL: ${logoUrl}`);
+      console.log(`Created store from product data: ${normalizedName}, Logo URL: ${logoUrl}`);
       
       return {
-        name: storeName,
-        id: storeName.toLowerCase().replace(/\s+/g, '-'),
+        name: normalizedName,
+        id: normalizedName.toLowerCase().replace(/\s+/g, '-'),
         logo_url: logoUrl
       };
     });
