@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { ComparisonHeader } from "./comparison/ComparisonHeader";
 import { ComparisonList } from "./comparison/ComparisonList";
 import { StoreComparison } from "@/types/shopping";
+import { normalizeChainName } from "@/utils/shopping/storeNameUtils";
 
 interface PriceComparisonProps {
   comparisons: StoreComparison[];
@@ -47,7 +48,8 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
   // נרמול שמות רשתות
   const normalizedComparisons = comparisons.map(comparison => {
-    let displayName = comparison.storeName;
+    // Normalize store name for consistent display and logo matching
+    const normalizedName = normalizeChainName(comparison.storeName);
     
     // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
     const total = comparison.items.reduce((sum, item) => {
@@ -60,7 +62,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
 
     return {
       ...comparison,
-      storeName: displayName,
+      storeName: normalizedName,
       total
     };
   });
@@ -68,6 +70,44 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
   console.log('Normalized comparisons:', normalizedComparisons.map(c => 
     `${c.storeName} (${c.availableItemsCount}/${c.items.length})`
   ));
+
+  // Fetch store chain info including logos
+  const { data: chainInfo } = useQuery({
+    queryKey: ['store-chains-info'],
+    queryFn: async () => {
+      const { data: storeChains, error } = await supabase
+        .from('store_chains')
+        .select('id, name, logo_url')
+        .order('name');
+        
+      if (error) {
+        console.error('Error fetching store chains:', error);
+        return {};
+      }
+      
+      const chainData: Record<string, {name: string, logoUrl: string | null}> = {};
+      
+      if (storeChains) {
+        storeChains.forEach(chain => {
+          const normalizedName = normalizeChainName(chain.name);
+          let logoUrl = chain.logo_url;
+          
+          // Handle relative paths for logos
+          if (logoUrl && !logoUrl.startsWith('/') && !logoUrl.startsWith('http')) {
+            logoUrl = '/' + logoUrl;
+          }
+          
+          chainData[normalizedName] = {
+            name: chain.name,
+            logoUrl
+          };
+        });
+      }
+      
+      return chainData;
+    },
+    staleTime: 60000, // 1 minute
+  });
 
   const { data: branchInfo } = useQuery({
     queryKey: ['store-branches-full', normalizedComparisons.map(c => c.storeId).join(',')],
@@ -110,13 +150,29 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       
       if (branches) {
         branches.forEach((branch: any) => {
+          // First try to get info from branch mapping
           if (branch.branch_mappings && branch.branch_mappings.length > 0) {
             const mapping = branch.branch_mappings[0];
+            const normalizedChain = normalizeChainName(mapping.source_chain);
+            
+            // Get logo from chainInfo if available
+            const chainLogoInfo = chainInfo?.[normalizedChain] || null;
+            
             branchData[mapping.source_branch_id] = {
               name: mapping.source_branch_name || branch.name,
               address: branch.address,
-              chainName: branch.store_chains?.name || mapping.source_chain,
-              logoUrl: branch.store_chains?.logo_url
+              chainName: normalizedChain,
+              logoUrl: chainLogoInfo?.logoUrl || branch.store_chains?.logo_url
+            };
+          } else if (branch.store_chains) {
+            // Fallback to direct chain info
+            const normalizedChain = normalizeChainName(branch.store_chains.name);
+            
+            branchData[branch.branch_id] = {
+              name: branch.name,
+              address: branch.address,
+              chainName: normalizedChain,
+              logoUrl: branch.store_chains.logo_url
             };
           }
         });
@@ -127,8 +183,29 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     enabled: normalizedComparisons.length > 0
   });
 
+  // Merge chain info with comparisons
+  const enhancedComparisons = normalizedComparisons.map(comparison => {
+    // Try to get logo URL from branch info first
+    const branchData = comparison.storeId ? branchInfo?.[comparison.storeId] : null;
+    
+    // If we couldn't get from branch info, try from chain info
+    const chainData = chainInfo?.[comparison.storeName];
+    
+    // Use chain name from branch data if available, otherwise use the normalized name
+    const displayChainName = branchData?.chainName || comparison.storeName;
+    
+    // Use logo URL from branch data if available, otherwise use from chain data
+    const logoUrl = branchData?.logoUrl || chainData?.logoUrl;
+    
+    return {
+      ...comparison,
+      chainName: displayChainName,
+      logoUrl
+    };
+  });
+
   // סינון סלים שלמים (כל הפריטים זמינים)
-  const completeBaskets = normalizedComparisons.filter(store => 
+  const completeBaskets = enhancedComparisons.filter(store => 
     store.availableItemsCount === store.items.length
   );
 
@@ -147,9 +224,9 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
   } else {
     // אם אין סלים שלמים, חשב ערכים עבור כל הסלים (אבל ציין שההשוואה חלקית)
-    if (normalizedComparisons.length > 0) {
-      cheapestTotal = Math.min(...normalizedComparisons.map(c => c.total));
-      mostExpensiveTotal = Math.max(...normalizedComparisons.map(c => c.total));
+    if (enhancedComparisons.length > 0) {
+      cheapestTotal = Math.min(...enhancedComparisons.map(c => c.total));
+      mostExpensiveTotal = Math.max(...enhancedComparisons.map(c => c.total));
       potentialSavings = mostExpensiveTotal - cheapestTotal;
       savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
     }
@@ -160,13 +237,13 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       <ComparisonHeader
         potentialSavings={potentialSavings}
         savingsPercentage={savingsPercentage}
-        storeName={completeBaskets[0]?.storeName}
+        storeName={completeBaskets[0]?.chainName || completeBaskets[0]?.storeName}
         storeId={completeBaskets[0]?.storeId}
         completeBaskets={completeBaskets.length}
       />
 
       <ComparisonList
-        comparisons={normalizedComparisons}
+        comparisons={enhancedComparisons}
         cheapestTotal={cheapestTotal}
         mostExpensiveTotal={mostExpensiveTotal}
         branchInfo={branchInfo || {}}

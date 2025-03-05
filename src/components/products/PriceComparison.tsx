@@ -2,6 +2,8 @@
 import { useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { StoreLogo } from '../shopping/comparison/StoreLogo';
+import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
 interface StoreProduct {
   product_code: string;
@@ -13,6 +15,7 @@ interface StoreProduct {
   store_id: string;
   store_name?: string;
   store_address?: string;
+  logo_url?: string | null;
 }
 
 interface PriceComparisonProps {
@@ -56,15 +59,27 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
           // Determine if this is the cheapest price
           const isCheapest = item.price === lowestPrice && sortedPrices.length > 1;
           
+          // Normalize chain name for consistent display
+          const normalizedChainName = normalizeChainName(item.store_chain);
+          
           return (
             <div 
-              key={`${item.store_chain}-${item.store_id}`}
+              key={`${item.store_chain}-${item.store_id}-${index}`}
               className={`flex items-center justify-between p-3 rounded-md border ${isCheapest ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}
             >
-              <div className="flex-1">
-                <div className="font-medium">{item.store_chain}</div>
-                <div className="text-sm text-gray-500">סניף: {item.store_id}</div>
-                <div className="text-xs text-gray-400">עדכון: {updateDateText}</div>
+              <div className="flex items-center gap-3 flex-1">
+                <div className="h-10 w-10 flex-shrink-0">
+                  <StoreLogo 
+                    storeName={normalizedChainName}
+                    logoUrl={item.logo_url}
+                    className="h-10 w-10 object-contain"
+                  />
+                </div>
+                <div>
+                  <div className="font-medium">{normalizedChainName}</div>
+                  <div className="text-sm text-gray-500">סניף: {item.store_id}</div>
+                  <div className="text-xs text-gray-400">עדכון: {updateDateText}</div>
+                </div>
               </div>
               
               <div className="text-right">

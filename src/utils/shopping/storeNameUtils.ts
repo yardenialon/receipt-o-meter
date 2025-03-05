@@ -55,6 +55,15 @@ export const normalizeChainName = (storeName: string): string => {
   if (normalizedName.includes('סופר פארם')) {
     return 'סופר פארם';
   }
+  
+  if (normalizedName.includes('קינג סטור') || normalizedName.includes('king store')) {
+    return 'קינג סטור';
+  }
+  
+  if (normalizedName.includes('זול ובגדול')) {
+    return 'זול ובגדול';
+  }
 
+  // Return original if no mapping found
   return storeName;
 };
