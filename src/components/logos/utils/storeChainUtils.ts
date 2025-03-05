@@ -3,28 +3,28 @@ import { supabase } from '@/lib/supabase';
 
 // רשימה סטטית של רשתות במקרה שאין תוצאות מה-API
 export const fallbackStoreChains = [
-  { name: 'רמי לוי', id: 'rami-levy', logo_url: 'https://www.rami-levy.co.il/files/design/logo.png' },
-  { name: 'שופרסל', id: 'shufersal', logo_url: 'https://www.shufersal.co.il/_layouts/images/Shufersal/favicon.png' },
-  { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: 'https://www.ybitan.co.il/UploadImages/11_2018/headerLogo.png' },
-  { name: 'ויקטורי', id: 'victory', logo_url: 'https://d5nunyagcicgy.cloudfront.net/thumbnails/victory-logo-png-2134.png' },
-  { name: 'יוחננוף', id: 'yochananof', logo_url: 'https://yochananof.co.il/wp-content/uploads/2019/10/yochananof-logo.png' },
-  { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: 'https://www.m-hashuk.co.il/Content/images/logo.png' },
-  { name: 'קרפור', id: 'carrefour', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/1200px-Carrefour_logo.svg.png' },
-  { name: 'אושר עד', id: 'osher-ad', logo_url: 'https://www.osheradmarket.co.il/images/Header/Osher_Ad_Logo.jpg' },
-  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: 'https://www.hatzi-hinam.co.il/wp-content/uploads/2021/10/HHlogo.png' },
+  { name: 'רמי לוי', id: 'rami-levy', logo_url: '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png' },
+  { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png' },
+  { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png' },
+  { name: 'ויקטורי', id: 'victory', logo_url: '/lovable-uploads/83f1c27e-8de1-4b8c-83c1-d807211c28d9.png' },
+  { name: 'יוחננוף', id: 'yochananof', logo_url: '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png' },
+  { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: '/lovable-uploads/7382a403-382f-4b83-a2d2-50854e4f83d7.png' },
+  { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png' },
+  { name: 'אושר עד', id: 'osher-ad', logo_url: '/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png' },
+  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png' },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: 'https://via.placeholder.com/100x100?text=קשת+טעמים' },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: 'https://via.placeholder.com/100x100?text=סופר+יהודה' },
   { name: 'פרש מרקט', id: 'fresh-market', logo_url: 'https://via.placeholder.com/100x100?text=פרש+מרקט' },
   { name: 'פוליצר', id: 'politzer', logo_url: 'https://via.placeholder.com/100x100?text=פוליצר' },
   { name: 'ברקת', id: 'bareket', logo_url: 'https://via.placeholder.com/100x100?text=ברקת' },
   { name: 'שוק העיר', id: 'shuk-hair', logo_url: 'https://via.placeholder.com/100x100?text=שוק+העיר' },
-  { name: 'סופר פארם', id: 'super-pharm', logo_url: 'https://www.super-pharm.co.il/on/demandware.static/-/Sites/default/dw5bab13d9/superpharm-Logo-header.png' },
+  { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png' },
   { name: 'סופר ספיר', id: 'super-sapir', logo_url: 'https://via.placeholder.com/100x100?text=סופר+ספיר' },
   { name: 'סיטי מרקט', id: 'city-market', logo_url: 'https://via.placeholder.com/100x100?text=סיטי+מרקט' },
   { name: 'גוד פארם', id: 'good-pharm', logo_url: 'https://via.placeholder.com/100x100?text=גוד+פארם' },
   { name: 'סטופ מרקט', id: 'stop-market', logo_url: 'https://via.placeholder.com/100x100?text=סטופ+מרקט' },
   { name: 'היפר כהן', id: 'hyper-cohen', logo_url: 'https://via.placeholder.com/100x100?text=היפר+כהן' },
-  { name: 'טיב טעם', id: 'tiv-taam', logo_url: 'https://www.tivtaam.co.il/wp-content/uploads/2018/10/tiv.png' },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png' },
   { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: 'https://via.placeholder.com/100x100?text=זול+ובגדול' },
   { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: 'https://via.placeholder.com/100x100?text=משנת+יוסף' },
   { name: 'קינג סטור', id: 'king-store', logo_url: 'https://via.placeholder.com/100x100?text=קינג+סטור' },
@@ -69,8 +69,9 @@ export async function fetchStoreChains() {
           fb => fb.name.trim().toLowerCase() === store.name.trim().toLowerCase()
         );
         
-        const logoUrl = store.logo_url || (fallbackStore?.logo_url || 
-                   `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`);
+        // Use the hardcoded path if available, otherwise use the DB value or a placeholder
+        const logoUrl = fallbackStore?.logo_url || store.logo_url || 
+                   `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`;
         
         console.log(`Formatted store: ${store.name}, Using logo URL: ${logoUrl}`);
         
