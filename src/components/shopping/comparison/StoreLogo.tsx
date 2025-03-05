@@ -23,7 +23,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // Normalize the store name (trim whitespace and lowercase)
     const normalizedName = name.trim().toLowerCase();
     
-    // Map of store names to their image files
+    // Map of store names to their image files - EXACT MATCHING ONLY
     const storeLogos: Record<string, string> = {
       'רמי לוי': '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png',
       'שופרסל': '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png',
@@ -38,16 +38,16 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       'קרפור': '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png',
     };
     
-    // Check for exact matches first
+    // Check for direct match first
     if (storeLogos[name]) {
-      console.log(`Found exact logo match for ${name}: ${storeLogos[name]}`);
+      console.log(`Found direct logo match for ${name}: ${storeLogos[name]}`);
       return storeLogos[name];
     }
     
-    // Then check for fuzzy matches (if the name includes the key or vice versa)
+    // Then check for normalized direct match
     for (const [key, value] of Object.entries(storeLogos)) {
-      if (normalizedName.includes(key.toLowerCase()) || key.toLowerCase().includes(normalizedName)) {
-        console.log(`Found fuzzy logo match for ${name} using ${key}: ${value}`);
+      if (normalizedName === key.toLowerCase()) {
+        console.log(`Found normalized direct match for ${name} using ${key}: ${value}`);
         return value;
       }
     }

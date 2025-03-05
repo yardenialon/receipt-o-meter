@@ -9,11 +9,11 @@ export const fallbackStoreChains = [
   { name: 'ויקטורי', id: 'victory', logo_url: '/lovable-uploads/83f1c27e-8de1-4b8c-83c1-d807211c28d9.png' },
   { name: 'יוחננוף', id: 'yochananof', logo_url: '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png' },
   { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: '/lovable-uploads/7382a403-382f-4b83-a2d2-50854e4f83d7.png' },
-  { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png' },
   { name: 'אושר עד', id: 'osher-ad', logo_url: '/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png' },
   { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png' },
   { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png' },
   { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png' },
+  { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png' },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: 'https://via.placeholder.com/100x100?text=קשת+טעמים' },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: 'https://via.placeholder.com/100x100?text=סופר+יהודה' },
   { name: 'פרש מרקט', id: 'fresh-market', logo_url: 'https://via.placeholder.com/100x100?text=פרש+מרקט' },
@@ -38,28 +38,46 @@ export interface StoreChain {
   key?: string;
 }
 
-// Helper function to get the correct logo URL for a store
+// Helper function to get the correct logo URL for a store - EXACT MATCHES ONLY
 export function getStoreLogoUrl(storeName: string): string | null {
-  // Look for exact match first
-  const exactMatch = fallbackStoreChains.find(
-    store => store.name.trim() === storeName.trim()
-  );
+  // Map of store names to their image files - EXACT MATCHING ONLY
+  const storeLogos: Record<string, string> = {
+    'רמי לוי': '/lovable-uploads/f7131837-8dd8-4e66-947a-54a1b9c7ebb4.png',
+    'שופרסל': '/lovable-uploads/d93c25df-9c2b-4fa3-ab6d-e0cb1b47de5d.png',
+    'יינות ביתן': '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png',
+    'ויקטורי': '/lovable-uploads/83f1c27e-8de1-4b8c-83c1-d807211c28d9.png',
+    'יוחננוף': '/lovable-uploads/978e1e86-3aa9-4d9d-a9a1-56b56d8eebdf.png',
+    'מחסני השוק': '/lovable-uploads/7382a403-382f-4b83-a2d2-50854e4f83d7.png',
+    'אושר עד': '/lovable-uploads/1f5589fb-c108-45ce-b235-a61909f72471.png',
+    'חצי חינם': '/lovable-uploads/1dc47ba7-26f0-461e-9822-5e477bd5ed31.png',
+    'סופר פארם': '/lovable-uploads/34a32c41-1c66-475d-9801-5cf24750a931.png',
+    'טיב טעם': '/lovable-uploads/07a1d83a-7044-4aa8-9501-18010ad22ff6.png',
+    'קרפור': '/lovable-uploads/47caafa9-5d58-4739-92d8-8fa9b7fd5e3c.png',
+  };
   
-  if (exactMatch?.logo_url) {
-    console.log(`Found exact logo match for ${storeName}: ${exactMatch.logo_url}`);
-    return exactMatch.logo_url;
+  // Look for exact match first
+  if (storeLogos[storeName]) {
+    console.log(`Found exact logo match for ${storeName}: ${storeLogos[storeName]}`);
+    return storeLogos[storeName];
   }
   
-  // Look for partial match
+  // Try with normalized name (remove whitespace, case insensitive)
   const normalizedName = storeName.trim().toLowerCase();
-  const partialMatch = fallbackStoreChains.find(
-    store => normalizedName.includes(store.name.toLowerCase()) || 
-             store.name.toLowerCase().includes(normalizedName)
+  for (const [key, url] of Object.entries(storeLogos)) {
+    if (normalizedName === key.toLowerCase().trim()) {
+      console.log(`Found normalized logo match for ${storeName} using ${key}: ${url}`);
+      return url;
+    }
+  }
+  
+  // Find in fallbackStoreChains if available
+  const fallbackMatch = fallbackStoreChains.find(
+    store => store.name.trim().toLowerCase() === normalizedName
   );
   
-  if (partialMatch?.logo_url) {
-    console.log(`Found partial logo match for ${storeName} using ${partialMatch.name}: ${partialMatch.logo_url}`);
-    return partialMatch.logo_url;
+  if (fallbackMatch?.logo_url) {
+    console.log(`Found fallback logo match for ${storeName}: ${fallbackMatch.logo_url}`);
+    return fallbackMatch.logo_url;
   }
   
   console.log(`No logo match found for ${storeName}`);
@@ -87,7 +105,7 @@ export async function fetchStoreChains() {
       
       // המרה לפורמט הנדרש ווידוא שיש תמיד URL של לוגו
       const formattedStores = storeChains.map(store => {
-        // Find matching fallback store to ensure we have a logo URL
+        // Find matching logo URL - Exact match first
         const logoUrl = getStoreLogoUrl(store.name) || store.logo_url || 
                    `https://via.placeholder.com/100x100?text=${encodeURIComponent(store.name)}`;
         
@@ -121,7 +139,7 @@ export async function fetchStoreChains() {
     
     // המרה לפורמט הנדרש
     const storesFromDB = uniqueStores.map(storeName => {
-      // Get the appropriate logo URL
+      // Get the appropriate logo URL using exact match only
       const logoUrl = getStoreLogoUrl(storeName) || 
                       `https://via.placeholder.com/100x100?text=${encodeURIComponent(storeName)}`;
                       

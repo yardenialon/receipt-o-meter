@@ -1,69 +1,59 @@
 
-import { Product } from '@/types/shopping';
-
 // פונקציה לנרמול שם רשת
 export const normalizeChainName = (storeName: string): string => {
   if (!storeName) return '';
   
   const normalizedName = storeName.toLowerCase().trim();
   
-  const yochananofVariations = [
-    'yochananof', 'יוחננוף', 'יוחנונוף', 'יוחננוב',
-    'יוחננוף טוב טעם', 'יוחננוף טוב טעם בעמ', 'טוב טעם יוחננוף',
-    'טוב טעם', 'tov taam', 'tovtaam', 'טוב טעם בעמ', 'טוב טעם רשת'
-  ];
-
-  const ramiLevyVariations = [
-    'רמי לוי', 'rami levy', 'רמי לוי שיווק השקמה',
-    'שיווק השקמה', 'רמי לוי שיווק השיקמה', 'רמי לוי סניף'
-  ];
-
-  const shufersalVariations = [
-    'שופרסל', 'shufersal', 'שופרסל אונליין',
-    'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס',
-    'shufersul', 'shufersual', 'shuffersal'
-  ];
-
-  const tiVTaamVariations = [
-    'טיב טעם', 'tiv taam', 'טיב טעם סניף', 'tiv-taam',
-    'tiv taam', 'tivtaam', 'טיבטעם'
-  ];
-
-  const hatziHinamVariations = [
-    'חצי חינם', 'hatzi hinam', 'חצי חינם סניף', 'hatzi-hinam',
-    'hatzihinam', 'חציחינם'
-  ];
-
-  const mishnatYosefVariations = [
-    'משנת יוסף', 'mishnat yosef', 'משנת יוסף סניף', 'mishnat-yosef',
-    'mishnatyosef', 'משנתיוסף'
-  ];
-
-  const yeinotBitanVariations = [
-    'יינות ביתן', 'yeinot bitan', 'יינות ביתן סניף', 'yeinot-bitan',
-    'yeinotbitan', 'יינותביתן'
-  ];
-
-  const carrefourVariations = [
-    'קרפור', 'carrefour', 'קרפור סניף', 'קארפור', 'carrefore'
-  ];
-
-  if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  // Map specific variations to their canonical store names
+  if (normalizedName.includes('יוחננוף') || normalizedName.includes('טוב טעם יוחננוף') || 
+      normalizedName.includes('יוחננוב') || normalizedName.includes('יוחנונוף')) {
     return 'יוחננוף';
-  } else if (ramiLevyVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('רמי לוי') || normalizedName.includes('שיווק השקמה')) {
     return 'רמי לוי';
-  } else if (shufersalVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('שופרסל') || normalizedName.includes('shufersal')) {
     return 'שופרסל';
-  } else if (tiVTaamVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('טיב טעם') && !normalizedName.includes('יוחננוף')) {
     return 'טיב טעם';
-  } else if (hatziHinamVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('חצי חינם')) {
     return 'חצי חינם';
-  } else if (mishnatYosefVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('משנת יוסף')) {
     return 'משנת יוסף';
-  } else if (yeinotBitanVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('יינות ביתן')) {
     return 'יינות ביתן';
-  } else if (carrefourVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('קרפור') || normalizedName.includes('קארפור') || 
+      normalizedName.includes('carrefour')) {
     return 'קרפור';
+  }
+  
+  if (normalizedName.includes('ויקטורי')) {
+    return 'ויקטורי';
+  }
+  
+  if (normalizedName.includes('אושר עד')) {
+    return 'אושר עד';
+  }
+  
+  if (normalizedName.includes('מחסני השוק')) {
+    return 'מחסני השוק';
+  }
+  
+  if (normalizedName.includes('סופר פארם')) {
+    return 'סופר פארם';
   }
 
   return storeName;
