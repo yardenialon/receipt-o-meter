@@ -75,11 +75,11 @@ export function useLogoSlider() {
       return [];
     }
     
-    // Log store chains to debug
-    console.log(`Preparing to display ${storeChains.length} store chains, showing ${totalToShow} at index ${currentIndex}`);
-    
     // חישוב כמה פריטים יש להציג
     const totalToShow = Math.min(visibleLogos, storeChains.length);
+    
+    // Log store chains to debug
+    console.log(`Preparing to display ${storeChains.length} store chains, showing ${totalToShow} at index ${currentIndex}`);
     
     // התאמת סידור מעגלי
     const result = [];
