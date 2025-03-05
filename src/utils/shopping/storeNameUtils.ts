@@ -36,7 +36,7 @@ export const normalizeChainName = (storeName: string): string => {
   }
   
   if (normalizedName.includes('קרפור') || normalizedName.includes('קארפור') || 
-      normalizedName.includes('carrefour')) {
+      normalizedName.includes('carrefour') || normalizedName.includes('כרפור')) {
     return 'קרפור';
   }
   
@@ -52,7 +52,8 @@ export const normalizeChainName = (storeName: string): string => {
     return 'מחסני השוק';
   }
   
-  if (normalizedName.includes('סופר פארם')) {
+  if (normalizedName.includes('סופר פארם') || normalizedName.includes('super pharm') || 
+      normalizedName.includes('super-pharm') || normalizedName.includes('סופרפארם')) {
     return 'סופר פארם';
   }
   
@@ -62,6 +63,22 @@ export const normalizeChainName = (storeName: string): string => {
   
   if (normalizedName.includes('זול ובגדול')) {
     return 'זול ובגדול';
+  }
+  
+  if (normalizedName.includes('נתיב החסד')) {
+    return 'נתיב החסד';
+  }
+  
+  if (normalizedName.includes('פרש מרקט') || normalizedName.includes('fresh market')) {
+    return 'פרש מרקט';
+  }
+  
+  if (normalizedName.includes('קשת טעמים')) {
+    return 'קשת טעמים';
+  }
+  
+  if (normalizedName.includes('סופר יהודה')) {
+    return 'סופר יהודה';
   }
 
   // Return original if no mapping found
