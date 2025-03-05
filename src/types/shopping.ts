@@ -26,6 +26,8 @@ export interface StoreComparison {
   storeId: string | null;
   branchName?: string | null;
   branchAddress?: string | null;
+  chainName?: string; // Added the chainName property
+  logoUrl?: string | null; // Added logoUrl property which is also used
   items: Array<{
     name: string;
     price: number | null;
@@ -35,7 +37,7 @@ export interface StoreComparison {
     product_code?: string | null;
     store_id?: string | null;
     store_chain?: string | null;
-    matchedProducts?: Product[]; // הוספנו שדה חדש עם כל המוצרים המתאימים
+    matchedProducts?: Product[]; 
   }>;
   total: number;
   availableItemsCount: number;

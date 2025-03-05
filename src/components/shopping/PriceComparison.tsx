@@ -33,12 +33,17 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
     branchInfo
   } = useShoppingComparison(comparisons);
 
+  // Get the cheapest store's name, safely handling undefined chainName
+  const cheapestStoreName = completeBaskets.length > 0 
+    ? (completeBaskets[0]?.chainName || completeBaskets[0]?.storeName) 
+    : '';
+
   return (
     <div className="space-y-6">
       <ComparisonHeader
         potentialSavings={potentialSavings}
         savingsPercentage={savingsPercentage}
-        storeName={completeBaskets[0]?.chainName || completeBaskets[0]?.storeName}
+        storeName={cheapestStoreName}
         storeId={completeBaskets[0]?.storeId}
         completeBaskets={completeBaskets.length}
       />
