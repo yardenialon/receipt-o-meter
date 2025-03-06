@@ -2,16 +2,13 @@
 import { supabase } from '@/lib/supabase';
 import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
-// Known available logos with direct paths
-const CONFIRMED_LOGOS: Record<string, string> = {
-  'שופרסל': '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png', // Fixed path
-  'טיב טעם': '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' // Fixed path
-};
+// Until we have actual uploaded logos available, we'll use placeholders for all stores
+const CONFIRMED_LOGOS: Record<string, string> = {};
 
 // Fallback store chains with standardized paths using chain-id based naming convention
 export const fallbackStoreChains = [
   { name: 'רמי לוי', id: 'rami-levy', logo_url: null },
-  { name: 'שופרסל', id: 'shufersal', logo_url: CONFIRMED_LOGOS['שופרסל'] },
+  { name: 'שופרסל', id: 'shufersal', logo_url: null },
   { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: null },
   { name: 'ויקטורי', id: 'victory', logo_url: null },
   { name: 'יוחננוף', id: 'yochananof', logo_url: null },
@@ -19,7 +16,7 @@ export const fallbackStoreChains = [
   { name: 'אושר עד', id: 'osher-ad', logo_url: null },
   { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: null },
   { name: 'סופר פארם', id: 'super-pharm', logo_url: null },
-  { name: 'טיב טעם', id: 'tiv-taam', logo_url: CONFIRMED_LOGOS['טיב טעם'] },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: null },
   { name: 'קרפור', id: 'carrefour', logo_url: null },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: null },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: null },
@@ -65,14 +62,13 @@ export async function fetchStoreChains() {
       const formattedStores = storeChains.map(store => {
         const normalizedName = normalizeChainName(store.name);
         
-        // Only use confirmed logos and actual uploaded files
-        // Don't construct dynamic file paths that might not exist
+        // Only use confirmed logos and actual URLs (not paths)
+        // Don't use paths that might not exist
         let logoUrl = CONFIRMED_LOGOS[normalizedName] || null;
         
-        // Only use DB logo if it has a full path and looks like an actual file
-        if (!logoUrl && store.logo_url && 
-            (store.logo_url.startsWith('/lovable-uploads/') || 
-             store.logo_url.startsWith('http'))) {
+        // Only use DB logo if it's a full URL and looks like an actual file
+        // Don't use relative paths as they're causing 404 errors
+        if (!logoUrl && store.logo_url && store.logo_url.startsWith('http')) {
           logoUrl = store.logo_url;
         }
         

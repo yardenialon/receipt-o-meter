@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
@@ -8,11 +9,9 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
-// List of stores with confirmed existing logos
-const CONFIRMED_LOGOS: Record<string, string> = {
-  'שופרסל': '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png', // Fixed path
-  'טיב טעם': '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' // Fixed path
-};
+// Since we're encountering 404s for the previously "confirmed" logos,
+// We'll use placeholders for all logos until we have actual images
+const CONFIRMED_LOGOS: Record<string, string> = {};
 
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
@@ -58,8 +57,8 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   
   if (hasConfirmedLogo) {
     logoSrc = CONFIRMED_LOGOS[normalizedStoreName];
-  } else if (logoUrl && logoUrl.startsWith('/lovable-uploads/')) {
-    // Only use logoUrl if it's an actual uploaded file (not a dynamically constructed path)
+  } else if (logoUrl && logoUrl.startsWith('http')) {
+    // Only use logoUrl if it's an actual URL (not a path)
     logoSrc = !imgError ? logoUrl : generatePlaceholderUrl(normalizedStoreName);
   } else {
     // For all other cases, use placeholder
