@@ -65,17 +65,15 @@ export async function fetchStoreChains() {
       const formattedStores = storeChains.map(store => {
         const normalizedName = normalizeChainName(store.name);
         
-        // First check for confirmed logos
-        let logoUrl = CONFIRMED_LOGOS[normalizedName];
+        // Only use confirmed logos and actual uploaded files
+        // Don't construct dynamic file paths that might not exist
+        let logoUrl = CONFIRMED_LOGOS[normalizedName] || null;
         
-        // If no confirmed logo, use the one from database if available
-        if (!logoUrl && store.logo_url && store.logo_url !== '') {
-          // Format the URL if needed
-          if (!store.logo_url.startsWith('/') && !store.logo_url.startsWith('http')) {
-            logoUrl = '/' + store.logo_url;
-          } else {
-            logoUrl = store.logo_url;
-          }
+        // Only use DB logo if it has a full path and looks like an actual file
+        if (!logoUrl && store.logo_url && 
+            (store.logo_url.startsWith('/lovable-uploads/') || 
+             store.logo_url.startsWith('http'))) {
+          logoUrl = store.logo_url;
         }
         
         return {
@@ -106,7 +104,7 @@ export async function fetchStoreChains() {
     const storesFromDB = uniqueStores.map(storeName => {
       const normalizedName = normalizeChainName(storeName);
       
-      // Use confirmed logo if available
+      // Only use confirmed logos
       const logoUrl = CONFIRMED_LOGOS[normalizedName] || null;
       
       return {

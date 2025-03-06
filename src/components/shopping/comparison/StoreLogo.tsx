@@ -1,3 +1,4 @@
+
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
@@ -52,34 +53,28 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   // Check if we have a confirmed logo for this store
   const hasConfirmedLogo = normalizedStoreName in CONFIRMED_LOGOS;
 
-  // Get the appropriate logo URL
-  const getLogoUrl = () => {
-    // First check if we have a confirmed logo
-    if (hasConfirmedLogo) {
-      return CONFIRMED_LOGOS[normalizedStoreName];
-    }
-    
-    // Otherwise use the provided URL
-    return logoUrl;
-  };
+  // Only use real logo URLs for confirmed logos, otherwise go straight to placeholder
+  // This prevents unnecessary 404 errors for non-existent logo files
+  let logoSrc;
+  
+  if (hasConfirmedLogo) {
+    logoSrc = CONFIRMED_LOGOS[normalizedStoreName];
+  } else if (logoUrl && logoUrl.startsWith('/lovable-uploads/')) {
+    // Only use logoUrl if it's an actual uploaded file (not a dynamically constructed path)
+    logoSrc = !imgError ? logoUrl : generatePlaceholderUrl(normalizedStoreName);
+  } else {
+    // For all other cases, use placeholder
+    logoSrc = generatePlaceholderUrl(normalizedStoreName);
+  }
 
-  // For fallback, always use the placeholder for stores without confirmed logos
-  const logoSrc = (!imgError && getLogoUrl()) 
-    ? getLogoUrl() 
-    : generatePlaceholderUrl(normalizedStoreName);
-
-  // Only log for debugging when there's an actual error
   const handleImageError = () => {
-    // Only log errors for URLs we expected to work
-    if (hasConfirmedLogo || logoUrl) {
-      console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${getLogoUrl()}`);
-    }
+    console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}`);
     setImgError(true);
   };
 
   return (
     <img 
-      src={logoSrc}
+      src={imgError ? generatePlaceholderUrl(normalizedStoreName) : logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
       onError={handleImageError}
