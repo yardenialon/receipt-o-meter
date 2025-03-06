@@ -1,5 +1,5 @@
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLogoSlider } from './hooks/useLogoSlider';
@@ -16,11 +16,24 @@ export function LogoSlider() {
     isLoading
   } = useLogoSlider();
 
-  // החזרת הפריטים לתצוגה
+  // Get display items
   const displayItems = getDisplayItems();
+  
+  // Add debug logging
+  useEffect(() => {
+    console.log('LogoSlider rendered with:', { 
+      displayItems, 
+      itemCount: displayItems.length,
+      visibleLogos
+    });
+  }, [displayItems, visibleLogos]);
 
   if (isLoading) {
     return <div className="py-4 flex justify-center">טוען נתונים...</div>;
+  }
+  
+  if (displayItems.length === 0) {
+    return <div className="py-4 flex justify-center">אין רשתות להצגה</div>;
   }
 
   return (

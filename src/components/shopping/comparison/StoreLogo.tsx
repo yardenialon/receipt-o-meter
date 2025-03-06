@@ -47,43 +47,12 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
            `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedStoreName)}`;
   };
 
-  // Helper to check if URL is valid and should be attempted
-  const shouldAttemptImageLoad = (url?: string | null): boolean => {
-    if (!url) return false;
-    
-    // Check if it's a valid URL format or a relative path
-    try {
-      if (url.startsWith('/')) {
-        return true;
-      }
-      
-      new URL(url);
-      return true;
-    } catch (e) {
-      console.log(`Invalid URL format for ${normalizedStoreName}: ${url}`);
-      return false;
-    }
-  };
-
-  // Normalize URL path
-  const normalizeUrl = (url: string): string => {
-    // If it's already a lovable-uploads URL, return as is
-    if (url.includes('/lovable-uploads/')) {
-      return url;
-    }
-    
-    // If it has no path prefix but is a relative path, add slash
-    if (!url.startsWith('/') && !url.startsWith('http')) {
-      return '/' + url;
-    }
-    
-    return url;
-  };
-
   // Use provided URL first, then fallback to chain-specific logo
-  const logoSrc = (!imgError && shouldAttemptImageLoad(logoUrl)) 
-    ? normalizeUrl(logoUrl as string)
+  const logoSrc = (!imgError && logoUrl) 
+    ? logoUrl 
     : getFallbackLogoUrl();
+
+  console.log(`Rendering logo for ${normalizedStoreName}:`, { logoUrl, logoSrc, imgError });
 
   return (
     <img 

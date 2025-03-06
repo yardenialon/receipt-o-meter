@@ -39,12 +39,12 @@ export interface StoreChain {
   key?: string;
 }
 
-// שליפת כל רשתות המזון מהדאטהבייס
+// Fetch all food chains from the database
 export async function fetchStoreChains() {
   try {
     console.log('Fetching store chains from database...');
     
-    // שליפה מטבלת store_chains
+    // Try to fetch from store_chains table
     const { data: storeChains, error: storeError } = await supabase
       .from('store_chains')
       .select('id, name, logo_url')
@@ -58,11 +58,8 @@ export async function fetchStoreChains() {
     if (storeChains && storeChains.length > 0) {
       console.log(`Found ${storeChains.length} store chains in database`);
       
-      // המרה לפורמט הנדרש
+      // Format stores with correct path prefix for images
       const formattedStores = storeChains.map(store => {
-        // Make sure logo_url has the correct path prefix if needed
-        let logoUrl = store.logo_url;
-        
         // Normalize the store name
         const normalizedName = normalizeChainName(store.name);
         
@@ -71,11 +68,14 @@ export async function fetchStoreChains() {
           normalizeChainName(s.name).trim().toLowerCase() === normalizedName.trim().toLowerCase()
         );
         
+        // Process logo URL
+        let logoUrl = store.logo_url;
+        
         // If logo URL doesn't exist or is invalid, use fallback
         if (!logoUrl || logoUrl === '' || logoUrl.includes('placeholder')) {
           logoUrl = fallback?.logo_url;
         }
-        // If logo URL is relative and doesn't start with /, add /
+        // Ensure URL has proper format
         else if (logoUrl && !logoUrl.startsWith('/') && !logoUrl.startsWith('http')) {
           logoUrl = '/' + logoUrl;
         }
@@ -83,15 +83,16 @@ export async function fetchStoreChains() {
         return {
           name: normalizedName,
           id: store.id,
-          logo_url: logoUrl || `/lovable-uploads/${normalizedName.toLowerCase().replace(/\s+/g, '-')}-logo.png`
+          logo_url: logoUrl || `/lovable-uploads/${store.id}-logo.png`
         };
       });
       
+      console.log('Formatted store chains:', formattedStores);
       return formattedStores;
     }
     
-    // אם אין נתונים בטבלת store_chains, שולפים מטבלת store_products
-    console.log('No data in store_chains, falling back to unique store chains from store_products');
+    // If no data in store_chains, fall back to unique chains from store_products
+    console.log('No data in store_chains, falling back to store_products');
     const { data, error } = await supabase
       .from('store_products')
       .select('store_chain')
@@ -99,14 +100,14 @@ export async function fetchStoreChains() {
       .not('store_chain', 'is', null);
 
     if (error) {
-      console.error('Error fetching store chains from store_products:', error);
+      console.error('Error fetching from store_products:', error);
       return fallbackStoreChains;
     }
 
-    // הסרת כפילויות
+    // Remove duplicates
     const uniqueStores = Array.from(new Set(data.map(item => item.store_chain)));
     
-    // המרה לפורמט הנדרש
+    // Format stores
     const storesFromDB = uniqueStores.map(storeName => {
       const normalizedName = normalizeChainName(storeName);
       
@@ -116,7 +117,7 @@ export async function fetchStoreChains() {
       );
       
       const logoUrl = fallback?.logo_url || 
-                     `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedName)}`;
+                     `/lovable-uploads/${normalizedName.toLowerCase().replace(/\s+/g, '-')}-logo.png`;
       
       return {
         name: normalizedName,
@@ -125,7 +126,7 @@ export async function fetchStoreChains() {
       };
     });
     
-    // מיון לפי שם
+    // Sort by name
     return storesFromDB.sort((a, b) => a.name.localeCompare(b.name, 'he'));
   } catch (error) {
     console.error('Error in fetchStoreChains:', error);

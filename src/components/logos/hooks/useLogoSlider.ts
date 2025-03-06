@@ -7,16 +7,25 @@ export function useLogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
 
-  // שליפת נתוני רשתות מהדאטהבייס
+  // Fetch store chain data with better error handling
   const { data: storeChains, isLoading } = useQuery({
     queryKey: ['store-chains'],
-    queryFn: fetchStoreChains,
+    queryFn: async () => {
+      try {
+        const chains = await fetchStoreChains();
+        console.log('Fetched store chains:', chains);
+        return chains;
+      } catch (error) {
+        console.error('Error fetching store chains:', error);
+        return fallbackStoreChains;
+      }
+    },
     initialData: fallbackStoreChains,
     staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false // Disable refetching when window regains focus
+    refetchOnWindowFocus: false
   });
 
-  // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
+  // Update visible logos based on screen width
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -38,7 +47,7 @@ export function useLogoSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // הזזת הלוגואים שמאלה וימינה
+  // Navigation functions
   const goToNext = () => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
@@ -57,31 +66,27 @@ export function useLogoSlider() {
     });
   };
 
-  // הפעלת הסליידר אוטומטית באופן מתון
+  // Auto-slide functionality
   useEffect(() => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     const interval = setInterval(() => {
       goToNext();
-    }, 3000); // 3 שניות לגלילה
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [visibleLogos, storeChains, currentIndex]);
 
-  // יצירת מערך עזר לתצוגה חלקה של הלוגואים
+  // Create array of visible logos with proper key handling
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) {
       console.log('No store chains to display');
       return [];
     }
     
-    // חישוב כמה פריטים יש להציג
     const totalToShow = Math.min(visibleLogos, storeChains.length);
+    console.log(`Displaying ${totalToShow} logos out of ${storeChains.length} at index ${currentIndex}`);
     
-    // Log store chains to debug
-    console.log(`Preparing to display ${storeChains.length} store chains, showing ${totalToShow} at index ${currentIndex}`);
-    
-    // התאמת סידור מעגלי
     const result = [];
     for (let i = 0; i < totalToShow; i++) {
       const index = (currentIndex + i) % storeChains.length;
@@ -90,14 +95,17 @@ export function useLogoSlider() {
         key: `store-${index}-${i}`
       };
       
-      console.log(`Display item ${i}: ${store.name} with logo ${store.logo_url}`);
+      // Make sure paths are valid
+      if (store.logo_url && !store.logo_url.startsWith('/') && !store.logo_url.startsWith('http')) {
+        store.logo_url = '/' + store.logo_url;
+      }
+      
       result.push(store);
     }
     
     return result;
   };
 
-  // במידה ואין מספיק רשתות להציג
   const showControls = (storeChains?.length || 0) > visibleLogos;
 
   return {
