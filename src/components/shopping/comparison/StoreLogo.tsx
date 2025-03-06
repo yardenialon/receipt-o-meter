@@ -44,14 +44,29 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
+  // Special case for Shufersal logo which we know exists
+  const getLogoUrl = () => {
+    if (normalizedStoreName === 'שופרסל') {
+      return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+    }
+    
+    // For other logos, use the provided URL
+    return logoUrl;
+  };
+
   // Define text-based placeholder fallbacks for when images don't exist
   const getFallbackLogoUrl = () => {
+    // Special case for Shufersal
+    if (normalizedStoreName === 'שופרסל') {
+      return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+    }
+    
     return generatePlaceholderUrl(normalizedStoreName);
   };
 
   // Use provided URL first, then fallback to a generated placeholder
-  const logoSrc = (!imgError && logoUrl) 
-    ? logoUrl 
+  const logoSrc = (!imgError && getLogoUrl()) 
+    ? getLogoUrl() 
     : getFallbackLogoUrl();
 
   console.log(`Rendering logo for ${normalizedStoreName}:`, { logoUrl, logoSrc, imgError });

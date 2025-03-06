@@ -1,11 +1,10 @@
-
 import { supabase } from '@/lib/supabase';
 import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
 // Fallback store chains with standardized paths using chain-id based naming convention
 export const fallbackStoreChains = [
   { name: 'רמי לוי', id: 'rami-levy', logo_url: '/lovable-uploads/rami-levy-logo.png' },
-  { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/shufersal-logo.png' },
+  { name: 'שופרסל', id: 'shufersal', logo_url: '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png' },
   { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: '/lovable-uploads/yeinot-bitan-logo.png' },
   { name: 'ויקטורי', id: 'victory', logo_url: '/lovable-uploads/victory-logo.png' },
   { name: 'יוחננוף', id: 'yochananof', logo_url: '/lovable-uploads/yochananof-logo.png' },
@@ -39,12 +38,10 @@ export interface StoreChain {
   key?: string;
 }
 
-// Fetch all food chains from the database
 export async function fetchStoreChains() {
   try {
     console.log('Fetching store chains from database...');
     
-    // Try to fetch from store_chains table
     const { data: storeChains, error: storeError } = await supabase
       .from('store_chains')
       .select('id, name, logo_url')
@@ -58,24 +55,21 @@ export async function fetchStoreChains() {
     if (storeChains && storeChains.length > 0) {
       console.log(`Found ${storeChains.length} store chains in database`);
       
-      // Format stores with correct path prefix for images
       const formattedStores = storeChains.map(store => {
-        // Normalize the store name
         const normalizedName = normalizeChainName(store.name);
         
-        // Find matching fallback for consistent logo URLs
         const fallback = fallbackStoreChains.find(s => 
           normalizeChainName(s.name).trim().toLowerCase() === normalizedName.trim().toLowerCase()
         );
         
-        // Process logo URL
         let logoUrl = store.logo_url;
         
-        // If logo URL doesn't exist or is invalid, use fallback
-        if (!logoUrl || logoUrl === '' || logoUrl.includes('placeholder')) {
+        if (normalizedName === 'שופרסל') {
+          logoUrl = '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+        } 
+        else if (!logoUrl || logoUrl === '' || logoUrl.includes('placeholder')) {
           logoUrl = fallback?.logo_url;
         }
-        // Ensure URL has proper format
         else if (logoUrl && !logoUrl.startsWith('/') && !logoUrl.startsWith('http')) {
           logoUrl = '/' + logoUrl;
         }
@@ -91,7 +85,6 @@ export async function fetchStoreChains() {
       return formattedStores;
     }
     
-    // If no data in store_chains, fall back to unique chains from store_products
     console.log('No data in store_chains, falling back to store_products');
     const { data, error } = await supabase
       .from('store_products')
@@ -104,14 +97,19 @@ export async function fetchStoreChains() {
       return fallbackStoreChains;
     }
 
-    // Remove duplicates
     const uniqueStores = Array.from(new Set(data.map(item => item.store_chain)));
     
-    // Format stores
     const storesFromDB = uniqueStores.map(storeName => {
       const normalizedName = normalizeChainName(storeName);
       
-      // Find matching fallback logo
+      if (normalizedName === 'שופרסל') {
+        return {
+          name: normalizedName,
+          id: 'shufersal',
+          logo_url: '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png'
+        };
+      }
+      
       const fallback = fallbackStoreChains.find(s => 
         normalizeChainName(s.name).trim().toLowerCase() === normalizedName.trim().toLowerCase()
       );
@@ -126,7 +124,6 @@ export async function fetchStoreChains() {
       };
     });
     
-    // Sort by name
     return storesFromDB.sort((a, b) => a.name.localeCompare(b.name, 'he'));
   } catch (error) {
     console.error('Error in fetchStoreChains:', error);
