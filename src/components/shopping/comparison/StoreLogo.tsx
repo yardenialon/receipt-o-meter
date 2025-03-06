@@ -22,32 +22,34 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   // Normalize the store name for consistent matching
   const normalizedStoreName = normalizeChainName(storeName);
 
-  // Get fallback logo URL based on chain name
-  const getFallbackLogoUrl = () => {
-    // Define standard chain-id based fallback paths
-    const chainMap: Record<string, string> = {
-      'רמי לוי': '/lovable-uploads/rami-levy-logo.png',
-      'שופרסל': '/lovable-uploads/shufersal-logo.png',
-      'יינות ביתן': '/lovable-uploads/yeinot-bitan-logo.png',
-      'ויקטורי': '/lovable-uploads/victory-logo.png',
-      'יוחננוף': '/lovable-uploads/yochananof-logo.png',
-      'מחסני השוק': '/lovable-uploads/machsanei-hashuk-logo.png',
-      'אושר עד': '/lovable-uploads/osher-ad-logo.png',
-      'חצי חינם': '/lovable-uploads/hatzi-hinam-logo.png',
-      'סופר פארם': '/lovable-uploads/super-pharm-logo.png',
-      'טיב טעם': '/lovable-uploads/tiv-taam-logo.png',
-      'קרפור': '/lovable-uploads/carrefour-logo.png',
-      'קשת טעמים': '/lovable-uploads/keshet-teamim-logo.png',
-      'סופר יהודה': '/lovable-uploads/super-yehuda-logo.png',
-      'פרש מרקט': '/lovable-uploads/fresh-market-logo.png'
-    };
+  // Function to generate a colored text-based placeholder
+  const generatePlaceholderUrl = (name: string) => {
+    // Get first letter or two of the name
+    const initials = name.replace(/\s+/g, ' ').trim().split(' ')
+      .map(word => word.charAt(0))
+      .slice(0, 2)
+      .join('');
     
-    // Return the chain-specific fallback or a generic placeholder
-    return chainMap[normalizedStoreName] || 
-           `https://via.placeholder.com/100x100?text=${encodeURIComponent(normalizedStoreName)}`;
+    // Generate a consistent color based on the name
+    const colors = [
+      'FF6B6B', 'FFD93D', '6BCB77', '4D96FF', 'F473B9', 
+      'AA77FF', '9A7B4F', '764AF1', '92C7CF', 'FF9B50'
+    ];
+    
+    // Use a simple hash function to pick a color
+    const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    const bgColor = colors[colorIndex];
+    
+    // Create the placeholder URL
+    return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Use provided URL first, then fallback to chain-specific logo
+  // Define text-based placeholder fallbacks for when images don't exist
+  const getFallbackLogoUrl = () => {
+    return generatePlaceholderUrl(normalizedStoreName);
+  };
+
+  // Use provided URL first, then fallback to a generated placeholder
   const logoSrc = (!imgError && logoUrl) 
     ? logoUrl 
     : getFallbackLogoUrl();
