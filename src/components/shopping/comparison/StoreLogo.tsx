@@ -60,7 +60,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
       onError={(e) => {
-        console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}, falling back to chain-specific logo`);
+        console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}`);
         setImgError(true);
       }}
     />
