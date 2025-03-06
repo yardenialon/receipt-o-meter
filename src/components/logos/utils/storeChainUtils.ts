@@ -4,8 +4,8 @@ import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
 // Known available logos with direct paths
 const CONFIRMED_LOGOS: Record<string, string> = {
-  'שופרסל': '/public/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png', // Updated path
-  'טיב טעם': '/public/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' // Updated path
+  'שופרסל': '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png', // Fixed path
+  'טיב טעם': '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' // Fixed path
 };
 
 // Fallback store chains with standardized paths using chain-id based naming convention
