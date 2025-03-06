@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
@@ -44,10 +43,14 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Special case for Shufersal logo which we know exists
+  // Special case for logos which we know exist
   const getLogoUrl = () => {
     if (normalizedStoreName === 'שופרסל') {
       return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+    }
+    
+    if (normalizedStoreName === 'טיב טעם') {
+      return '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png';
     }
     
     // For other logos, use the provided URL
@@ -59,6 +62,11 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // Special case for Shufersal
     if (normalizedStoreName === 'שופרסל') {
       return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+    }
+    
+    // Special case for Tiv Taam
+    if (normalizedStoreName === 'טיב טעם') {
+      return '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png';
     }
     
     return generatePlaceholderUrl(normalizedStoreName);

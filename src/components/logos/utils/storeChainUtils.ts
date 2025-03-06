@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
@@ -12,7 +13,7 @@ export const fallbackStoreChains = [
   { name: 'אושר עד', id: 'osher-ad', logo_url: '/lovable-uploads/osher-ad-logo.png' },
   { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: '/lovable-uploads/hatzi-hinam-logo.png' },
   { name: 'סופר פארם', id: 'super-pharm', logo_url: '/lovable-uploads/super-pharm-logo.png' },
-  { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/tiv-taam-logo.png' },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' },
   { name: 'קרפור', id: 'carrefour', logo_url: '/lovable-uploads/carrefour-logo.png' },
   { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: '/lovable-uploads/keshet-teamim-logo.png' },
   { name: 'סופר יהודה', id: 'super-yehuda', logo_url: '/lovable-uploads/super-yehuda-logo.png' },
