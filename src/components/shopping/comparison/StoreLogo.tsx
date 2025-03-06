@@ -11,7 +11,7 @@ interface StoreLogoProps {
 
 // List of stores with confirmed existing logos
 const CONFIRMED_LOGOS: Record<string, string> = {
-  'שופרסל': '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png',
+  'שופרסל': '/public/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png', // Updated path
   'טיב טעם': '/public/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png' // Updated path
 };
 
