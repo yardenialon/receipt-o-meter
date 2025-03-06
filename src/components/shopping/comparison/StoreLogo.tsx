@@ -8,6 +8,12 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
+// List of stores with confirmed existing logos
+const CONFIRMED_LOGOS: Record<string, string> = {
+  'שופרסל': '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png',
+  'טיב טעם': '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png'
+};
+
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
@@ -43,51 +49,40 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Special case for logos which we know exist
+  // Check if we have a confirmed logo for this store
+  const hasConfirmedLogo = normalizedStoreName in CONFIRMED_LOGOS;
+
+  // Get the appropriate logo URL
   const getLogoUrl = () => {
-    if (normalizedStoreName === 'שופרסל') {
-      return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
+    // First check if we have a confirmed logo
+    if (hasConfirmedLogo) {
+      return CONFIRMED_LOGOS[normalizedStoreName];
     }
     
-    if (normalizedStoreName === 'טיב טעם') {
-      return '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png';
-    }
-    
-    // For other logos, use the provided URL
+    // Otherwise use the provided URL
     return logoUrl;
   };
 
-  // Define text-based placeholder fallbacks for when images don't exist
-  const getFallbackLogoUrl = () => {
-    // Special case for Shufersal
-    if (normalizedStoreName === 'שופרסל') {
-      return '/lovable-uploads/7f874da2-c327-4a3b-aec1-53f8a0b28a1c.png';
-    }
-    
-    // Special case for Tiv Taam
-    if (normalizedStoreName === 'טיב טעם') {
-      return '/lovable-uploads/bee996f5-ef8f-434b-8d0b-04e7b6ce37b9.png';
-    }
-    
-    return generatePlaceholderUrl(normalizedStoreName);
-  };
-
-  // Use provided URL first, then fallback to a generated placeholder
+  // For fallback, always use the placeholder for stores without confirmed logos
   const logoSrc = (!imgError && getLogoUrl()) 
     ? getLogoUrl() 
-    : getFallbackLogoUrl();
+    : generatePlaceholderUrl(normalizedStoreName);
 
-  console.log(`Rendering logo for ${normalizedStoreName}:`, { logoUrl, logoSrc, imgError });
+  // Only log for debugging when there's an actual error
+  const handleImageError = () => {
+    // Only log errors for URLs we expected to work
+    if (hasConfirmedLogo || logoUrl) {
+      console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${getLogoUrl()}`);
+    }
+    setImgError(true);
+  };
 
   return (
     <img 
       src={logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
-      onError={(e) => {
-        console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}`);
-        setImgError(true);
-      }}
+      onError={handleImageError}
     />
   );
 };
