@@ -46,16 +46,33 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
+  // Function to ensure the logo path is correct
+  const getCorrectLogoPath = (path: string | null) => {
+    if (!path) return null;
+    
+    // If it's already a full URL, return as is
+    if (path.startsWith('http')) return path;
+    
+    // If it's a Lovable upload path, ensure it's correct
+    if (path.includes('lovable-uploads')) {
+      // Remove leading slash if present to avoid double slashes
+      return path.startsWith('/') ? path : `/${path}`;
+    }
+    
+    // For other relative paths
+    return path.startsWith('/') ? path : `/${path}`;
+  };
+
   // Determine the logo URL to use
   let logoSrc;
   
   // First try to use the provided logoUrl (highest priority)
   if (logoUrl && !imgError) {
-    logoSrc = logoUrl;
+    logoSrc = getCorrectLogoPath(logoUrl);
   } 
   // Then check if we have a logo for this chain in our database
   else if (chainInfo && chainInfo[normalizedStoreName]?.logoUrl && !imgError) {
-    logoSrc = chainInfo[normalizedStoreName].logoUrl;
+    logoSrc = getCorrectLogoPath(chainInfo[normalizedStoreName].logoUrl);
   } 
   // Fall back to placeholder if no logo is available or if loading failed
   else {
@@ -68,7 +85,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
       onError={() => {
-        console.error(`Failed to load logo for ${normalizedStoreName}`);
+        console.error(`Failed to load logo for ${normalizedStoreName}`, logoSrc);
         setImgError(true);
       }}
     />
