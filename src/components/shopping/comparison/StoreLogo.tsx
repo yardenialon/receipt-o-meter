@@ -2,7 +2,6 @@
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
-import { useStoreChainInfo } from "@/hooks/comparison/useStoreInfo";
 
 interface StoreLogoProps {
   storeName: string;
@@ -10,19 +9,19 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
+// Since we're having issues with logos, we'll use placeholders for all logos
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
-  // Fetch store chain info from database
-  const { data: chainInfo, isLoading } = useStoreChainInfo();
-  
-  // Normalize the store name for consistent matching
-  const normalizedStoreName = normalizeChainName(storeName);
-  
   // Reset the error state when logoUrl changes
   useEffect(() => {
-    setImgError(false);
-  }, [logoUrl, chainInfo]);
+    if (logoUrl) {
+      setImgError(false);
+    }
+  }, [logoUrl]);
+
+  // Normalize the store name for consistent matching
+  const normalizedStoreName = normalizeChainName(storeName);
 
   // Function to generate a colored text-based placeholder
   const generatePlaceholderUrl = (name: string) => {
@@ -46,55 +45,16 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Function to ensure the logo path is correct
-  const getCorrectLogoPath = (path: string | null) => {
-    if (!path) return null;
-    
-    // If it's already a full URL, return as is
-    if (path.startsWith('http')) return path;
-    
-    // Remove any leading slash
-    let cleanPath = path.replace(/^\//, '');
-    
-    // Handle lovable-uploads paths
-    if (cleanPath.includes('lovable-uploads')) {
-      if (import.meta.env.DEV) {
-        // In development, ensure we have the public/ prefix
-        if (!cleanPath.startsWith('public/')) {
-          cleanPath = `public/${cleanPath}`;
-        }
-      }
-    }
-    
-    return cleanPath;
-  };
-
-  // Determine the logo URL to use
-  let logoSrc;
-  
-  // First try to use the provided logoUrl (highest priority)
-  if (logoUrl && !imgError) {
-    logoSrc = getCorrectLogoPath(logoUrl);
-  } 
-  // Then check if we have a logo for this chain in our database
-  else if (chainInfo && chainInfo[normalizedStoreName]?.logoUrl && !imgError) {
-    logoSrc = getCorrectLogoPath(chainInfo[normalizedStoreName].logoUrl);
-  } 
-  // Fall back to placeholder if no logo is available or if loading failed
-  else {
-    logoSrc = generatePlaceholderUrl(normalizedStoreName);
-  }
-
-  // For debugging
-  console.log(`Using logo for ${normalizedStoreName}:`, logoSrc);
+  // For all cases, use placeholder instead of trying real logos
+  const logoSrc = generatePlaceholderUrl(normalizedStoreName);
 
   return (
     <img 
       src={logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
-      onError={(e) => {
-        console.error(`Failed to load logo for ${normalizedStoreName}`, logoSrc);
+      onError={() => {
+        console.error(`Failed to load logo for ${normalizedStoreName}`);
         setImgError(true);
       }}
     />
