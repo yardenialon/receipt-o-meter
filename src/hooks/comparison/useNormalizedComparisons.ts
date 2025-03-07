@@ -17,6 +17,7 @@ export const useNormalizedComparisons = (comparisons: StoreComparison[] = []) =>
   const normalizedComparisons = comparisons.map(comparison => {
     // Normalize store name for consistent display and logo matching
     const normalizedName = normalizeChainName(comparison.storeName);
+    console.log(`Normalizing store: original=${comparison.storeName}, normalized=${normalizedName}`);
     
     // Calculate total cost only for available items
     const total = comparison.items.reduce((sum, item) => {

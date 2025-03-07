@@ -61,7 +61,8 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
       
       console.log('Fetching branch info for store IDs:', storeIds);
       
-      // Separate queries for chains and branches for better debugging
+      // Fetch all data before processing to avoid race conditions
+      
       // First, get chain data 
       const { data: chains, error: chainError } = await supabase
         .from('store_chains')
@@ -97,6 +98,7 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
         console.error('Error fetching branch mappings:', mappingError);
       }
       
+      // Pre-process all chain names to avoid doing it repeatedly
       // Create lookup maps
       const chainMap = chains ? chains.reduce((map, chain) => {
         // Debug each chain to ensure correct normalization
