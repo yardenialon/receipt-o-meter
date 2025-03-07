@@ -9,19 +9,35 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
-// Since we're encountering 404s for the previously "confirmed" logos,
-// We'll use placeholders for all logos until we have actual images
-const CONFIRMED_LOGOS: Record<string, string> = {};
+// Map of confirmed logos with their standard file name pattern
+const STORE_LOGOS: Record<string, string> = {
+  'רמי לוי': '/store-logos/rami-levy.png',
+  'שופרסל': '/store-logos/shufersal.png',
+  'יוחננוף': '/store-logos/yochananof.png',
+  'טיב טעם': '/store-logos/tiv-taam.png',
+  'חצי חינם': '/store-logos/hatzi-hinam.png',
+  'אושר עד': '/store-logos/osher-ad.png',
+  'ויקטורי': '/store-logos/victory.png',
+  'יינות ביתן': '/store-logos/yeinot-bitan.png',
+  'מחסני השוק': '/store-logos/machsanei-hashuk.png',
+  'קרפור': '/store-logos/carrefour.png',
+  'סופר פארם': '/store-logos/super-pharm.png',
+  'זול ובגדול': '/store-logos/zol-vbgadol.png',
+  'משנת יוסף': '/store-logos/mishnat-yosef.png',
+  'קינג סטור': '/store-logos/king-store.png',
+  'נתיב החסד': '/store-logos/netiv-hachesed.png',
+  'פרש מרקט': '/store-logos/fresh-market.png',
+  'קשת טעמים': '/store-logos/keshet-teamim.png',
+  'סופר יהודה': '/store-logos/super-yehuda.png'
+};
 
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
-  // Reset the error state when logoUrl changes
+  // Reset the error state when storeName or logoUrl changes
   useEffect(() => {
-    if (logoUrl) {
-      setImgError(false);
-    }
-  }, [logoUrl]);
+    setImgError(false);
+  }, [storeName, logoUrl]);
 
   // Normalize the store name for consistent matching
   const normalizedStoreName = normalizeChainName(storeName);
@@ -48,31 +64,46 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Check if we have a confirmed logo for this store
-  const hasConfirmedLogo = normalizedStoreName in CONFIRMED_LOGOS;
-
-  // Only use real logo URLs for confirmed logos, otherwise go straight to placeholder
-  // This prevents unnecessary 404 errors for non-existent logo files
-  let logoSrc;
+  // Source selection logic (prioritized)
+  let logoSrc: string;
   
-  if (hasConfirmedLogo) {
-    logoSrc = CONFIRMED_LOGOS[normalizedStoreName];
-  } else if (logoUrl && logoUrl.startsWith('http')) {
-    // Only use logoUrl if it's an actual URL (not a path)
-    logoSrc = !imgError ? logoUrl : generatePlaceholderUrl(normalizedStoreName);
+  if (imgError) {
+    // If we've had an error loading the image, use placeholder
+    logoSrc = generatePlaceholderUrl(normalizedStoreName);
+  } else if (logoUrl && (logoUrl.startsWith('http') || logoUrl.startsWith('/'))) {
+    // Use the provided URL if it looks valid (absolute URL or starts with /)
+    logoSrc = logoUrl;
+  } else if (normalizedStoreName in STORE_LOGOS) {
+    // Use our predefined logo mapping if available
+    logoSrc = STORE_LOGOS[normalizedStoreName];
   } else {
-    // For all other cases, use placeholder
+    // Fallback to placeholder
     logoSrc = generatePlaceholderUrl(normalizedStoreName);
   }
 
   const handleImageError = () => {
     console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}`);
+    
+    // If current source is from our mapping and it failed, go straight to placeholder
+    if (normalizedStoreName in STORE_LOGOS && logoSrc === STORE_LOGOS[normalizedStoreName]) {
+      setImgError(true);
+      return;
+    }
+    
+    // If current source is the provided logoUrl and it failed, try our mapping
+    if (logoUrl && logoSrc === logoUrl && normalizedStoreName in STORE_LOGOS) {
+      logoSrc = STORE_LOGOS[normalizedStoreName];
+      // Don't set error yet, let it try our mapping first
+      return;
+    }
+    
+    // In all other cases, set error to true to use placeholder
     setImgError(true);
   };
 
   return (
     <img 
-      src={imgError ? generatePlaceholderUrl(normalizedStoreName) : logoSrc}
+      src={logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
       onError={handleImageError}

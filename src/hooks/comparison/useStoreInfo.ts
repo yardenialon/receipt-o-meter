@@ -27,9 +27,10 @@ export const useStoreChainInfo = () => {
           const normalizedName = normalizeChainName(chain.name);
           let logoUrl = chain.logo_url;
           
-          // Handle relative paths for logos
-          if (logoUrl && !logoUrl.startsWith('/') && !logoUrl.startsWith('http')) {
-            logoUrl = '/' + logoUrl;
+          // Use standard logo path pattern if no specific URL
+          if (!logoUrl) {
+            const chainId = normalizedName.toLowerCase().replace(/\s+/g, '-');
+            logoUrl = `/store-logos/${chainId}.png`;
           }
           
           chainData[normalizedName] = {
@@ -56,59 +57,81 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
       
       console.log('Fetching branch info for store IDs:', storeIds);
       
-      if (storeIds.length === 0) {
-        console.log('No valid store IDs to fetch');
-        return {};
-      }
-
-      const { data: branches, error } = await supabase
+      // First, get branch data
+      const { data: branches, error: branchError } = await supabase
         .from('store_branches')
         .select(`
           branch_id,
           name,
           address,
-          chain_id,
-          store_chains (
-            name,
-            logo_url
-          ),
-          branch_mappings (
-            source_chain,
-            source_branch_id,
-            source_branch_name
-          )
+          chain_id
         `)
         .in('branch_id', storeIds);
-      
-      if (error) {
-        console.error('Error fetching branch info:', error);
+        
+      if (branchError) {
+        console.error('Error fetching branch info:', branchError);
         return {};
       }
+      
+      // Then get chain data
+      const { data: chains, error: chainError } = await supabase
+        .from('store_chains')
+        .select('id, name, logo_url');
+        
+      if (chainError) {
+        console.error('Error fetching chain info:', chainError);
+        return {};
+      }
+      
+      // Finally get branch mappings
+      const { data: mappings, error: mappingError } = await supabase
+        .from('branch_mappings')
+        .select('id, source_chain, source_branch_id, source_branch_name, branch_id');
+        
+      if (mappingError) {
+        console.error('Error fetching branch mappings:', mappingError);
+      }
+      
+      // Create lookup maps
+      const chainMap = chains ? chains.reduce((map, chain) => {
+        map[chain.id] = { name: chain.name, logoUrl: chain.logo_url };
+        return map;
+      }, {} as Record<string, { name: string, logoUrl: string | null }>) : {};
+      
+      const mappingMap = mappings ? mappings.reduce((map, mapping) => {
+        map[mapping.source_branch_id] = mapping;
+        return map;
+      }, {} as Record<string, any>) : {};
       
       const branchData: Record<string, any> = {};
       
       if (branches) {
         branches.forEach((branch: any) => {
-          // First try to get info from branch mapping
-          if (branch.branch_mappings && branch.branch_mappings.length > 0) {
-            const mapping = branch.branch_mappings[0];
+          const chainInfo = chainMap[branch.chain_id];
+          const normalizedChain = chainInfo ? normalizeChainName(chainInfo.name) : '';
+          
+          branchData[branch.branch_id] = {
+            name: branch.name,
+            address: branch.address,
+            chainName: normalizedChain,
+            logoUrl: chainInfo?.logoUrl
+          };
+        });
+      }
+      
+      // Add data from branch mappings
+      if (mappings) {
+        mappings.forEach((mapping: any) => {
+          if (storeIds.includes(mapping.source_branch_id)) {
             const normalizedChain = normalizeChainName(mapping.source_chain);
             
             branchData[mapping.source_branch_id] = {
-              name: mapping.source_branch_name || branch.name,
-              address: branch.address,
+              name: mapping.source_branch_name,
               chainName: normalizedChain,
-              logoUrl: branch.store_chains?.logo_url
-            };
-          } else if (branch.store_chains) {
-            // Fallback to direct chain info
-            const normalizedChain = normalizeChainName(branch.store_chains.name);
-            
-            branchData[branch.branch_id] = {
-              name: branch.name,
-              address: branch.address,
-              chainName: normalizedChain,
-              logoUrl: branch.store_chains.logo_url
+              // Try to find logo from chain data
+              logoUrl: Object.values(chainMap).find(c => 
+                normalizeChainName(c.name) === normalizedChain
+              )?.logoUrl
             };
           }
         });
