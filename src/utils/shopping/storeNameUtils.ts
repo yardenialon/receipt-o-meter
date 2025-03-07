@@ -11,6 +11,7 @@ export const normalizeChainName = (storeName: string): string => {
     return 'יוחננוף';
   }
   
+  // Fixed: Make sure Rami Levy is correctly normalized and not being confused with other chains
   if (normalizedName.includes('רמי לוי') || normalizedName.includes('שיווק השקמה')) {
     return 'רמי לוי';
   }

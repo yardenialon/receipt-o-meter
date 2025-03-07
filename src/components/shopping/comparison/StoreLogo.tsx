@@ -39,8 +39,9 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     setImgError(false);
   }, [storeName, logoUrl]);
 
-  // Normalize the store name for consistent matching
+  // Normalize the store name for consistent matching - adding debug logging
   const normalizedStoreName = normalizeChainName(storeName);
+  console.log(`StoreLogo: original name=${storeName}, normalized=${normalizedStoreName}`);
 
   // Function to generate a colored text-based placeholder
   const generatePlaceholderUrl = (name: string) => {

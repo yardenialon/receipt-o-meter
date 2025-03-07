@@ -24,7 +24,11 @@ export const useStoreChainInfo = () => {
       
       if (storeChains) {
         storeChains.forEach(chain => {
+          // Adding debug logging to track normalization
+          const originalName = chain.name;
           const normalizedName = normalizeChainName(chain.name);
+          console.log(`Chain: original=${originalName}, normalized=${normalizedName}`);
+          
           let logoUrl = chain.logo_url;
           
           // Use standard logo path pattern if no specific URL
@@ -57,7 +61,18 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
       
       console.log('Fetching branch info for store IDs:', storeIds);
       
-      // First, get branch data
+      // Separate queries for chains and branches for better debugging
+      // First, get chain data 
+      const { data: chains, error: chainError } = await supabase
+        .from('store_chains')
+        .select('id, name, logo_url');
+        
+      if (chainError) {
+        console.error('Error fetching chain info:', chainError);
+        return {};
+      }
+      
+      // Then get branch data
       const { data: branches, error: branchError } = await supabase
         .from('store_branches')
         .select(`
@@ -73,16 +88,6 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
         return {};
       }
       
-      // Then get chain data
-      const { data: chains, error: chainError } = await supabase
-        .from('store_chains')
-        .select('id, name, logo_url');
-        
-      if (chainError) {
-        console.error('Error fetching chain info:', chainError);
-        return {};
-      }
-      
       // Finally get branch mappings
       const { data: mappings, error: mappingError } = await supabase
         .from('branch_mappings')
@@ -94,9 +99,18 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
       
       // Create lookup maps
       const chainMap = chains ? chains.reduce((map, chain) => {
-        map[chain.id] = { name: chain.name, logoUrl: chain.logo_url };
+        // Debug each chain to ensure correct normalization
+        const originalName = chain.name;
+        const normalizedName = normalizeChainName(chain.name);
+        console.log(`ChainMap: ${chain.id} original=${originalName}, normalized=${normalizedName}`);
+        
+        map[chain.id] = { 
+          name: chain.name, 
+          normalizedName: normalizedName,
+          logoUrl: chain.logo_url 
+        };
         return map;
-      }, {} as Record<string, { name: string, logoUrl: string | null }>) : {};
+      }, {} as Record<string, { name: string, normalizedName: string, logoUrl: string | null }>) : {};
       
       const mappingMap = mappings ? mappings.reduce((map, mapping) => {
         map[mapping.source_branch_id] = mapping;
@@ -108,7 +122,7 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
       if (branches) {
         branches.forEach((branch: any) => {
           const chainInfo = chainMap[branch.chain_id];
-          const normalizedChain = chainInfo ? normalizeChainName(chainInfo.name) : '';
+          const normalizedChain = chainInfo ? chainInfo.normalizedName : '';
           
           branchData[branch.branch_id] = {
             name: branch.name,
@@ -124,13 +138,14 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
         mappings.forEach((mapping: any) => {
           if (storeIds.includes(mapping.source_branch_id)) {
             const normalizedChain = normalizeChainName(mapping.source_chain);
+            console.log(`Mapping: source=${mapping.source_chain}, normalized=${normalizedChain}`);
             
             branchData[mapping.source_branch_id] = {
               name: mapping.source_branch_name,
               chainName: normalizedChain,
               // Try to find logo from chain data
               logoUrl: Object.values(chainMap).find(c => 
-                normalizeChainName(c.name) === normalizedChain
+                c.normalizedName === normalizedChain
               )?.logoUrl
             };
           }
