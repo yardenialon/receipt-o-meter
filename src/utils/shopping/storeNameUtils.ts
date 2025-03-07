@@ -84,3 +84,4 @@ export const normalizeChainName = (storeName: string): string => {
   // Return original if no mapping found
   return storeName;
 };
+

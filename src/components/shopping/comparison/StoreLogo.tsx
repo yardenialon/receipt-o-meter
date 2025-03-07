@@ -53,21 +53,20 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // If it's already a full URL, return as is
     if (path.startsWith('http')) return path;
     
+    // Remove any leading slash
+    let cleanPath = path.replace(/^\//, '');
+    
     // Handle lovable-uploads paths
-    if (path.includes('lovable-uploads')) {
-      // For lovable-uploads, ensure we're using public/ prefix if needed
-      const cleanPath = path.replace(/^\//, ''); // Remove leading slash if present
-      
-      // Check if we need to add public/ prefix - depends on the environment
-      if (import.meta.env.DEV && !cleanPath.startsWith('public/')) {
-        return `public/${cleanPath}`;
+    if (cleanPath.includes('lovable-uploads')) {
+      if (import.meta.env.DEV) {
+        // In development, ensure we have the public/ prefix
+        if (!cleanPath.startsWith('public/')) {
+          cleanPath = `public/${cleanPath}`;
+        }
       }
-      
-      return cleanPath;
     }
     
-    // For other relative paths
-    return path.replace(/^\//, ''); // Remove leading slash to use as relative path
+    return cleanPath;
   };
 
   // Determine the logo URL to use
@@ -85,6 +84,9 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
   else {
     logoSrc = generatePlaceholderUrl(normalizedStoreName);
   }
+
+  // For debugging
+  console.log(`Using logo for ${normalizedStoreName}:`, logoSrc);
 
   return (
     <img 
