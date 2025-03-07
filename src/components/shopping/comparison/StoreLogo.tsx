@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
+import { useStoreChainInfo } from "@/hooks/comparison/useStoreInfo";
 
 interface StoreLogoProps {
   storeName: string;
@@ -9,19 +10,19 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
-// Since we're having issues with logos, we'll use placeholders for all logos
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
-  // Reset the error state when logoUrl changes
-  useEffect(() => {
-    if (logoUrl) {
-      setImgError(false);
-    }
-  }, [logoUrl]);
-
+  // Fetch store chain info from database
+  const { data: chainInfo, isLoading } = useStoreChainInfo();
+  
   // Normalize the store name for consistent matching
   const normalizedStoreName = normalizeChainName(storeName);
+  
+  // Reset the error state when logoUrl changes
+  useEffect(() => {
+    setImgError(false);
+  }, [logoUrl, chainInfo]);
 
   // Function to generate a colored text-based placeholder
   const generatePlaceholderUrl = (name: string) => {
@@ -45,8 +46,21 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // For all cases, use placeholder instead of trying real logos
-  const logoSrc = generatePlaceholderUrl(normalizedStoreName);
+  // Determine the logo URL to use
+  let logoSrc;
+  
+  // First try to use the provided logoUrl (highest priority)
+  if (logoUrl && !imgError) {
+    logoSrc = logoUrl;
+  } 
+  // Then check if we have a logo for this chain in our database
+  else if (chainInfo && chainInfo[normalizedStoreName]?.logoUrl && !imgError) {
+    logoSrc = chainInfo[normalizedStoreName].logoUrl;
+  } 
+  // Fall back to placeholder if no logo is available or if loading failed
+  else {
+    logoSrc = generatePlaceholderUrl(normalizedStoreName);
+  }
 
   return (
     <img 

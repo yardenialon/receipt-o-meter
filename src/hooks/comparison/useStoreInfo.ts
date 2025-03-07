@@ -25,11 +25,19 @@ export const useStoreChainInfo = () => {
       if (storeChains) {
         storeChains.forEach(chain => {
           const normalizedName = normalizeChainName(chain.name);
-          let logoUrl = chain.logo_url;
           
-          // Handle relative paths for logos
-          if (logoUrl && !logoUrl.startsWith('/') && !logoUrl.startsWith('http')) {
-            logoUrl = '/' + logoUrl;
+          // Make sure we have a valid URL for the logo
+          let logoUrl = null;
+          
+          if (chain.logo_url) {
+            // Make sure logo_url is a full URL or a valid path
+            if (chain.logo_url.startsWith('http')) {
+              logoUrl = chain.logo_url;
+            } else if (chain.logo_url.startsWith('/')) {
+              logoUrl = chain.logo_url;
+            } else {
+              logoUrl = '/' + chain.logo_url;
+            }
           }
           
           chainData[normalizedName] = {
