@@ -53,14 +53,15 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // If it's already a full URL, return as is
     if (path.startsWith('http')) return path;
     
-    // If it's a Lovable upload path, ensure it's correct
+    // For paths with lovable-uploads, handle specifically with the correct relative path
     if (path.includes('lovable-uploads')) {
-      // Remove leading slash if present to avoid double slashes
-      return path.startsWith('/') ? path : `/${path}`;
+      // Ensure we're using the correct relative path format for the current hosting environment
+      const cleanPath = path.replace(/^\//, ''); // Remove leading slash if present
+      return cleanPath;
     }
     
     // For other relative paths
-    return path.startsWith('/') ? path : `/${path}`;
+    return path.replace(/^\//, ''); // Remove leading slash to use as relative path
   };
 
   // Determine the logo URL to use
