@@ -1,5 +1,6 @@
 
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface StoreLogoProps {
   storeName: string;
@@ -8,6 +9,8 @@ interface StoreLogoProps {
 }
 
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
+  const [imageError, setImageError] = useState(false);
+  
   const getLogo = (name: string) => {
     const normalizedName = name.toLowerCase().trim();
     
@@ -36,7 +39,8 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
     
     if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
-      return '/lovable-uploads/f26b4523-2f66-4954-9867-d146917d68a0.png';
+      // This was the problematic URL - updating to a correct one
+      return '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png';
     }
     
     return logoUrl || null;
@@ -44,13 +48,21 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
 
   const logo = getLogo(storeName);
   
-  if (!logo) return null;
+  if (!logo || imageError) {
+    // Return a fallback UI when no logo is available or if there was an error loading the image
+    return (
+      <div className={cn("h-6 w-auto flex items-center justify-center text-xs text-gray-500 rounded bg-gray-100 px-2", className)}>
+        {storeName}
+      </div>
+    );
+  }
 
   return (
     <img 
       src={logo} 
       alt={`${storeName} logo`}
       className={cn("h-6 w-auto object-contain", className)}
+      onError={() => setImageError(true)}
     />
   );
 };
