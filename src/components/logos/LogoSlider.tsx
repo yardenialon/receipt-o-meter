@@ -52,7 +52,7 @@ export function LogoSlider() {
               className="flex items-center"
               initial={false}
               animate={{ 
-                x: `calc(-${currentIndex * (100 / visibleLogos)}%)`
+                x: `calc(-${currentIndex * (100 / visibleLogos)}%)`,
               }}
               transition={{ 
                 ease: "easeInOut", 

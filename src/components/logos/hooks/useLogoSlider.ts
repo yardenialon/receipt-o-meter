@@ -41,13 +41,13 @@ export function useLogoSlider() {
     setCurrentIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
       
-      // אם הגענו לסוף מקטע הדאפליקציה, נחזור אחורה למיקום האמיתי בלי אנימציה
+      // אם הגענו לסוף, נחזור להתחלה בצורה חלקה
       if (nextIndex >= storeChains.length) {
-        // עדכון מיידי למניעת פער
+        // מעבר חלק בין הסוף להתחלה
         setTimeout(() => {
           setCurrentIndex(0);
-        }, 0);
-        return storeChains.length - 1;
+        }, 50);
+        return prevIndex;
       }
       
       return nextIndex;
@@ -62,10 +62,10 @@ export function useLogoSlider() {
       
       // אם הגענו לתחילת הסליידר וצריך לקפוץ לסוף
       if (prevIndexValue < 0) {
-        // עדכון מיידי למניעת פער
+        // מעבר חלק להתחלה או לסוף
         setTimeout(() => {
-          setCurrentIndex(storeChains.length - visibleLogos);
-        }, 0);
+          setCurrentIndex(Math.max(0, storeChains.length - visibleLogos));
+        }, 50);
         return 0;
       }
       
@@ -84,15 +84,38 @@ export function useLogoSlider() {
     return () => clearInterval(interval);
   }, [visibleLogos, storeChains]);
 
-  // החזרת הפריטים לתצוגה ללא צורך באלמנטים כפולים בצדדים
+  // החזרת הפריטים לתצוגה עם אלמנט נוסף בסוף להימנעות מרווח
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // שימוש בכל המערך הקיים עם מפתחות ייחודיים
-    return storeChains.map((store, index) => ({
-      ...store,
-      key: `store-${index}`
-    }));
+    // יצירת מערך עם מספיק לוגואים להציג ועוד אחד נוסף בסוף
+    const visibleCount = visibleLogos + 1; // הוספת עוד לוגו אחד לימין
+    
+    // יצירת מערך של הפריטים לתצוגה
+    const items: (StoreChain & { key: string })[] = [];
+    
+    // מוסיפים את הלוגואים הרגילים
+    for (let i = 0; i < storeChains.length; i++) {
+      const actualIndex = (currentIndex + i) % storeChains.length;
+      items.push({
+        ...storeChains[actualIndex],
+        key: `store-${actualIndex}-${i}`
+      });
+
+      // אם יש לנו מספיק פריטים לתצוגה כולל הנוסף, מפסיקים
+      if (items.length >= visibleCount) break;
+    }
+    
+    // וודא שיש לנו מספיק פריטים גם אם אין מספיק חנויות
+    while (items.length < visibleCount && storeChains.length > 0) {
+      const index = items.length % storeChains.length;
+      items.push({
+        ...storeChains[index],
+        key: `store-extra-${index}-${items.length}`
+      });
+    }
+    
+    return items;
   };
 
   // האם להציג כפתורי שליטה
