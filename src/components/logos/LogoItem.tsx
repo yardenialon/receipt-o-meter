@@ -14,10 +14,10 @@ export function LogoItem({ store, visibleLogos }: LogoItemProps) {
       style={{ width: `${100 / visibleLogos}%` }}
     >
       <div className="h-16 w-full flex items-center justify-center group cursor-pointer">
-        <div className="bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center h-14 w-14 md:h-16 md:w-16 transition-transform group-hover:scale-105">
+        <div className="bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center transition-transform group-hover:scale-105">
           <StoreLogo 
             storeName={store.name} 
-            className="max-h-10 max-w-full object-contain" 
+            className="h-10 max-w-full object-contain" 
           />
         </div>
       </div>

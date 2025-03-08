@@ -34,15 +34,23 @@ export function useLogoSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // הזזת הלוגואים שמאלה וימינה
+  // הזזת הלוגואים שמאלה וימינה עם מעבר חלק
   const goToNext = () => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // קידום רגיל, מעבר מעגלי חלק
       const nextIndex = prevIndex + 1;
-      // אם הגענו לסוף, נחזור לתחילת המערך
-      return nextIndex >= storeChains.length ? 0 : nextIndex;
+      
+      // אם הגענו לסוף מקטע הדאפליקציה, נחזור אחורה למיקום האמיתי בלי אנימציה
+      if (nextIndex >= storeChains.length) {
+        // עדכון מיידי למניעת פער
+        setTimeout(() => {
+          setCurrentIndex(0);
+        }, 0);
+        return storeChains.length - 1;
+      }
+      
+      return nextIndex;
     });
   };
 
@@ -50,10 +58,18 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // נסיגה אחורה, מעבר מעגלי חלק
       const prevIndexValue = prevIndex - 1;
-      // אם הגענו להתחלה (מתחת לאפס), נקפוץ לסוף המערך
-      return prevIndexValue < 0 ? storeChains.length - 1 : prevIndexValue;
+      
+      // אם הגענו לתחילת הסליידר וצריך לקפוץ לסוף
+      if (prevIndexValue < 0) {
+        // עדכון מיידי למניעת פער
+        setTimeout(() => {
+          setCurrentIndex(storeChains.length - visibleLogos);
+        }, 0);
+        return 0;
+      }
+      
+      return prevIndexValue;
     });
   };
 
@@ -68,28 +84,18 @@ export function useLogoSlider() {
     return () => clearInterval(interval);
   }, [visibleLogos, storeChains]);
 
-  // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
+  // החזרת הפריטים לתצוגה ללא צורך באלמנטים כפולים בצדדים
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי ליצור לופ חלק
-    const itemCount = storeChains.length;
-    const duplicatesNeeded = Math.max(visibleLogos, Math.ceil(visibleLogos * 1.5));
-    
-    let items = [];
-    
-    // הוספת פריטים מסביב לאינדקס הנוכחי
-    for (let i = -duplicatesNeeded; i < itemCount + duplicatesNeeded; i++) {
-      // חישוב האינדקס המעגלי במערך המקורי
-      const realIndex = (currentIndex + i + itemCount) % itemCount;
-      const store = {...storeChains[realIndex], key: `slide-${i}`};
-      items.push(store);
-    }
-    
-    return items;
+    // שימוש בכל המערך הקיים עם מפתחות ייחודיים
+    return storeChains.map((store, index) => ({
+      ...store,
+      key: `store-${index}`
+    }));
   };
 
-  // במידה ואין מספיק רשתות להציג
+  // האם להציג כפתורי שליטה
   const showControls = (storeChains?.length || 0) > visibleLogos;
 
   return {
