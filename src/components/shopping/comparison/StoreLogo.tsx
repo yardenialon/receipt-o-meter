@@ -36,7 +36,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
     
     if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
-      return '/lovable-uploads/be320eeb-41fc-47ee-b56c-e856f36b61fd.png';
+      return '/lovable-uploads/f26b4523-2f66-4954-9867-d146917d68a0.png';
     }
     
     return logoUrl || null;
