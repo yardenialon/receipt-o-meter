@@ -1,9 +1,9 @@
 
 import { HeroSection } from '@/components/home/HeroSection';
+import { StoreLogosSection } from '@/components/home/StoreLogosSection';
 import { CategorySection } from '@/components/home/CategorySection';
 import { SmartInfoSection } from '@/components/home/SmartInfoSection';
 import { AnalyticsSection } from '@/components/home/AnalyticsSection';
-import { StoreLogosSection } from '@/components/home/StoreLogosSection';
 
 export default function Index() {
   return (
@@ -11,7 +11,7 @@ export default function Index() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* סליידר לוגואים של רשתות */}
+      {/* סליידר לוגואים */}
       <StoreLogosSection />
 
       {/* קטגוריות מובילות */}

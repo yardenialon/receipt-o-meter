@@ -1,5 +1,6 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLogoSlider } from './hooks/useLogoSlider';
@@ -8,36 +9,19 @@ import { LogoItem } from './LogoItem';
 export function LogoSlider() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { 
+    currentIndex, 
     visibleLogos, 
     goToNext, 
     goToPrev, 
     getDisplayItems, 
-    showControls,
-    isLoading
+    showControls 
   } = useLogoSlider();
 
-  // Get display items
+  // החזרת הפריטים לתצוגה
   const displayItems = getDisplayItems();
-  
-  // Add debug logging
-  useEffect(() => {
-    console.log('LogoSlider rendered with:', { 
-      displayItems, 
-      itemCount: displayItems.length,
-      visibleLogos
-    });
-  }, [displayItems, visibleLogos]);
-
-  if (isLoading) {
-    return <div className="py-4 flex justify-center">טוען נתונים...</div>;
-  }
-  
-  if (displayItems.length === 0) {
-    return <div className="py-4 flex justify-center">אין רשתות להצגה</div>;
-  }
 
   return (
-    <div className="relative py-4">
+    <div className="relative py-8">
       <div className="flex items-center justify-between">
         {showControls && (
           <Button
@@ -54,7 +38,17 @@ export function LogoSlider() {
           ref={containerRef}
           className="overflow-hidden mx-10 w-full"
         >
-          <div className="flex justify-center">
+          <motion.div 
+            className="flex items-center justify-start"
+            initial={false}
+            animate={{ 
+              x: `calc(-${(currentIndex * 100) / visibleLogos}%)` 
+            }}
+            transition={{ 
+              ease: "easeInOut", 
+              duration: 0.8 
+            }}
+          >
             {displayItems.map((store) => (
               <LogoItem 
                 key={store.key} 
@@ -62,7 +56,7 @@ export function LogoSlider() {
                 visibleLogos={visibleLogos} 
               />
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {showControls && (

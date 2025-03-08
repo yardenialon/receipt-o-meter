@@ -1,10 +1,9 @@
 
-import { StoreComparison } from "@/types/shopping";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import { ComparisonHeader } from "./comparison/ComparisonHeader";
 import { ComparisonList } from "./comparison/ComparisonList";
-import { LoadingDisplay } from "./comparison/LoadingDisplay";
-import { EmptyState } from "./comparison/EmptyState";
-import { useShoppingComparison } from "@/hooks/useShoppingComparison";
+import { StoreComparison } from "@/types/shopping";
 
 interface PriceComparisonProps {
   comparisons: StoreComparison[];
@@ -12,47 +11,165 @@ interface PriceComparisonProps {
 }
 
 export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceComparisonProps) => {
-  // Handle loading state
+  console.log('Initial comparisons received:', comparisons);
+
+  // בוא נבדוק באופן מפורש אילו חנויות התקבלו בהתחלה
+  if (comparisons?.length > 0) {
+    console.log('Stores received in comparisons:');
+    comparisons.forEach(comp => {
+      console.log(`Store: ${comp.storeName}, Available Items: ${comp.availableItemsCount}/${comp.items.length}, Total: ${comp.total}`);
+    });
+  }
+
+  // וודא שקיבלנו מידע
   if (isLoading) {
-    return <LoadingDisplay />;
+    return (
+      <div className="p-6">
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <p className="text-center text-muted-foreground mt-2">
+          מחשב השוואת מחירים...
+        </p>
+      </div>
+    );
   }
 
-  // Handle empty state
   if (!comparisons || comparisons.length === 0) {
-    return <EmptyState />;
+    return (
+      <div className="p-6">
+        <p className="text-center text-muted-foreground">
+          לא נמצאו חנויות עם מידע על המוצרים המבוקשים
+        </p>
+      </div>
+    );
   }
 
-  // Use our custom hook to process the comparison data
-  const {
-    enhancedComparisons,
-    completeBaskets,
-    cheapestTotal,
-    mostExpensiveTotal,
-    potentialSavings,
-    savingsPercentage,
-    branchInfo
-  } = useShoppingComparison(comparisons);
+  // נרמול שמות רשתות
+  const normalizedComparisons = comparisons.map(comparison => {
+    let displayName = comparison.storeName;
+    
+    // חישוב הסכום הכולל לחנות - רק עבור פריטים זמינים
+    const total = comparison.items.reduce((sum, item) => {
+      if (item.isAvailable && item.price !== null) {
+        const itemTotal = item.price * (item.quantity || 1);
+        return sum + itemTotal;
+      }
+      return sum;
+    }, 0);
 
-  // Get the cheapest store's name, safely handling undefined chainName
-  const cheapestStoreName = completeBaskets.length > 0 
-    ? (completeBaskets[0]?.chainName || completeBaskets[0]?.storeName) 
-    : '';
+    return {
+      ...comparison,
+      storeName: displayName,
+      total
+    };
+  });
+
+  console.log('Normalized comparisons:', normalizedComparisons.map(c => 
+    `${c.storeName} (${c.availableItemsCount}/${c.items.length})`
+  ));
+
+  const { data: branchInfo } = useQuery({
+    queryKey: ['store-branches-full', normalizedComparisons.map(c => c.storeId).join(',')],
+    queryFn: async () => {
+      if (!normalizedComparisons.length) return {};
+      
+      const storeIds = normalizedComparisons.map(c => c.storeId || '').filter(Boolean);
+      console.log('Fetching branch info for store IDs:', storeIds);
+      
+      if (storeIds.length === 0) {
+        console.log('No valid store IDs to fetch');
+        return {};
+      }
+
+      const { data: branches, error } = await supabase
+        .from('store_branches')
+        .select(`
+          branch_id,
+          name,
+          address,
+          chain_id,
+          store_chains (
+            name,
+            logo_url
+          ),
+          branch_mappings (
+            source_chain,
+            source_branch_id,
+            source_branch_name
+          )
+        `)
+        .in('branch_id', storeIds);
+      
+      if (error) {
+        console.error('Error fetching branch info:', error);
+        return {};
+      }
+      
+      const branchData: Record<string, any> = {};
+      
+      if (branches) {
+        branches.forEach((branch: any) => {
+          if (branch.branch_mappings && branch.branch_mappings.length > 0) {
+            const mapping = branch.branch_mappings[0];
+            branchData[mapping.source_branch_id] = {
+              name: mapping.source_branch_name || branch.name,
+              address: branch.address,
+              chainName: branch.store_chains?.name || mapping.source_chain,
+              logoUrl: branch.store_chains?.logo_url
+            };
+          }
+        });
+      }
+      
+      return branchData;
+    },
+    enabled: normalizedComparisons.length > 0
+  });
+
+  // סינון סלים שלמים (כל הפריטים זמינים)
+  const completeBaskets = normalizedComparisons.filter(store => 
+    store.availableItemsCount === store.items.length
+  );
+
+  console.log('Complete baskets:', completeBaskets.map(c => c.storeName));
+
+  // חישוב חסכון - רק עבור סלים שלמים
+  let cheapestTotal = 0;
+  let mostExpensiveTotal = 0;
+  let potentialSavings = 0;
+  let savingsPercentage = "0";
+  
+  if (completeBaskets.length > 0) {
+    cheapestTotal = Math.min(...completeBaskets.map(c => c.total));
+    mostExpensiveTotal = Math.max(...completeBaskets.map(c => c.total));
+    potentialSavings = mostExpensiveTotal - cheapestTotal;
+    savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+  } else {
+    // אם אין סלים שלמים, חשב ערכים עבור כל הסלים (אבל ציין שההשוואה חלקית)
+    if (normalizedComparisons.length > 0) {
+      cheapestTotal = Math.min(...normalizedComparisons.map(c => c.total));
+      mostExpensiveTotal = Math.max(...normalizedComparisons.map(c => c.total));
+      potentialSavings = mostExpensiveTotal - cheapestTotal;
+      savingsPercentage = ((potentialSavings / mostExpensiveTotal) * 100).toFixed(1);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <ComparisonHeader
         potentialSavings={potentialSavings}
         savingsPercentage={savingsPercentage}
-        storeName={cheapestStoreName}
+        storeName={completeBaskets[0]?.storeName}
         storeId={completeBaskets[0]?.storeId}
         completeBaskets={completeBaskets.length}
       />
 
       <ComparisonList
-        comparisons={enhancedComparisons}
+        comparisons={normalizedComparisons}
         cheapestTotal={cheapestTotal}
         mostExpensiveTotal={mostExpensiveTotal}
-        branchInfo={branchInfo}
+        branchInfo={branchInfo || {}}
       />
     </div>
   );

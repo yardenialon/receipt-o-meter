@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -7,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { LoginHero } from '@/components/login/LoginHero';
 import { FeaturesGrid } from '@/components/login/FeaturesGrid';
 import { SocialProof } from '@/components/login/SocialProof';
+import { AuthSection } from '@/components/login/AuthSection';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -62,6 +62,7 @@ const Login = () => {
         <LoginHero />
         <FeaturesGrid />
         <SocialProof />
+        <AuthSection />
       </div>
     </div>
   );

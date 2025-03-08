@@ -7,35 +7,22 @@ export function useLogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
 
-  // Fetch store chain data with better error handling
+  // שליפת נתוני רשתות
   const { data: storeChains, isLoading } = useQuery({
     queryKey: ['store-chains'],
-    queryFn: async () => {
-      try {
-        const chains = await fetchStoreChains();
-        console.log('Fetched store chains:', chains);
-        return chains;
-      } catch (error) {
-        console.error('Error fetching store chains:', error);
-        return fallbackStoreChains;
-      }
-    },
-    initialData: fallbackStoreChains,
-    staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false
+    queryFn: fetchStoreChains,
+    initialData: fallbackStoreChains
   });
 
-  // Update visible logos based on screen width
+  // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       if (width < 640) {
-        setVisibleLogos(2);
-      } else if (width < 768) {
         setVisibleLogos(3);
-      } else if (width < 1024) {
+      } else if (width < 768) {
         setVisibleLogos(4);
-      } else if (width < 1280) {
+      } else if (width < 1024) {
         setVisibleLogos(5);
       } else {
         setVisibleLogos(6);
@@ -47,13 +34,13 @@ export function useLogoSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Navigation functions
+  // הזזת הלוגואים שמאלה וימינה
   const goToNext = () => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      const maxIndex = storeChains.length - visibleLogos;
-      return prevIndex >= maxIndex ? 0 : prevIndex + 1;
+      // קידום רגיל, עם טיפול במעבר חלק בין סופו של המערך לתחילתו
+      return (prevIndex + 1) % storeChains.length;
     });
   };
 
@@ -61,51 +48,54 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      const maxIndex = storeChains.length - visibleLogos;
-      return prevIndex <= 0 ? maxIndex : prevIndex - 1;
+      // נסיגה אחורה, עם טיפול במעבר חלק בין תחילת המערך לסופו
+      return (prevIndex - 1 + storeChains.length) % storeChains.length;
     });
   };
 
-  // Auto-slide functionality
+  // הפעלת הסליידר אוטומטית באופן איטי
   useEffect(() => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     const interval = setInterval(() => {
       goToNext();
-    }, 3000);
+    }, 5000); // 5 שניות לגלילה
 
     return () => clearInterval(interval);
-  }, [visibleLogos, storeChains, currentIndex]);
+  }, [visibleLogos, storeChains]);
 
-  // Create array of visible logos with proper key handling
+  // יצירת מערך עזר לתצוגה חלקה ולופית של הלוגואים
   const getDisplayItems = () => {
-    if (!storeChains || storeChains.length === 0) {
-      console.log('No store chains to display');
-      return [];
+    if (!storeChains || storeChains.length === 0) return [];
+    
+    // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי למנוע חללים ריקים
+    const additionalItems = Math.ceil(visibleLogos / 2);
+    
+    let items = [];
+    
+    // הוספת פריטים מהסוף להתחלה (לטיפול בגלילה אחורה)
+    for (let i = additionalItems; i > 0; i--) {
+      const idx = (currentIndex - i + storeChains.length) % storeChains.length;
+      items.push({...storeChains[idx], key: `pre-${idx}`});
     }
     
-    const totalToShow = Math.min(visibleLogos, storeChains.length);
-    console.log(`Displaying ${totalToShow} logos out of ${storeChains.length} at index ${currentIndex}`);
-    
-    const result = [];
-    for (let i = 0; i < totalToShow; i++) {
-      const index = (currentIndex + i) % storeChains.length;
-      const store = {
-        ...storeChains[index],
-        key: `store-${index}-${i}`
-      };
-      
-      // Make sure paths are valid
-      if (store.logo_url && !store.logo_url.startsWith('/') && !store.logo_url.startsWith('http')) {
-        store.logo_url = '/' + store.logo_url;
-      }
-      
-      result.push(store);
+    // הוספת הפריטים הנוכחיים
+    for (let i = 0; i < storeChains.length; i++) {
+      const idx = (currentIndex + i) % storeChains.length;
+      items.push({...storeChains[idx], key: `main-${idx}`});
     }
     
-    return result;
+    // הוספת פריטים מההתחלה (כולל הפריט הראשון) כדי ליצור לופ חלק
+    // הוספת אותו מספר פריטים כמו שיש ב-additionalItems כדי לוודא שאין רווחים מיותרים
+    for (let i = 0; i < additionalItems; i++) {
+      const idx = (currentIndex + storeChains.length + i) % storeChains.length;
+      items.push({...storeChains[idx], key: `post-${idx}`});
+    }
+    
+    return items;
   };
 
+  // במידה ואין מספיק רשתות להציג
   const showControls = (storeChains?.length || 0) > visibleLogos;
 
   return {
