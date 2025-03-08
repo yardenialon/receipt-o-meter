@@ -1,6 +1,7 @@
 
 import { StoreLogo } from '@/components/shopping/comparison/StoreLogo';
 import { StoreChain } from './utils/storeChainUtils';
+import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
 
 interface LogoItemProps {
   store: StoreChain;
@@ -8,8 +9,8 @@ interface LogoItemProps {
 }
 
 export function LogoItem({ store, visibleLogos }: LogoItemProps) {
-  // Make sure to see what's being rendered
-  console.log('Rendering LogoItem:', { store });
+  // נרמול שם הרשת להצגה עקבית
+  const normalizedName = normalizeChainName(store.name);
   
   return (
     <div 
@@ -18,13 +19,13 @@ export function LogoItem({ store, visibleLogos }: LogoItemProps) {
     >
       <div className="h-16 w-16 mx-auto bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center overflow-hidden">
         <StoreLogo 
-          storeName={store.name} 
+          storeName={normalizedName} 
           className="h-12 w-12 object-contain"
           logoUrl={store.logo_url} 
         />
       </div>
       <span className="mt-2 text-sm text-center text-gray-700 truncate w-full">
-        {store.name}
+        {normalizedName}
       </span>
     </div>
   );

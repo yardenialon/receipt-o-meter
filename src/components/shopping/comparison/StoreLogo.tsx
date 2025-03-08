@@ -1,8 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
-import { useStoreChainInfo } from "@/hooks/comparison/useStoreInfo";
+import { normalizeChainName, getStoreLogo } from "@/utils/shopping/storeNameUtils"; 
 
 interface StoreLogoProps {
   storeName: string;
@@ -13,16 +12,13 @@ interface StoreLogoProps {
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
-  // Fetch store chain info from database
-  const { data: chainInfo, isLoading } = useStoreChainInfo();
-  
   // Normalize the store name for consistent matching
   const normalizedStoreName = normalizeChainName(storeName);
   
   // Reset the error state when logoUrl changes
   useEffect(() => {
     setImgError(false);
-  }, [logoUrl, chainInfo]);
+  }, [logoUrl]);
 
   // Function to generate a colored text-based placeholder
   const generatePlaceholderUrl = (name: string) => {
@@ -53,31 +49,30 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     // If it's already a full URL, return as is
     if (path.startsWith('http')) return path;
     
-    // For paths with lovable-uploads, handle specifically with the correct relative path
-    if (path.includes('lovable-uploads')) {
-      // Ensure we're using the correct relative path format for the current hosting environment
-      const cleanPath = path.replace(/^\//, ''); // Remove leading slash if present
-      return cleanPath;
-    }
-    
-    // For other relative paths
-    return path.replace(/^\//, ''); // Remove leading slash to use as relative path
+    // Remove leading slash if present to use as relative path
+    return path.replace(/^\//, '');
   };
 
-  // Determine the logo URL to use
+  // Determine the logo URL to use (priority order)
   let logoSrc;
   
-  // First try to use the provided logoUrl (highest priority)
+  // 1. First try to use the provided logoUrl (highest priority)
   if (logoUrl && !imgError) {
     logoSrc = getCorrectLogoPath(logoUrl);
+    console.log(`Using provided logoUrl for ${normalizedStoreName}:`, logoSrc);
   } 
-  // Then check if we have a logo for this chain in our database
-  else if (chainInfo && chainInfo[normalizedStoreName]?.logoUrl && !imgError) {
-    logoSrc = getCorrectLogoPath(chainInfo[normalizedStoreName].logoUrl);
-  } 
-  // Fall back to placeholder if no logo is available or if loading failed
+  // 2. Then try to use our predefined logos mapping
   else {
-    logoSrc = generatePlaceholderUrl(normalizedStoreName);
+    const mappedLogo = getStoreLogo(normalizedStoreName);
+    if (mappedLogo && !imgError) {
+      logoSrc = getCorrectLogoPath(mappedLogo);
+      console.log(`Using mapped logo for ${normalizedStoreName}:`, logoSrc);
+    } 
+    // 3. Fall back to placeholder if no logo is available or if loading failed
+    else {
+      logoSrc = generatePlaceholderUrl(normalizedStoreName);
+      console.log(`Using placeholder for ${normalizedStoreName}:`, logoSrc);
+    }
   }
 
   return (

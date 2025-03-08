@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { normalizeChainName } from "@/utils/shopping/storeNameUtils";
+import { normalizeChainName, STORE_LOGOS } from "@/utils/shopping/storeNameUtils";
 
 /**
  * Hook to fetch store chain information including logos
@@ -26,19 +26,8 @@ export const useStoreChainInfo = () => {
         storeChains.forEach(chain => {
           const normalizedName = normalizeChainName(chain.name);
           
-          // Make sure we have a valid URL for the logo
-          let logoUrl = null;
-          
-          if (chain.logo_url) {
-            // Make sure logo_url is a full URL or a valid path
-            if (chain.logo_url.startsWith('http')) {
-              logoUrl = chain.logo_url;
-            } else if (chain.logo_url.startsWith('/')) {
-              logoUrl = chain.logo_url;
-            } else {
-              logoUrl = '/' + chain.logo_url;
-            }
-          }
+          // Use our predefined logos mapping instead of DB values
+          const logoUrl = STORE_LOGOS[normalizedName] || null;
           
           chainData[normalizedName] = {
             name: chain.name,
@@ -102,26 +91,33 @@ export const useStoreBranchInfo = (storeIds: string[]) => {
             const mapping = branch.branch_mappings[0];
             const normalizedChain = normalizeChainName(mapping.source_chain);
             
+            // Use our predefined logos mapping
+            const logoUrl = STORE_LOGOS[normalizedChain] || null;
+            
             branchData[mapping.source_branch_id] = {
               name: mapping.source_branch_name || branch.name,
               address: branch.address,
               chainName: normalizedChain,
-              logoUrl: branch.store_chains?.logo_url
+              logoUrl
             };
           } else if (branch.store_chains) {
             // Fallback to direct chain info
             const normalizedChain = normalizeChainName(branch.store_chains.name);
             
+            // Use our predefined logos mapping
+            const logoUrl = STORE_LOGOS[normalizedChain] || null;
+            
             branchData[branch.branch_id] = {
               name: branch.name,
               address: branch.address,
               chainName: normalizedChain,
-              logoUrl: branch.store_chains.logo_url
+              logoUrl
             };
           }
         });
       }
       
+      console.log('Fetched branch data:', branchData);
       return branchData;
     },
     enabled: storeIds.length > 0

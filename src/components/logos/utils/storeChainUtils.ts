@@ -1,37 +1,26 @@
 
 import { supabase } from '@/lib/supabase';
-import { normalizeChainName } from '@/utils/shopping/storeNameUtils';
+import { normalizeChainName, STORE_LOGOS } from '@/utils/shopping/storeNameUtils';
 
-// Until we have actual uploaded logos available, we'll use placeholders for all stores
-const CONFIRMED_LOGOS: Record<string, string> = {};
-
-// Fallback store chains with standardized paths using chain-id based naming convention
+// Fallback store chains עם שמות מנורמלים
 export const fallbackStoreChains = [
-  { name: 'רמי לוי', id: 'rami-levy', logo_url: null },
-  { name: 'שופרסל', id: 'shufersal', logo_url: null },
-  { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: null },
-  { name: 'ויקטורי', id: 'victory', logo_url: null },
-  { name: 'יוחננוף', id: 'yochananof', logo_url: null },
-  { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: null },
-  { name: 'אושר עד', id: 'osher-ad', logo_url: null },
-  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: null },
-  { name: 'סופר פארם', id: 'super-pharm', logo_url: null },
-  { name: 'טיב טעם', id: 'tiv-taam', logo_url: null },
-  { name: 'קרפור', id: 'carrefour', logo_url: null },
-  { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: null },
-  { name: 'סופר יהודה', id: 'super-yehuda', logo_url: null },
-  { name: 'פרש מרקט', id: 'fresh-market', logo_url: null },
-  { name: 'פוליצר', id: 'politzer', logo_url: null },
-  { name: 'ברקת', id: 'bareket', logo_url: null },
-  { name: 'שוק העיר', id: 'shuk-hair', logo_url: null },
-  { name: 'סופר ספיר', id: 'super-sapir', logo_url: null },
-  { name: 'סיטי מרקט', id: 'city-market', logo_url: null },
-  { name: 'גוד פארם', id: 'good-pharm', logo_url: null },
-  { name: 'סטופ מרקט', id: 'stop-market', logo_url: null },
-  { name: 'היפר כהן', id: 'hyper-cohen', logo_url: null },
-  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: null },
-  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: null },
-  { name: 'קינג סטור', id: 'king-store', logo_url: null },
+  { name: 'רמי לוי', id: 'rami-levy', logo_url: STORE_LOGOS['רמי לוי'] },
+  { name: 'שופרסל', id: 'shufersal', logo_url: STORE_LOGOS['שופרסל'] },
+  { name: 'יינות ביתן', id: 'yeinot-bitan', logo_url: STORE_LOGOS['יינות ביתן'] },
+  { name: 'ויקטורי', id: 'victory', logo_url: STORE_LOGOS['ויקטורי'] },
+  { name: 'יוחננוף', id: 'yochananof', logo_url: STORE_LOGOS['יוחננוף'] },
+  { name: 'מחסני השוק', id: 'machsanei-hashuk', logo_url: STORE_LOGOS['מחסני השוק'] },
+  { name: 'אושר עד', id: 'osher-ad', logo_url: STORE_LOGOS['אושר עד'] },
+  { name: 'חצי חינם', id: 'hatzi-hinam', logo_url: STORE_LOGOS['חצי חינם'] },
+  { name: 'סופר פארם', id: 'super-pharm', logo_url: STORE_LOGOS['סופר פארם'] },
+  { name: 'טיב טעם', id: 'tiv-taam', logo_url: STORE_LOGOS['טיב טעם'] },
+  { name: 'קרפור', id: 'carrefour', logo_url: STORE_LOGOS['קרפור'] },
+  { name: 'קשת טעמים', id: 'keshet-teamim', logo_url: STORE_LOGOS['קשת טעמים'] },
+  { name: 'סופר יהודה', id: 'super-yehuda', logo_url: STORE_LOGOS['סופר יהודה'] },
+  { name: 'פרש מרקט', id: 'fresh-market', logo_url: STORE_LOGOS['פרש מרקט'] },
+  { name: 'זול ובגדול', id: 'zol-vbgadol', logo_url: STORE_LOGOS['זול ובגדול'] },
+  { name: 'משנת יוסף', id: 'mishnat-yosef', logo_url: STORE_LOGOS['משנת יוסף'] },
+  { name: 'קינג סטור', id: 'king-store', logo_url: STORE_LOGOS['קינג סטור'] },
   { name: 'נתיב החסד', id: 'netiv-hachesed', logo_url: null }
 ];
 
@@ -62,15 +51,8 @@ export async function fetchStoreChains() {
       const formattedStores = storeChains.map(store => {
         const normalizedName = normalizeChainName(store.name);
         
-        // Only use confirmed logos and actual URLs (not paths)
-        // Don't use paths that might not exist
-        let logoUrl = CONFIRMED_LOGOS[normalizedName] || null;
-        
-        // Only use DB logo if it's a full URL and looks like an actual file
-        // Don't use relative paths as they're causing 404 errors
-        if (!logoUrl && store.logo_url && store.logo_url.startsWith('http')) {
-          logoUrl = store.logo_url;
-        }
+        // Use our predefined logos instead of the database ones
+        const logoUrl = STORE_LOGOS[normalizedName] || null;
         
         return {
           name: normalizedName,
@@ -100,8 +82,8 @@ export async function fetchStoreChains() {
     const storesFromDB = uniqueStores.map(storeName => {
       const normalizedName = normalizeChainName(storeName);
       
-      // Only use confirmed logos
-      const logoUrl = CONFIRMED_LOGOS[normalizedName] || null;
+      // Use our predefined logos
+      const logoUrl = STORE_LOGOS[normalizedName] || null;
       
       return {
         name: normalizedName,

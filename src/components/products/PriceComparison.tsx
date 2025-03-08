@@ -71,7 +71,6 @@ export const PriceComparison = ({ prices }: PriceComparisonProps) => {
                 <div className="h-10 w-10 flex-shrink-0">
                   <StoreLogo 
                     storeName={normalizedChainName}
-                    logoUrl={item.logo_url}
                     className="h-10 w-10 object-contain"
                   />
                 </div>
