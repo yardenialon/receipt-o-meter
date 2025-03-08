@@ -21,7 +21,7 @@ export function LogoSlider() {
   const displayItems = getDisplayItems();
 
   return (
-    <div className="relative py-8">
+    <div className="relative py-6">
       <div className="flex items-center justify-between">
         {showControls && (
           <Button
@@ -39,14 +39,14 @@ export function LogoSlider() {
           className="overflow-hidden mx-10 w-full"
         >
           <motion.div 
-            className="flex items-center justify-start"
+            className="flex items-center"
             initial={false}
             animate={{ 
-              x: `calc(-${(currentIndex * 100) / visibleLogos}%)` 
+              x: `calc(-${currentIndex * (100 / visibleLogos)}%)` 
             }}
             transition={{ 
               ease: "easeInOut", 
-              duration: 0.8 
+              duration: 0.5 
             }}
           >
             {displayItems.map((store) => (

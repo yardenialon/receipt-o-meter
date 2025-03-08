@@ -39,8 +39,10 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // קידום רגיל, עם טיפול במעבר חלק בין סופו של המערך לתחילתו
-      return (prevIndex + 1) % storeChains.length;
+      // קידום רגיל, מעבר מעגלי חלק
+      const nextIndex = prevIndex + 1;
+      // אם הגענו לסוף, נחזור לתחילת המערך
+      return nextIndex >= storeChains.length ? 0 : nextIndex;
     });
   };
 
@@ -48,8 +50,10 @@ export function useLogoSlider() {
     if (!storeChains || storeChains.length <= visibleLogos) return;
     
     setCurrentIndex((prevIndex) => {
-      // נסיגה אחורה, עם טיפול במעבר חלק בין תחילת המערך לסופו
-      return (prevIndex - 1 + storeChains.length) % storeChains.length;
+      // נסיגה אחורה, מעבר מעגלי חלק
+      const prevIndexValue = prevIndex - 1;
+      // אם הגענו להתחלה (מתחת לאפס), נקפוץ לסוף המערך
+      return prevIndexValue < 0 ? storeChains.length - 1 : prevIndexValue;
     });
   };
 
@@ -68,28 +72,18 @@ export function useLogoSlider() {
   const getDisplayItems = () => {
     if (!storeChains || storeChains.length === 0) return [];
     
-    // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי למנוע חללים ריקים
-    const additionalItems = Math.ceil(visibleLogos / 2);
+    // מספר הפריטים המינימלי שצריך להציג לפני ואחרי כדי ליצור לופ חלק
+    const itemCount = storeChains.length;
+    const duplicatesNeeded = Math.max(visibleLogos, Math.ceil(visibleLogos * 1.5));
     
     let items = [];
     
-    // הוספת פריטים מהסוף להתחלה (לטיפול בגלילה אחורה)
-    for (let i = additionalItems; i > 0; i--) {
-      const idx = (currentIndex - i + storeChains.length) % storeChains.length;
-      items.push({...storeChains[idx], key: `pre-${idx}`});
-    }
-    
-    // הוספת הפריטים הנוכחיים
-    for (let i = 0; i < storeChains.length; i++) {
-      const idx = (currentIndex + i) % storeChains.length;
-      items.push({...storeChains[idx], key: `main-${idx}`});
-    }
-    
-    // הוספת פריטים מההתחלה (כולל הפריט הראשון) כדי ליצור לופ חלק
-    // הוספת אותו מספר פריטים כמו שיש ב-additionalItems כדי לוודא שאין רווחים מיותרים
-    for (let i = 0; i < additionalItems; i++) {
-      const idx = (currentIndex + storeChains.length + i) % storeChains.length;
-      items.push({...storeChains[idx], key: `post-${idx}`});
+    // הוספת פריטים מסביב לאינדקס הנוכחי
+    for (let i = -duplicatesNeeded; i < itemCount + duplicatesNeeded; i++) {
+      // חישוב האינדקס המעגלי במערך המקורי
+      const realIndex = (currentIndex + i + itemCount) % itemCount;
+      const store = {...storeChains[realIndex], key: `slide-${i}`};
+      items.push(store);
     }
     
     return items;
