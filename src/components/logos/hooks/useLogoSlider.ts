@@ -73,17 +73,6 @@ export function useLogoSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // הפעלת הסליידר אוטומטית באופן איטי
-  useEffect(() => {
-    if (!storeChains || storeChains.length <= visibleLogos) return;
-    
-    const interval = setInterval(() => {
-      goToNext();
-    }, 5000); // 5 שניות לגלילה
-
-    return () => clearInterval(interval);
-  }, [visibleLogos, storeChains]);
-
   // לוגיקת המעבר לפריט הבא עם קפיצה חלקה כשמגיעים לסוף
   const goToNext = useCallback(() => {
     if (!storeChains || storeChains.length <= visibleLogos || isAnimating) return;

@@ -33,7 +33,7 @@ export function LogoSlider() {
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-full absolute left-0 z-10 opacity-80 shadow-sm"
+            className="h-8 w-8 rounded-full absolute left-0 z-10 opacity-90 shadow-sm hover:opacity-100"
             onClick={goToPrev}
             disabled={isAnimating}
           >
@@ -72,7 +72,7 @@ export function LogoSlider() {
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-full absolute right-0 z-10 opacity-80 shadow-sm"
+            className="h-8 w-8 rounded-full absolute right-0 z-10 opacity-90 shadow-sm hover:opacity-100"
             onClick={goToNext}
             disabled={isAnimating}
           >
