@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { normalizeChainName } from "@/utils/shopping/storeNameUtils"; 
+import { useStoreChainInfo } from "@/hooks/comparison/useStoreInfo";
 
 interface StoreLogoProps {
   storeName: string;
@@ -9,39 +10,19 @@ interface StoreLogoProps {
   logoUrl?: string | null;
 }
 
-// Map of confirmed logos with their standard file name pattern
-const STORE_LOGOS: Record<string, string> = {
-  'רמי לוי': '/store-logos/rami-levy.png',
-  'שופרסל': '/store-logos/shufersal.png',
-  'יוחננוף': '/store-logos/yochananof.png',
-  'טיב טעם': '/store-logos/tiv-taam.png',
-  'חצי חינם': '/store-logos/hatzi-hinam.png',
-  'אושר עד': '/store-logos/osher-ad.png',
-  'ויקטורי': '/store-logos/victory.png',
-  'יינות ביתן': '/store-logos/yeinot-bitan.png',
-  'מחסני השוק': '/store-logos/machsanei-hashuk.png',
-  'קרפור': '/store-logos/carrefour.png',
-  'סופר פארם': '/store-logos/super-pharm.png',
-  'זול ובגדול': '/store-logos/zol-vbgadol.png',
-  'משנת יוסף': '/store-logos/mishnat-yosef.png',
-  'קינג סטור': '/store-logos/king-store.png',
-  'נתיב החסד': '/store-logos/netiv-hachesed.png',
-  'פרש מרקט': '/store-logos/fresh-market.png',
-  'קשת טעמים': '/store-logos/keshet-teamim.png',
-  'סופר יהודה': '/store-logos/super-yehuda.png'
-};
-
 export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => {
   const [imgError, setImgError] = useState(false);
   
-  // Reset the error state when storeName or logoUrl changes
+  // Fetch store chain info from database
+  const { data: chainInfo, isLoading } = useStoreChainInfo();
+  
+  // Normalize the store name for consistent matching
+  const normalizedStoreName = normalizeChainName(storeName);
+  
+  // Reset the error state when logoUrl changes
   useEffect(() => {
     setImgError(false);
-  }, [storeName, logoUrl]);
-
-  // Normalize the store name for consistent matching - adding debug logging
-  const normalizedStoreName = normalizeChainName(storeName);
-  console.log(`StoreLogo: original name=${storeName}, normalized=${normalizedStoreName}`);
+  }, [logoUrl, chainInfo]);
 
   // Function to generate a colored text-based placeholder
   const generatePlaceholderUrl = (name: string) => {
@@ -61,53 +42,53 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
     const bgColor = colors[colorIndex];
     
-    // Create the placeholder URL
+    // Create the placeholder URL with initials
     return `https://placehold.co/100x100/${bgColor}/FFFFFF/svg?text=${encodeURIComponent(initials)}`;
   };
 
-  // Source selection logic (prioritized)
-  let logoSrc: string;
+  // Function to ensure the logo path is correct
+  const getCorrectLogoPath = (path: string | null) => {
+    if (!path) return null;
+    
+    // If it's already a full URL, return as is
+    if (path.startsWith('http')) return path;
+    
+    // For paths with lovable-uploads, handle specifically with the correct relative path
+    if (path.includes('lovable-uploads')) {
+      // Ensure we're using the correct relative path format for the current hosting environment
+      const cleanPath = path.replace(/^\//, ''); // Remove leading slash if present
+      return cleanPath;
+    }
+    
+    // For other relative paths
+    return path.replace(/^\//, ''); // Remove leading slash to use as relative path
+  };
+
+  // Determine the logo URL to use
+  let logoSrc;
   
-  if (imgError) {
-    // If we've had an error loading the image, use placeholder
-    logoSrc = generatePlaceholderUrl(normalizedStoreName);
-  } else if (logoUrl && (logoUrl.startsWith('http') || logoUrl.startsWith('/'))) {
-    // Use the provided URL if it looks valid (absolute URL or starts with /)
-    logoSrc = logoUrl;
-  } else if (normalizedStoreName in STORE_LOGOS) {
-    // Use our predefined logo mapping if available
-    logoSrc = STORE_LOGOS[normalizedStoreName];
-  } else {
-    // Fallback to placeholder
+  // First try to use the provided logoUrl (highest priority)
+  if (logoUrl && !imgError) {
+    logoSrc = getCorrectLogoPath(logoUrl);
+  } 
+  // Then check if we have a logo for this chain in our database
+  else if (chainInfo && chainInfo[normalizedStoreName]?.logoUrl && !imgError) {
+    logoSrc = getCorrectLogoPath(chainInfo[normalizedStoreName].logoUrl);
+  } 
+  // Fall back to placeholder if no logo is available or if loading failed
+  else {
     logoSrc = generatePlaceholderUrl(normalizedStoreName);
   }
-
-  const handleImageError = () => {
-    console.error(`Failed to load logo for ${normalizedStoreName} from URL: ${logoSrc}`);
-    
-    // If current source is from our mapping and it failed, go straight to placeholder
-    if (normalizedStoreName in STORE_LOGOS && logoSrc === STORE_LOGOS[normalizedStoreName]) {
-      setImgError(true);
-      return;
-    }
-    
-    // If current source is the provided logoUrl and it failed, try our mapping
-    if (logoUrl && logoSrc === logoUrl && normalizedStoreName in STORE_LOGOS) {
-      logoSrc = STORE_LOGOS[normalizedStoreName];
-      // Don't set error yet, let it try our mapping first
-      return;
-    }
-    
-    // In all other cases, set error to true to use placeholder
-    setImgError(true);
-  };
 
   return (
     <img 
       src={logoSrc}
       alt={`${normalizedStoreName} logo`}
       className={cn("object-contain", className)}
-      onError={handleImageError}
+      onError={() => {
+        console.error(`Failed to load logo for ${normalizedStoreName}`, logoSrc);
+        setImgError(true);
+      }}
     />
   );
 };
