@@ -13,13 +13,10 @@ export function LogoSlider() {
     visibleLogos, 
     goToNext, 
     goToPrev, 
-    getDisplayItems, 
+    displayItems,
     showControls,
-    storeChains
+    isAnimating
   } = useLogoSlider();
-
-  // החזרת הפריטים לתצוגה
-  const displayItems = getDisplayItems();
   
   // נוודא שהסליידר ממוקם נכון כשמשתנה האינדקס
   useEffect(() => {
@@ -38,6 +35,7 @@ export function LogoSlider() {
             size="icon"
             className="h-8 w-8 rounded-full absolute left-0 z-10 opacity-80 shadow-sm"
             onClick={goToPrev}
+            disabled={isAnimating}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -76,6 +74,7 @@ export function LogoSlider() {
             size="icon"
             className="h-8 w-8 rounded-full absolute right-0 z-10 opacity-80 shadow-sm"
             onClick={goToNext}
+            disabled={isAnimating}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

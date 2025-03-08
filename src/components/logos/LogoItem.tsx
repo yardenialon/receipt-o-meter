@@ -3,7 +3,7 @@ import { StoreLogo } from '@/components/shopping/comparison/StoreLogo';
 import { StoreChain } from './utils/storeChainUtils';
 
 interface LogoItemProps {
-  store: StoreChain;
+  store: StoreChain & { key: string };
   visibleLogos: number;
 }
 

@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { StoreChain, fetchStoreChains, fallbackStoreChains } from '../utils/storeChainUtils';
 import { useQuery } from '@tanstack/react-query';
 
 export function useLogoSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visibleLogos, setVisibleLogos] = useState(5);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // שליפת נתוני רשתות
   const { data: storeChains, isLoading } = useQuery({
@@ -14,6 +15,44 @@ export function useLogoSlider() {
     initialData: fallbackStoreChains
   });
 
+  // חישוב מספר הכפילויות שיש להוסיף לפני ואחרי
+  const duplicatesCount = useMemo(() => Math.max(visibleLogos, 3), [visibleLogos]);
+  
+  // יצירת מערך הלוגואים עם כפילויות לפני ואחרי
+  const extendedItems = useMemo(() => {
+    if (!storeChains || storeChains.length === 0) return [];
+    
+    // יצירת חלק קדמי (prefix)
+    const prefix = storeChains.slice(-duplicatesCount).map((store, i) => ({
+      ...store,
+      key: `prefix-${store.id}-${i}`
+    }));
+    
+    // רשימת הלוגואים המקורית
+    const original = storeChains.map((store, i) => ({
+      ...store,
+      key: `original-${store.id}-${i}`
+    }));
+    
+    // יצירת חלק אחורי (suffix)
+    const suffix = storeChains.slice(0, duplicatesCount).map((store, i) => ({
+      ...store,
+      key: `suffix-${store.id}-${i}`
+    }));
+    
+    // שילוב כל החלקים
+    return [...prefix, ...original, ...suffix];
+  }, [storeChains, duplicatesCount]);
+  
+  // חישוב האינדקס המקסימלי לגלילה
+  const maxIndex = useMemo(() => {
+    if (!storeChains) return 0;
+    return storeChains.length;
+  }, [storeChains]);
+  
+  // האם להציג כפתורי שליטה
+  const showControls = (storeChains?.length || 0) > visibleLogos;
+  
   // התאמה למספר הלוגואים המוצגים בהתאם לרוחב המסך
   useEffect(() => {
     const handleResize = () => {
@@ -34,45 +73,6 @@ export function useLogoSlider() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // הזזת הלוגואים שמאלה וימינה עם מעבר חלק
-  const goToNext = () => {
-    if (!storeChains || storeChains.length <= visibleLogos) return;
-    
-    setCurrentIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-      
-      // אם הגענו לסוף, נחזור להתחלה בצורה חלקה
-      if (nextIndex >= storeChains.length) {
-        // מעבר חלק בין הסוף להתחלה
-        setTimeout(() => {
-          setCurrentIndex(0);
-        }, 50);
-        return prevIndex;
-      }
-      
-      return nextIndex;
-    });
-  };
-
-  const goToPrev = () => {
-    if (!storeChains || storeChains.length <= visibleLogos) return;
-    
-    setCurrentIndex((prevIndex) => {
-      const prevIndexValue = prevIndex - 1;
-      
-      // אם הגענו לתחילת הסליידר וצריך לקפוץ לסוף
-      if (prevIndexValue < 0) {
-        // מעבר חלק להתחלה או לסוף
-        setTimeout(() => {
-          setCurrentIndex(Math.max(0, storeChains.length - visibleLogos));
-        }, 50);
-        return 0;
-      }
-      
-      return prevIndexValue;
-    });
-  };
-
   // הפעלת הסליידר אוטומטית באופן איטי
   useEffect(() => {
     if (!storeChains || storeChains.length <= visibleLogos) return;
@@ -84,42 +84,76 @@ export function useLogoSlider() {
     return () => clearInterval(interval);
   }, [visibleLogos, storeChains]);
 
-  // החזרת הפריטים לתצוגה עם אלמנט נוסף בסוף להימנעות מרווח
-  const getDisplayItems = () => {
-    if (!storeChains || storeChains.length === 0) return [];
+  // לוגיקת המעבר לפריט הבא עם קפיצה חלקה כשמגיעים לסוף
+  const goToNext = useCallback(() => {
+    if (!storeChains || storeChains.length <= visibleLogos || isAnimating) return;
     
-    // יצירת מערך עם מספיק לוגואים להציג ועוד אחד נוסף בסוף
-    const visibleCount = visibleLogos + 1; // הוספת עוד לוגו אחד לימין
+    setIsAnimating(true);
     
-    // יצירת מערך של הפריטים לתצוגה
-    const items: (StoreChain & { key: string })[] = [];
-    
-    // מוסיפים את הלוגואים הרגילים
-    for (let i = 0; i < storeChains.length; i++) {
-      const actualIndex = (currentIndex + i) % storeChains.length;
-      items.push({
-        ...storeChains[actualIndex],
-        key: `store-${actualIndex}-${i}`
-      });
+    setCurrentIndex((prevIndex) => {
+      const nextIndex = prevIndex + 1;
+      
+      // אם הגענו לסוף המערך המקורי (לפני ה-suffix)
+      if (nextIndex >= maxIndex) {
+        // נעבור לאחור באופן שקוף כדי ליצור אפקט של גלילה אינסופית
+        setTimeout(() => {
+          setCurrentIndex(0);
+          setIsAnimating(false);
+        }, 500); // זמן השווה לזמן האנימציה ב-CSS
+        return nextIndex;
+      }
+      
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 500);
+      
+      return nextIndex;
+    });
+  }, [storeChains, visibleLogos, maxIndex, isAnimating]);
 
-      // אם יש לנו מספיק פריטים לתצוגה כולל הנוסף, מפסיקים
-      if (items.length >= visibleCount) break;
+  const goToPrev = useCallback(() => {
+    if (!storeChains || storeChains.length <= visibleLogos || isAnimating) return;
+    
+    setIsAnimating(true);
+    
+    setCurrentIndex((prevIndex) => {
+      const prevIndexValue = prevIndex - 1;
+      
+      // אם הגענו לתחילת המערך המקורי (אחרי ה-prefix)
+      if (prevIndexValue < 0) {
+        // נעבור קדימה באופן שקוף כדי ליצור אפקט של גלילה אינסופית
+        setTimeout(() => {
+          setCurrentIndex(maxIndex - 1);
+          setIsAnimating(false);
+        }, 500); // זמן השווה לזמן האנימציה ב-CSS
+        return prevIndexValue;
+      }
+      
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 500);
+      
+      return prevIndexValue;
+    });
+  }, [storeChains, visibleLogos, maxIndex, isAnimating]);
+
+  // החזרת הפריטים הנוכחיים שצריכים להיות בתצוגה
+  const displayItems = useMemo(() => {
+    // אם אין נתונים, נחזיר מערך ריק
+    if (!extendedItems.length) return [];
+    
+    // חישוב האינדקס האמיתי עם התחשבות בקבוצת ה-prefix
+    const startIndex = duplicatesCount + currentIndex;
+    
+    // יצירת המערך של הפריטים לתצוגה (לפי הגודל של visibleLogos + 1 לחפיפה)
+    const itemsToDisplay = [];
+    for (let i = 0; i < visibleLogos + 1; i++) {
+      const itemIndex = (startIndex + i) % extendedItems.length;
+      itemsToDisplay.push(extendedItems[itemIndex]);
     }
     
-    // וודא שיש לנו מספיק פריטים גם אם אין מספיק חנויות
-    while (items.length < visibleCount && storeChains.length > 0) {
-      const index = items.length % storeChains.length;
-      items.push({
-        ...storeChains[index],
-        key: `store-extra-${index}-${items.length}`
-      });
-    }
-    
-    return items;
-  };
-
-  // האם להציג כפתורי שליטה
-  const showControls = (storeChains?.length || 0) > visibleLogos;
+    return itemsToDisplay;
+  }, [extendedItems, currentIndex, duplicatesCount, visibleLogos]);
 
   return {
     currentIndex,
@@ -128,7 +162,8 @@ export function useLogoSlider() {
     isLoading,
     goToNext,
     goToPrev,
-    getDisplayItems,
-    showControls
+    displayItems,
+    showControls,
+    isAnimating
   };
 }
