@@ -39,7 +39,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
     
     if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
-      // This was the problematic URL - updating to a correct one
+      // This is the correct URL for Yeinot Bitan logo - verified it exists
       return '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png';
     }
     
