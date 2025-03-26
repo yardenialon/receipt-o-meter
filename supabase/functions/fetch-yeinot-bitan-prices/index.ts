@@ -1,11 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "./utils/cors.ts";
+import { createUpdateRecord, updateProgress, markUpdateCompleted, markUpdateFailed } from "./utils/database.ts";
+import { fetchChains, fetchStores, fetchStoreProducts, processStoreProducts } from "./utils/api.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,39 +26,14 @@ serve(async (req) => {
     );
 
     // Create a record for this operation
-    const { data: updateRecord, error: updateError } = await supabase
-      .from('price_updates')
-      .insert({
-        status: 'processing',
-        started_at: new Date().toISOString(),
-        chain_name: 'יינות ביתן'
-      })
-      .select()
-      .single();
-
-    if (updateError) {
-      throw new Error(`Failed to create update record: ${updateError.message}`);
-    }
-
-    // Fetch chain data from Open Israeli Supermarkets API
+    const updateRecord = await createUpdateRecord(supabase);
+    
+    // Fetch chain data
     console.log('Fetching chain data from API...');
-    const chainsResponse = await fetch('https://www.openisraelisupermarkets.co.il/api/chains', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!chainsResponse.ok) {
-      throw new Error(`Failed to fetch chains: ${chainsResponse.statusText}`);
-    }
-
-    const chains = await chainsResponse.json();
+    const chains = await fetchChains(API_TOKEN);
     console.log(`Found ${chains.length} chains`);
     
-    // Find Yeinot Bitan in the list - try various spellings and formats
+    // Find Yeinot Bitan in the list
     const yeinotBitan = chains.find(chain => 
       chain.name.includes('יינות ביתן') || 
       chain.name.toLowerCase().includes('yeinot bitan') || 
@@ -75,30 +48,14 @@ serve(async (req) => {
 
     // Fetch all stores for Yeinot Bitan
     console.log('Fetching Yeinot Bitan stores...');
-    const storesResponse = await fetch(`https://www.openisraelisupermarkets.co.il/api/stores?chain_id=${yeinotBitan.id}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!storesResponse.ok) {
-      throw new Error(`Failed to fetch stores: ${storesResponse.statusText}`);
-    }
-
-    const stores = await storesResponse.json();
+    const stores = await fetchStores(API_TOKEN, yeinotBitan.id);
     console.log(`Found ${stores.length} Yeinot Bitan stores`);
 
     // Update stats in database
-    await supabase
-      .from('price_updates')
-      .update({
-        total_stores: stores.length,
-        processed_stores: 0
-      })
-      .eq('id', updateRecord.id);
+    await updateProgress(supabase, updateRecord.id, {
+      total_stores: stores.length,
+      processed_stores: 0
+    });
 
     // Process each store
     let totalProducts = 0;
@@ -109,24 +66,7 @@ serve(async (req) => {
         console.log(`Processing store: ${store.name} (ID: ${store.id})`);
         
         // Fetch products for this store
-        const searchResponse = await fetch(
-          `https://www.openisraelisupermarkets.co.il/api/products/search?chain_id=${yeinotBitan.id}&store_id=${store.id}&limit=500`, 
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${API_TOKEN}`,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (!searchResponse.ok) {
-          console.warn(`Failed to fetch products for store ${store.id}: ${searchResponse.statusText}`);
-          continue;
-        }
-
-        const products = await searchResponse.json();
+        const products = await fetchStoreProducts(API_TOKEN, yeinotBitan.id, store.id);
         console.log(`Found ${products.length} products for store ${store.name}`);
         
         if (products.length === 0) {
@@ -134,49 +74,16 @@ serve(async (req) => {
           continue;
         }
 
-        // Map products to our database structure and batch insert
-        // IMPORTANT: Make sure store_chain is consistently "יינות ביתן"
-        const mappedProducts = products.map(product => ({
-          store_chain: 'יינות ביתן',
-          store_id: store.id,
-          product_code: product.code,
-          product_name: product.name,
-          manufacturer: product.manufacturer || '',
-          price: parseFloat(product.price) || 0,
-          unit_quantity: product.quantity || '',
-          unit_of_measure: product.unit || '',
-          category: product.category || 'כללי',
-          price_update_date: new Date().toISOString()
-        }));
-
-        // Insert products in batches of 100
-        const batchSize = 100;
-        for (let i = 0; i < mappedProducts.length; i += batchSize) {
-          const batch = mappedProducts.slice(i, i + batchSize);
-          const { error: insertError } = await supabase
-            .from('store_products')
-            .upsert(batch, {
-              onConflict: 'product_code,store_chain,store_id',
-              ignoreDuplicates: false
-            });
-
-          if (insertError) {
-            console.error(`Error inserting batch for store ${store.id}:`, insertError);
-          } else {
-            totalProducts += batch.length;
-          }
-        }
-
+        // Process products and insert to database
+        const insertedCount = await processStoreProducts(supabase, products, store);
+        totalProducts += insertedCount;
         processedStores++;
         
         // Update progress
-        await supabase
-          .from('price_updates')
-          .update({
-            processed_stores: processedStores,
-            processed_products: totalProducts
-          })
-          .eq('id', updateRecord.id);
+        await updateProgress(supabase, updateRecord.id, {
+          processed_stores: processedStores,
+          processed_products: totalProducts
+        });
 
       } catch (storeError) {
         console.error(`Error processing store ${store.id}:`, storeError);
@@ -184,15 +91,7 @@ serve(async (req) => {
     }
 
     // Mark the update as completed
-    await supabase
-      .from('price_updates')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        total_products: totalProducts,
-        processed_products: totalProducts
-      })
-      .eq('id', updateRecord.id);
+    await markUpdateCompleted(supabase, updateRecord.id, totalProducts);
 
     return new Response(
       JSON.stringify({
@@ -216,16 +115,7 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       );
       
-      await supabase
-        .from('price_updates')
-        .update({
-          status: 'failed',
-          completed_at: new Date().toISOString(),
-          error_log: { error: error.message }
-        })
-        .eq('chain_name', 'יינות ביתן')
-        .order('created_at', { ascending: false })
-        .limit(1);
+      await markUpdateFailed(supabase, error.message);
     } catch (dbError) {
       console.error('Failed to update error status:', dbError);
     }
