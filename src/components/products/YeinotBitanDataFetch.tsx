@@ -6,6 +6,19 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
+// Define the interface for price_updates table
+interface PriceUpdate {
+  id: string;
+  status: string;
+  started_at: string;
+  completed_at?: string;
+  chain_name: string;
+  total_stores?: number;
+  processed_stores?: number;
+  processed_products?: number;
+  error_log?: any;
+}
+
 export function YeinotBitanDataFetch() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<{
@@ -27,6 +40,7 @@ export function YeinotBitanDataFetch() {
       if (error) {
         console.error('Error fetching Yeinot Bitan data:', error);
         toast.error('שגיאה בעדכון נתוני יינות ביתן');
+        setIsLoading(false);
         return;
       }
       
@@ -47,40 +61,50 @@ export function YeinotBitanDataFetch() {
   
   const pollProgress = async (updateId: string) => {
     const intervalId = setInterval(async () => {
-      const { data, error } = await supabase
-        .from('price_updates')
-        .select('*')
-        .eq('id', updateId)
-        .single();
-      
-      if (error) {
-        console.error('Error polling progress:', error);
-        clearInterval(intervalId);
-        setIsLoading(false);
-        return;
-      }
-      
-      setProgress({
-        status: data.status,
-        totalStores: data.total_stores,
-        processedStores: data.processed_stores,
-        totalProducts: data.processed_products,
-        processedProducts: data.processed_products
-      });
-      
-      if (data.status === 'completed' || data.status === 'failed') {
-        clearInterval(intervalId);
-        setIsLoading(false);
-        
-        if (data.status === 'completed') {
-          toast.success(`עודכנו ${data.processed_products} מוצרים מ-${data.processed_stores} סניפים של יינות ביתן`);
-        } else {
-          toast.error('שגיאה בעדכון נתוני יינות ביתן');
+      try {
+        // Use type assertion to inform TypeScript about the expected structure
+        const { data, error } = await supabase
+          .from('price_updates')
+          .select('*')
+          .eq('id', updateId)
+          .single();
+          
+        if (error) {
+          console.error('Error polling progress:', error);
+          clearInterval(intervalId);
+          setIsLoading(false);
+          return;
         }
+        
+        // Explicitly cast the data to our PriceUpdate interface
+        const priceUpdate = data as unknown as PriceUpdate;
+        
+        setProgress({
+          status: priceUpdate.status,
+          totalStores: priceUpdate.total_stores,
+          processedStores: priceUpdate.processed_stores,
+          totalProducts: priceUpdate.processed_products,
+          processedProducts: priceUpdate.processed_products
+        });
+        
+        if (priceUpdate.status === 'completed' || priceUpdate.status === 'failed') {
+          clearInterval(intervalId);
+          setIsLoading(false);
+          
+          if (priceUpdate.status === 'completed') {
+            toast.success(`עודכנו ${priceUpdate.processed_products} מוצרים מ-${priceUpdate.processed_stores} סניפים של יינות ביתן`);
+          } else {
+            toast.error('שגיאה בעדכון נתוני יינות ביתן');
+          }
+        }
+      } catch (error) {
+        console.error('Error in polling:', error);
+        clearInterval(intervalId);
+        setIsLoading(false);
       }
     }, 2000);
     
-    // Cleanup
+    // Return a cleanup function
     return () => clearInterval(intervalId);
   };
   

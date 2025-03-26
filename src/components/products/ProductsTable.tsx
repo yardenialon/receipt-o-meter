@@ -1,146 +1,167 @@
 
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { PriceComparison } from './PriceComparison';
+import { useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronRight, Loader2, Image } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { useNavigate } from 'react-router-dom';
 
-interface ProductsTableProps {
+export interface ProductsTableProps {
   productsByCategory: Record<string, Array<{ productCode: string, products: any[] }>>;
   expandedProducts: Record<string, { expanded: boolean }>;
   onToggleExpand: (productCode: string) => void;
-  onRowClick?: (productCode: string) => void;
+  loading?: boolean;
+  onSelectProduct?: (productCode: string) => void;
 }
 
-export const ProductsTable = ({ 
+export function ProductsTable({ 
   productsByCategory, 
   expandedProducts, 
   onToggleExpand,
-  onRowClick
-}: ProductsTableProps) => {
-  // Debug: Log the data received in this component
-  console.log('Products by category in ProductsTable:', productsByCategory);
-  
-  // Helper function to safely format date
-  const safeFormatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return 'לא ידוע';
-    
-    try {
-      const date = new Date(dateStr);
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'לא ידוע';
-      }
-      return format(date, 'dd/MM/yyyy HH:mm', { locale: he });
-    } catch (error) {
-      console.error('Invalid date format:', dateStr, error);
-      return 'לא ידוע';
+  loading = false,
+  onSelectProduct
+}: ProductsTableProps) {
+  const navigate = useNavigate();
+  const [categoryVisibility, setCategoryVisibility] = useState<Record<string, boolean>>({});
+
+  const toggleCategory = (category: string) => {
+    setCategoryVisibility(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const handleProductClick = (productCode: string) => {
+    navigate(`/products/${productCode}`);
+  };
+
+  const handleSelectForImage = (e: React.MouseEvent, productCode: string) => {
+    e.stopPropagation();
+    if (onSelectProduct) {
+      onSelectProduct(productCode);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const categories = Object.keys(productsByCategory);
+
+  if (categories.length === 0) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        לא נמצאו מוצרים
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {Object.entries(productsByCategory).length === 0 ? (
-        <div className="text-center py-4">
-          <p className="text-gray-500">לא נמצאו מוצרים לתצוגה</p>
-        </div>
-      ) : (
-        Object.entries(productsByCategory).map(([category, categoryProducts]) => (
-          <div key={category} className="rounded-md border">
-            <h2 className="text-xl font-semibold p-4 bg-gray-50">{category}</h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead></TableHead>
-                  <TableHead>קוד מוצר</TableHead>
-                  <TableHead>שם מוצר</TableHead>
-                  <TableHead>יצרן</TableHead>
-                  <TableHead>מחיר הכי זול</TableHead>
-                  <TableHead>עודכן</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categoryProducts.map(({ productCode, products }) => {
-                  const baseProduct = products[0];
-                  const isExpanded = expandedProducts[productCode]?.expanded;
-                  const prices = products.map(p => p.price).filter(price => price > 0);
-                  const lowestPrice = prices.length > 0 ? Math.min(...prices) : null;
+    <div className="border rounded-md overflow-hidden">
+      <div className="bg-gray-50 p-4 border-b">
+        <h3 className="text-lg font-medium">מוצרים</h3>
+      </div>
 
-                  // Safely calculate latest update date
-                  let latestUpdate;
-                  try {
-                    const validDates = products
-                      .map(p => new Date(p.price_update_date))
-                      .filter(date => !isNaN(date.getTime()));
-                    
-                    latestUpdate = validDates.length > 0 
-                      ? new Date(Math.max(...validDates.map(d => d.getTime())))
-                      : new Date();
-                  } catch(e) {
-                    console.error('Error calculating latest update date:', e);
-                    latestUpdate = new Date();
-                  }
+      <div className="overflow-x-auto">
+        {categories.map(category => (
+          <div key={category} className="border-b last:border-b-0">
+            <div 
+              className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer"
+              onClick={() => toggleCategory(category)}
+            >
+              <div className="flex items-center gap-2">
+                {categoryVisibility[category] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                <span className="font-medium">{category}</span>
+              </div>
+              <span className="text-sm text-gray-500">{productsByCategory[category].length} מוצרים</span>
+            </div>
 
-                  return (
-                    <>
-                      <TableRow 
-                        key={productCode}
-                        className="cursor-pointer hover:bg-gray-50"
-                      >
-                        <TableCell onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleExpand(productCode);
-                        }}>
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </TableCell>
-                        <TableCell 
-                          className="font-medium"
-                          onClick={() => onRowClick && onRowClick(productCode)}
+            {categoryVisibility[category] && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40px]"></TableHead>
+                    <TableHead>קוד מוצר</TableHead>
+                    <TableHead>שם מוצר</TableHead>
+                    <TableHead>יצרן</TableHead>
+                    <TableHead>מחיר</TableHead>
+                    <TableHead className="text-right">פעולות</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productsByCategory[category].map(({ productCode, products }) => {
+                    const baseProduct = products[0];
+                    const isExpanded = expandedProducts[productCode]?.expanded || false;
+
+                    return (
+                      <>
+                        <TableRow 
+                          key={productCode}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleProductClick(productCode)}
                         >
-                          {baseProduct.product_code}
-                        </TableCell>
-                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
-                          {baseProduct.product_name}
-                        </TableCell>
-                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
-                          {baseProduct.manufacturer}
-                        </TableCell>
-                        <TableCell 
-                          className="font-bold text-red-600"
-                          onClick={() => onRowClick && onRowClick(productCode)}
-                        >
-                          {lowestPrice ? `₪${lowestPrice.toFixed(2)}` : 'לא זמין'}
-                        </TableCell>
-                        <TableCell onClick={() => onRowClick && onRowClick(productCode)}>
-                          {safeFormatDate(latestUpdate.toISOString())}
-                        </TableCell>
-                      </TableRow>
-                      {isExpanded && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="bg-gray-50 p-4">
-                            <PriceComparison prices={products} />
+                          <TableCell>
+                            {products.length > 1 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 rounded-full p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleExpand(productCode);
+                                }}
+                              >
+                                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell>{productCode}</TableCell>
+                          <TableCell>{baseProduct.product_name}</TableCell>
+                          <TableCell>{baseProduct.manufacturer || 'לא ידוע'}</TableCell>
+                          <TableCell>{formatCurrency(baseProduct.price)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="ml-2"
+                              onClick={(e) => handleSelectForImage(e, productCode)}
+                            >
+                              <Image className="h-3 w-3 mr-1" />
+                              תמונה
+                            </Button>
                           </TableCell>
                         </TableRow>
-                      )}
-                    </>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        
+                        {isExpanded && products.length > 1 && (
+                          <TableRow className="bg-gray-50">
+                            <TableCell colSpan={6} className="p-0">
+                              <div className="p-3">
+                                <h4 className="text-sm font-medium mb-2">מחירים ברשתות שונות:</h4>
+                                <div className="space-y-2">
+                                  {products.map((product, index) => (
+                                    <div key={index} className="flex justify-between text-sm">
+                                      <span>{product.store_chain} - {product.store_id}</span>
+                                      <span className="font-medium">{formatCurrency(product.price)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </div>
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
-};
+}
