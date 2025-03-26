@@ -16,7 +16,7 @@ serve(async (req) => {
     const API_TOKEN = Deno.env.get("OPEN_ISRAELI_MARKETS_TOKEN");
 
     if (!API_TOKEN) {
-      throw new Error('API token not configured');
+      throw new Error('API token not configured. Please set OPEN_ISRAELI_MARKETS_TOKEN in Supabase secrets.');
     }
 
     // Create Supabase client
@@ -33,23 +33,37 @@ serve(async (req) => {
     const chains = await fetchChains(API_TOKEN);
     console.log(`Found ${chains.length} chains`);
     
-    // Find Yeinot Bitan in the list
+    // Find Yeinot Bitan in the list - try different naming variations
+    const yeinotBitanVariations = [
+      'יינות ביתן',
+      'ינות ביתן',
+      'yeinot bitan',
+      'ינות',
+      'יינות',
+      'ביתן'
+    ];
+    
     const yeinotBitan = chains.find(chain => 
-      chain.name.includes('יינות ביתן') || 
-      chain.name.toLowerCase().includes('yeinot bitan') || 
-      chain.name.toLowerCase().includes('יינות') ||
-      chain.name.toLowerCase().includes('ינות ביתן'));
+      yeinotBitanVariations.some(variation => 
+        chain.name.toLowerCase().includes(variation.toLowerCase())
+      )
+    );
     
     if (!yeinotBitan) {
-      throw new Error('יינות ביתן not found in the API response');
+      console.error('Available chains:', chains.map(c => c.name).join(', '));
+      throw new Error('יינות ביתן not found in the API response. Please check chain names.');
     }
     
-    console.log(`Found Yeinot Bitan with ID: ${yeinotBitan.id}`);
+    console.log(`Found Yeinot Bitan with ID: ${yeinotBitan.id}, Name: ${yeinotBitan.name}`);
 
     // Fetch all stores for Yeinot Bitan
     console.log('Fetching Yeinot Bitan stores...');
     const stores = await fetchStores(API_TOKEN, yeinotBitan.id);
     console.log(`Found ${stores.length} Yeinot Bitan stores`);
+
+    if (stores.length === 0) {
+      throw new Error('No stores found for Yeinot Bitan');
+    }
 
     // Update stats in database
     await updateProgress(supabase, updateRecord.id, {
@@ -85,6 +99,7 @@ serve(async (req) => {
           processed_products: totalProducts
         });
 
+        console.log(`Successfully processed store ${store.name}, inserted ${insertedCount} products`);
       } catch (storeError) {
         console.error(`Error processing store ${store.id}:`, storeError);
       }
@@ -92,6 +107,8 @@ serve(async (req) => {
 
     // Mark the update as completed
     await markUpdateCompleted(supabase, updateRecord.id, totalProducts);
+
+    console.log(`Yeinot Bitan price fetch completed successfully. Processed ${totalProducts} products from ${processedStores} stores.`);
 
     return new Response(
       JSON.stringify({
