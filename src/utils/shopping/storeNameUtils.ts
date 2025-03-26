@@ -22,6 +22,12 @@ export const normalizeChainName = (storeName: string): string => {
     'שופרסל', 'shufersal', 'שופרסל אונליין',
     'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
   ];
+  
+  const yeinotBitanVariations = [
+    'יינות ביתן', 'yeinot bitan', 'ינות ביתן', 'יינות',
+    'ינות', 'bitan', 'ביתן', 'יינות-ביתן', 'יינות_ביתן',
+    'megamart', 'מגה מרט', 'מגהמרט'
+  ];
 
   if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'יוחננוף';
@@ -29,6 +35,8 @@ export const normalizeChainName = (storeName: string): string => {
     return 'רמי לוי';
   } else if (shufersalVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
     return 'שופרסל';
+  } else if (yeinotBitanVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+    return 'יינות ביתן';
   }
 
   return storeName;

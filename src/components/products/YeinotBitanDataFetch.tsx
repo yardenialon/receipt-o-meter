@@ -77,7 +77,7 @@ export function YeinotBitanDataFetch() {
         }
         
         // Explicitly cast the data to our PriceUpdate interface
-        const priceUpdate = data as unknown as PriceUpdate;
+        const priceUpdate = data as PriceUpdate;
         
         setProgress({
           status: priceUpdate.status,

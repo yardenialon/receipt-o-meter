@@ -60,10 +60,12 @@ serve(async (req) => {
     const chains = await chainsResponse.json();
     console.log(`Found ${chains.length} chains`);
     
-    // Find Yeinot Bitan in the list
+    // Find Yeinot Bitan in the list - try various spellings and formats
     const yeinotBitan = chains.find(chain => 
       chain.name.includes('יינות ביתן') || 
-      chain.name.toLowerCase().includes('yeinot bitan'));
+      chain.name.toLowerCase().includes('yeinot bitan') || 
+      chain.name.toLowerCase().includes('יינות') ||
+      chain.name.toLowerCase().includes('ינות ביתן'));
     
     if (!yeinotBitan) {
       throw new Error('יינות ביתן not found in the API response');
@@ -106,7 +108,7 @@ serve(async (req) => {
       try {
         console.log(`Processing store: ${store.name} (ID: ${store.id})`);
         
-        // Fetch random products to get structure (we'll use a limit since we can't fetch all products at once)
+        // Fetch products for this store
         const searchResponse = await fetch(
           `https://www.openisraelisupermarkets.co.il/api/products/search?chain_id=${yeinotBitan.id}&store_id=${store.id}&limit=500`, 
           {
@@ -133,6 +135,7 @@ serve(async (req) => {
         }
 
         // Map products to our database structure and batch insert
+        // IMPORTANT: Make sure store_chain is consistently "יינות ביתן"
         const mappedProducts = products.map(product => ({
           store_chain: 'יינות ביתן',
           store_id: store.id,
