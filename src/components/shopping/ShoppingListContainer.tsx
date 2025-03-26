@@ -37,10 +37,17 @@ export const ShoppingListContainer = ({
     });
   };
 
+  const handleSearch = (searchTerm: string) => {
+    // We're only using product selection in this component, 
+    // but we need to provide this function to satisfy the prop requirements
+    console.log('Search term:', searchTerm);
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
         <ProductsSearch
+          onSearch={handleSearch}
           onProductSelect={(product) => handleAddProductToList(product)}
         />
       </div>
