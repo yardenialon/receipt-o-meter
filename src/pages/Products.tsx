@@ -4,6 +4,8 @@ import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { ProductsSearch } from "@/components/products/ProductsSearch";
 import { ProductsStats } from "@/components/products/ProductsStats";
 import { ProductsTable } from "@/components/products/ProductsTable";
+import { ProductsGrid } from "@/components/products/ProductsGrid";
+import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
 import { PriceFileUpload } from "@/components/products/PriceFileUpload";
 import { ProductImageUpload } from "@/components/products/ProductImageUpload";
 import { ChainMappingUpload } from "@/components/products/ChainMappingUpload";
@@ -16,15 +18,18 @@ export default function Products() {
   
   const { 
     currentPage, 
-    searchTerm, 
+    searchTerm,
+    viewMode,
     expandedProducts, 
     handlePageChange, 
     handleSearch, 
+    handleViewChange,
     handleToggleExpand 
   } = useProductsDisplay();
   
   const { 
     productsByCategory,
+    flattenedProducts,
     loading
   } = useProductsData({ 
     currentPage, 
@@ -36,24 +41,36 @@ export default function Products() {
       <ProductsHeader />
       <div className="grid gap-8 mt-8">
         <ProductsStats />
-        <ProductsSearch onSearch={handleSearch} />
+        
+        <ProductsSearchBar 
+          onSearch={handleSearch} 
+          onViewChange={handleViewChange}
+          currentView={viewMode}
+        />
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <PriceFileUpload />
           <YeinotBitanDataFetch />
         </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {selectedProductCode && (
             <ProductImageUpload productCode={selectedProductCode} />
           )}
           <ChainMappingUpload />
         </div>
-        <ProductsTable 
-          productsByCategory={productsByCategory || {}}
-          expandedProducts={expandedProducts}
-          onToggleExpand={handleToggleExpand}
-          loading={loading}
-          onSelectProduct={setSelectedProductCode}
-        />
+        
+        {viewMode === 'list' ? (
+          <ProductsTable 
+            productsByCategory={productsByCategory || {}}
+            expandedProducts={expandedProducts}
+            onToggleExpand={handleToggleExpand}
+            loading={loading}
+            onSelectProduct={setSelectedProductCode}
+          />
+        ) : (
+          <ProductsGrid products={flattenedProducts || []} />
+        )}
       </div>
     </div>
   );
