@@ -6,11 +6,12 @@ import { supabase } from '@/lib/supabase';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 
-interface ProductSearchProps {
+interface ProductsSearchProps {
+  onSearch: (searchTerm: string) => void;
   onProductSelect?: (product: { name: string; product_code?: string | null }) => void;
 }
 
-export const ProductsSearch = ({ onProductSelect }: ProductSearchProps) => {
+export const ProductsSearch = ({ onSearch, onProductSelect }: ProductsSearchProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 

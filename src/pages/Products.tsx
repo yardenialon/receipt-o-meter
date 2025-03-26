@@ -48,7 +48,7 @@ export default function Products() {
           <ChainMappingUpload />
         </div>
         <ProductsTable 
-          productsByCategory={productsByCategory}
+          productsByCategory={productsByCategory || {}}
           expandedProducts={expandedProducts}
           onToggleExpand={handleToggleExpand}
           loading={loading}
