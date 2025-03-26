@@ -1,7 +1,6 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
+import { Home, BarChart2, Package2, LogOut, ListCheck, Tag, ShoppingCart, Receipt, Gauge, BarChart3, Package, PriceCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
@@ -67,6 +66,11 @@ export const NavLinks = () => {
     { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },
+    {
+      title: "מחירים בזמן אמת",
+      href: "/live-prices",
+      icon: <PriceCheck className="h-5 w-5" />,
+    },
   ];
 
   return (

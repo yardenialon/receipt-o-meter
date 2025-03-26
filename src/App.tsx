@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -10,8 +9,8 @@ import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
 import { ProductDetails } from './components/products/ProductDetails';
+import LivePrices from "./pages/LivePrices";
 
-// Protected Route component to handle auth checks
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
@@ -69,7 +68,7 @@ function App() {
                     <ShoppingList />
                   </ProtectedRoute>
                 } />
-                {/* Add a catch-all route to redirect to home */}
+                <Route path="/live-prices" element={<LivePrices />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
