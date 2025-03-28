@@ -116,7 +116,7 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
                 {product.manufacturer && <p className="mb-1">{product.manufacturer}</p>}
                 
                 <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-gray-400">קוד: {product.product_code.substring(0, 8)}</p>
+                  <p className="text-xs text-gray-400">קוד: {product.product_code}</p>
                   
                   {product.store_chain && (
                     <span className="text-xs font-medium text-primary-600">
