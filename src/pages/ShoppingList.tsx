@@ -21,7 +21,7 @@ export default function ShoppingList() {
   }
 
   return (
-    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32">
+    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32" dir="rtl">
       <div className="flex items-center justify-between mb-8 px-4 md:px-0">
         <h1 className="text-3xl font-bold">רשימות קניות</h1>
         <Button 

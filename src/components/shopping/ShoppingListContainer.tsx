@@ -58,7 +58,7 @@ export const ShoppingListContainer = ({
   };
 
   return (
-    <Card className="p-0 overflow-hidden bg-gradient-to-br from-white to-gray-50/90 backdrop-blur-sm border-primary-100/20 shadow-md">
+    <Card className="p-0 overflow-hidden bg-gradient-to-br from-white to-gray-50/90 backdrop-blur-sm border-primary-100/20 shadow-md" dir="rtl">
       {/* Header with progress bar */}
       <div className="relative p-4 pb-1 bg-gradient-to-r from-primary-500/10 to-primary-300/10">
         <div className="flex items-center justify-between mb-2">
@@ -110,7 +110,7 @@ export const ShoppingListContainer = ({
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="text-xs text-gray-500 text-right mb-2">
+        <div className="text-xs text-gray-500 text-left mb-2">
           {completedItems} מתוך {totalItems} פריטים
         </div>
       </div>
@@ -151,6 +151,15 @@ export const ShoppingListContainer = ({
                     : "hover:bg-primary-50/50 hover:border-primary-100/50"
                 )}
               >
+                <span 
+                  className={cn(
+                    "flex-1 text-sm transition-all",
+                    item.is_completed && "line-through"
+                  )}
+                >
+                  {item.name}
+                </span>
+                
                 <button
                   onClick={() => toggleItem.mutate({ id: item.id, isCompleted: !item.is_completed })}
                   className={cn(
@@ -162,15 +171,6 @@ export const ShoppingListContainer = ({
                 >
                   {item.is_completed && <Check className="h-3 w-3" />}
                 </button>
-                
-                <span 
-                  className={cn(
-                    "flex-1 text-sm transition-all",
-                    item.is_completed && "line-through"
-                  )}
-                >
-                  {item.name}
-                </span>
                 
                 <Button
                   variant="ghost"
