@@ -9,9 +9,16 @@ import { useQuery } from '@tanstack/react-query';
 interface ProductsSearchProps {
   onSearch: (searchTerm: string) => void;
   onProductSelect?: (product: { name: string; product_code?: string | null }) => void;
+  placeholder?: string;
+  className?: string;
 }
 
-export const ProductsSearch = ({ onSearch, onProductSelect }: ProductsSearchProps) => {
+export const ProductsSearch = ({ 
+  onSearch, 
+  onProductSelect,
+  placeholder = "חפש מוצר...",
+  className = ""
+}: ProductsSearchProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
@@ -60,10 +67,10 @@ export const ProductsSearch = ({ onSearch, onProductSelect }: ProductsSearchProp
     <div className="relative">
       <Input
         type="search"
-        placeholder="חפש מוצר..."
+        placeholder={placeholder}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full"
+        className={className}
         dir="rtl"
       />
       <SearchResults
