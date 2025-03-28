@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
 
 export default function Products() {
-  const [productsPerPage, setProductsPerPage] = useState(16);
+  const [productsPerPage, setProductsPerPage] = useState(24);
   
   const { 
     currentPage, 
@@ -63,15 +63,15 @@ export default function Products() {
   };
 
   const handleLoadMore = () => {
-    setProductsPerPage(prevValue => prevValue + 16);
+    setProductsPerPage(prevValue => prevValue + 24);
   };
 
   const hasMoreProducts = flattenedProducts.length < totalProducts;
 
   return (
-    <div className="container py-8">
+    <div className="container py-8" dir="rtl">
       <ProductsHeader />
-      <div className="grid gap-8 mt-8">
+      <div className="space-y-8 mt-8">
         <ProductsSearchBar 
           onSearch={handleSearch} 
           onViewChange={handleViewChange}
@@ -79,17 +79,15 @@ export default function Products() {
         />
         
         {viewMode === 'list' ? (
-          <>
-            <ProductsTable 
-              productsByCategory={productsByCategory || {}}
-              expandedProducts={expandedProducts}
-              onToggleExpand={handleToggleExpand}
-              loading={loading}
-              onSelectProduct={handleAddToShoppingList}
-            />
-          </>
+          <ProductsTable 
+            productsByCategory={productsByCategory || {}}
+            expandedProducts={expandedProducts}
+            onToggleExpand={handleToggleExpand}
+            loading={loading}
+            onSelectProduct={handleAddToShoppingList}
+          />
         ) : (
-          <>
+          <div className="space-y-6">
             <ProductsGrid 
               products={flattenedProducts || []} 
               onAddToList={handleAddToShoppingList}
@@ -108,7 +106,7 @@ export default function Products() {
                 </Button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

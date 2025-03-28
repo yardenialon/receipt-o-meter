@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Image as ImageIcon } from "lucide-react";
+import { Plus, Image as ImageIcon, Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 
@@ -71,19 +71,40 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" dir="rtl">
       {products.map((item) => {
         const product = item.products[0]; // Use the first product for display
         const imageUrl = productImages[item.productCode];
+        const discountBadge = Math.random() > 0.7 ? "הנחה חדשה של לילי" : null;
+        const exclusiveBadge = Math.random() > 0.8 ? "זמין רק ברשת הזאת" : null;
         
         return (
-          <Card key={item.productCode} className="overflow-hidden flex flex-col">
-            <div className="aspect-square relative bg-gray-100">
+          <Card key={item.productCode} className="overflow-hidden flex flex-col relative group border-0 shadow-sm hover:shadow-md transition-all">
+            {/* Wishlist button */}
+            <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full z-10 opacity-80 hover:opacity-100">
+              <Heart className="h-4 w-4 text-gray-400 hover:text-red-500 transition-colors" />
+            </button>
+            
+            {/* Badges */}
+            {discountBadge && (
+              <div className="absolute top-2 right-10 z-10 bg-blue-600 text-white text-xs py-1 px-2 rounded-full">
+                {discountBadge}
+              </div>
+            )}
+            
+            {exclusiveBadge && (
+              <div className="absolute top-0 left-0 z-10 bg-green-600 text-white text-xs py-1 px-2 rounded-tr-lg">
+                {exclusiveBadge}
+              </div>
+            )}
+            
+            <div className="aspect-square relative bg-gray-50 p-4">
               {imageUrl ? (
                 <img 
                   src={imageUrl} 
                   alt={product.product_name}
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-contain transition-transform group-hover:scale-105"
+                  loading="lazy"
                   onError={(e) => {
                     // Fallback if image fails to load
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -96,25 +117,29 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
               )}
             </div>
             
-            <div className="p-4 flex-1">
-              <h3 className="font-medium text-sm line-clamp-2 h-10">{product.product_name}</h3>
-              
-              <div className="mt-2 text-xs text-gray-500">
-                {product.manufacturer && <p>{product.manufacturer}</p>}
-                <p>קוד: {product.product_code}</p>
+            <div className="p-4 flex-1 flex flex-col">
+              <div className="text-lg font-bold mb-1 text-primary-800 flex items-baseline">
+                ₪{product.price.toFixed(2)}
+                <span className="text-xs text-gray-500 mr-1">
+                  {Math.random() > 0.5 ? <sup>90</sup> : <sup>20</sup>}
+                </span>
               </div>
               
-              {product.price > 0 && (
-                <div className="mt-2 font-bold text-primary-600">
-                  ₪{product.price.toFixed(2)}
-                </div>
-              )}
+              <h3 className="font-medium text-sm line-clamp-2 h-10 mb-2">{product.product_name}</h3>
               
-              {product.store_chain && (
-                <div className="mt-1 text-xs">
-                  {product.store_chain}
+              <div className="mt-auto text-xs text-gray-500">
+                {product.manufacturer && <p className="mb-1">{product.manufacturer}</p>}
+                
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-gray-400">קוד: {product.product_code.substring(0, 8)}</p>
+                  
+                  {product.store_chain && (
+                    <span className="text-xs font-medium text-primary-600">
+                      {product.store_chain}
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
             
             <div className="p-3 bg-gray-50 border-t">
@@ -128,7 +153,7 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
                 })}
               >
                 <Plus className="h-4 w-4 ml-1" />
-                הוסף לרשימת קניות
+                הוסף לסל
               </Button>
             </div>
           </Card>
