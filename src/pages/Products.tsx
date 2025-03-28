@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowDown } from "lucide-react";
 
 export default function Products() {
-  const [productsPerPage, setProductsPerPage] = useState(12);
+  const [productsPerPage, setProductsPerPage] = useState(16);
   
   const { 
     currentPage, 
@@ -63,7 +63,7 @@ export default function Products() {
   };
 
   const handleLoadMore = () => {
-    setProductsPerPage(prevValue => prevValue + 12);
+    setProductsPerPage(prevValue => prevValue + 16);
   };
 
   const hasMoreProducts = flattenedProducts.length < totalProducts;
