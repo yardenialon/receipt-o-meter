@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -59,10 +60,10 @@ const Login = () => {
       </div>
 
       <div className="relative container mx-auto py-6 md:py-12 min-h-screen overflow-y-auto">
+        <AuthSection />
         <LoginHero />
         <FeaturesGrid />
         <SocialProof />
-        <AuthSection />
       </div>
     </div>
   );
