@@ -1,21 +1,16 @@
 
 import { useState } from "react";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
-import { ProductsSearch } from "@/components/products/ProductsSearch";
-import { ProductsStats } from "@/components/products/ProductsStats";
+import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
 import { ProductsTable } from "@/components/products/ProductsTable";
 import { ProductsGrid } from "@/components/products/ProductsGrid";
-import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
-import { PriceFileUpload } from "@/components/products/PriceFileUpload";
-import { ProductImageUpload } from "@/components/products/ProductImageUpload";
-import { ChainMappingUpload } from "@/components/products/ChainMappingUpload";
-import { YeinotBitanDataFetch } from "@/components/products/YeinotBitanDataFetch";
 import { useProductsDisplay } from "@/hooks/useProductsDisplay";
 import { useProductsData } from "@/hooks/useProductsData";
+import { useShoppingListItems } from "@/hooks/useShoppingListItems";
+import { toast } from "sonner";
+import { useShoppingLists } from "@/hooks/useShoppingLists";
 
 export default function Products() {
-  const [selectedProductCode, setSelectedProductCode] = useState<string>("");
-  
   const { 
     currentPage, 
     searchTerm,
@@ -36,29 +31,40 @@ export default function Products() {
     searchTerm 
   });
 
+  // Get shopping lists to add products to
+  const { lists } = useShoppingLists();
+  // Add product to shopping list functionality
+  const { addItem } = useShoppingListItems();
+
+  const handleAddToShoppingList = (product: any) => {
+    if (!lists || lists.length === 0) {
+      toast.error("אין רשימות קניות זמינות. אנא צור רשימה חדשה קודם.");
+      return;
+    }
+
+    // Use the first list by default
+    const listId = lists[0].id;
+    
+    addItem.mutate({
+      listId: listId,
+      name: product.name || product.product_name,
+      productCode: product.code || product.product_code
+    }, {
+      onSuccess: () => {
+        toast.success(`המוצר "${product.name || product.product_name}" נוסף לרשימת הקניות`);
+      }
+    });
+  };
+
   return (
     <div className="container py-8">
       <ProductsHeader />
       <div className="grid gap-8 mt-8">
-        <ProductsStats />
-        
         <ProductsSearchBar 
           onSearch={handleSearch} 
           onViewChange={handleViewChange}
           currentView={viewMode}
         />
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PriceFileUpload />
-          <YeinotBitanDataFetch />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {selectedProductCode && (
-            <ProductImageUpload productCode={selectedProductCode} />
-          )}
-          <ChainMappingUpload />
-        </div>
         
         {viewMode === 'list' ? (
           <ProductsTable 
@@ -66,10 +72,13 @@ export default function Products() {
             expandedProducts={expandedProducts}
             onToggleExpand={handleToggleExpand}
             loading={loading}
-            onSelectProduct={setSelectedProductCode}
+            onSelectProduct={handleAddToShoppingList}
           />
         ) : (
-          <ProductsGrid products={flattenedProducts || []} />
+          <ProductsGrid 
+            products={flattenedProducts || []} 
+            onAddToList={handleAddToShoppingList}
+          />
         )}
       </div>
     </div>
