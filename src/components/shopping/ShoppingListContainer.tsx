@@ -3,7 +3,7 @@ import { ProductsSearch } from '@/components/products/ProductsSearch';
 import { useShoppingListItems } from '@/hooks/useShoppingListItems';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
-import { Plus, ShoppingCart, Trash2, Check, Scale } from 'lucide-react';
+import { ShoppingCart, Trash2, Check, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { ShoppingListPriceComparison } from './PriceComparison';
@@ -32,7 +32,6 @@ export const ShoppingListContainer = ({
   onDeleteList 
 }: ShoppingListContainerProps) => {
   const { toggleItem, deleteItem, addItem } = useShoppingListItems();
-  const [newItemName, setNewItemName] = useState("");
   const [showComparison, setShowComparison] = useState(false);
   const { data: priceComparisons, isLoading } = useShoppingListPrices(list.shopping_list_items);
   
@@ -52,27 +51,9 @@ export const ShoppingListContainer = ({
     });
   };
 
-  const handleAddManualItem = () => {
-    if (!newItemName.trim()) return;
-    
-    addItem.mutate({
-      listId: list.id,
-      name: newItemName,
-      productCode: null
-    }, {
-      onSuccess: () => setNewItemName("")
-    });
-  };
-
   const handleDeleteList = () => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק את הרשימה?')) {
       onDeleteList(list.id);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleAddManualItem();
     }
   };
 
@@ -136,29 +117,11 @@ export const ShoppingListContainer = ({
 
       {/* Search and add items */}
       <div className="p-4 pt-2">
-        <div className="flex gap-2 mb-3">
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="הוסף פריט חדש..."
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:border-primary-300 focus:ring-1 focus:ring-primary-300 outline-none text-sm"
-          />
-          <Button 
-            size="sm"
-            className="bg-primary-500 hover:bg-primary-600 px-3"
-            onClick={handleAddManualItem}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-
         <div className="relative">
           <ProductsSearch
             onSearch={() => {}}
             onProductSelect={(product) => handleAddProductToList(product)}
-            placeholder="חפש מוצר..."
+            placeholder="חפש מוצר לפי מקט או שם..."
             className="w-full"
           />
         </div>
