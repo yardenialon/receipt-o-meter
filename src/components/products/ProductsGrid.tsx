@@ -75,8 +75,6 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
       {products.map((item) => {
         const product = item.products[0]; // Use the first product for display
         const imageUrl = productImages[item.productCode];
-        const discountBadge = Math.random() > 0.7 ? "הנחה חדשה של לילי" : null;
-        const exclusiveBadge = Math.random() > 0.8 ? "זמין רק ברשת הזאת" : null;
         
         return (
           <Card key={item.productCode} className="overflow-hidden flex flex-col relative group border-0 shadow-sm hover:shadow-md transition-all">
@@ -84,19 +82,6 @@ export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
             <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full z-10 opacity-80 hover:opacity-100">
               <Heart className="h-4 w-4 text-gray-400 hover:text-red-500 transition-colors" />
             </button>
-            
-            {/* Badges */}
-            {discountBadge && (
-              <div className="absolute top-2 right-10 z-10 bg-blue-600 text-white text-xs py-1 px-2 rounded-full">
-                {discountBadge}
-              </div>
-            )}
-            
-            {exclusiveBadge && (
-              <div className="absolute top-0 left-0 z-10 bg-green-600 text-white text-xs py-1 px-2 rounded-tr-lg">
-                {exclusiveBadge}
-              </div>
-            )}
             
             <div className="aspect-square relative bg-gray-50 p-4">
               {imageUrl ? (
