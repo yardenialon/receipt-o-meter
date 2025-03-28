@@ -9,8 +9,12 @@ import { useProductsData } from "@/hooks/useProductsData";
 import { useShoppingListItems } from "@/hooks/useShoppingListItems";
 import { toast } from "sonner";
 import { useShoppingLists } from "@/hooks/useShoppingLists";
+import { Button } from "@/components/ui/button";
+import { ArrowDown } from "lucide-react";
 
 export default function Products() {
+  const [productsPerPage, setProductsPerPage] = useState(12);
+  
   const { 
     currentPage, 
     searchTerm,
@@ -25,10 +29,12 @@ export default function Products() {
   const { 
     productsByCategory,
     flattenedProducts,
-    loading
+    loading,
+    totalProducts
   } = useProductsData({ 
     currentPage, 
-    searchTerm 
+    searchTerm,
+    productsPerPage
   });
 
   // Get shopping lists to add products to
@@ -56,6 +62,12 @@ export default function Products() {
     });
   };
 
+  const handleLoadMore = () => {
+    setProductsPerPage(prevValue => prevValue + 12);
+  };
+
+  const hasMoreProducts = flattenedProducts.length < totalProducts;
+
   return (
     <div className="container py-8">
       <ProductsHeader />
@@ -67,20 +79,38 @@ export default function Products() {
         />
         
         {viewMode === 'list' ? (
-          <ProductsTable 
-            productsByCategory={productsByCategory || {}}
-            expandedProducts={expandedProducts}
-            onToggleExpand={handleToggleExpand}
-            loading={loading}
-            onSelectProduct={handleAddToShoppingList}
-          />
+          <>
+            <ProductsTable 
+              productsByCategory={productsByCategory || {}}
+              expandedProducts={expandedProducts}
+              onToggleExpand={handleToggleExpand}
+              loading={loading}
+              onSelectProduct={handleAddToShoppingList}
+            />
+          </>
         ) : (
-          <ProductsGrid 
-            products={flattenedProducts || []} 
-            onAddToList={handleAddToShoppingList}
-          />
+          <>
+            <ProductsGrid 
+              products={flattenedProducts || []} 
+              onAddToList={handleAddToShoppingList}
+            />
+
+            {hasMoreProducts && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  onClick={handleLoadMore} 
+                  variant="outline" 
+                  className="gap-2"
+                  disabled={loading}
+                >
+                  {loading ? 'טוען...' : 'הצג עוד מוצרים'}
+                  {!loading && <ArrowDown className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
-}
+};
