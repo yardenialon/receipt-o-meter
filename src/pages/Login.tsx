@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { LoginHero } from '@/components/login/LoginHero';
 import { FeaturesGrid } from '@/components/login/FeaturesGrid';
 import { SocialProof } from '@/components/login/SocialProof';
-import { AuthSection } from '@/components/login/AuthSection';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -60,7 +59,6 @@ const Login = () => {
       </div>
 
       <div className="relative container mx-auto py-6 md:py-12 min-h-screen overflow-y-auto">
-        <AuthSection />
         <LoginHero />
         <FeaturesGrid />
         <SocialProof />

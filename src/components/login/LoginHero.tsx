@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { SavvyLogo } from '@/components/SavvyLogo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { AuthSection } from './AuthSection';
 
 const data = [
   { savings: 4000, waste: 2400, prices: 2400 },
@@ -39,6 +40,11 @@ export const LoginHero = () => {
       <p className="text-base md:text-xl text-gray-600 mb-4 md:mb-6 max-w-md mx-auto">
         הדרך החכמה לחסוך בקניות ולשמור על המזון שלכם
       </p>
+
+      {/* Authentication section placed right after the subtitle */}
+      <div className="mb-6">
+        <AuthSection />
+      </div>
 
       <div className="h-20 md:h-48 mb-4 md:mb-8">
         <ResponsiveContainer width="100%" height="100%">
