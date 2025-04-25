@@ -2,10 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Use environment variables if available
+const isDevelopment = import.meta.env.DEV;
 const SUPABASE_URL = "https://kthqkydgegsoheymesgc.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0aHFreWRnZWdzb2hleW1lc2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5Nzg2ODgsImV4cCI6MjA1MDU1NDY4OH0.Yek0syRgz4mgPmXc7wy-nml-ci1WFWCniwlZhc83Z6s";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
+
+if (isDevelopment) {
+    console.log(`Development mode: Using Supabase URL ${SUPABASE_URL} with mock authentication.`);
+    console.log('You will be automatically logged in for development purposes.');
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);

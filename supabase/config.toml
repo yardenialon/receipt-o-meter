@@ -1,1 +1,30 @@
-project_id = "kthqkydgegsoheymesgc"
+# A string used to distinguish different Supabase projects on the same host. Defaults to the working
+# directory name when running `supabase init`.
+project_id = "receipt-o-meter"
+
+[api]
+# Port to use for the API URL.
+port = 54321
+
+[db]
+# Port to use for the local database URL.
+port = 54322
+# The database major version to use. This has to be the same as your remote database's. Run `SHOW
+# server_version;` on the remote database to check.
+major_version = 15
+
+[studio]
+# Port to use for Supabase Studio.
+port = 54323
+
+[inbucket]
+port = 54324
+
+[auth]
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://localhost:3003"
+# The secret used to encrypt/decrypt sensitive data. Use `openssl rand -base64 32` to generate.
+anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0aHFreWRnZWdzb2hleW1lc2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5Nzg2ODgsImV4cCI6MjA1MDU1NDY4OH0.Yek0syRgz4mgPmXc7wy-nml-ci1WFWCniwlZhc83Z6s"
+# The secret used to encrypt/decrypt sensitive data. Use `openssl rand -base64 32` to generate.
+service_role_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0aHFreWRnZWdzb2hleW1lc2djIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNDk3ODY4OCwiZXhwIjoyMDUwNTU0Njg4fQ.jRQSGdDkWUCOKSvnDbDqNiyD6npytH0pJ_p_Aiw7XkI"

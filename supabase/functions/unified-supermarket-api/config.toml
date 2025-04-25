@@ -1,0 +1,8 @@
+project_id = "kthqkydgegsoheymesgc"
+api_url = "https://supermarket-rest-api.onrender.com"
+
+[api]
+port = 54321
+
+[functions.unified-supermarket-api]
+verify_jwt = false

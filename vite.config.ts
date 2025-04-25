@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
@@ -15,8 +14,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   server: {
-    host: "::",
-    port: 8080,
+    host: "localhost",
+    port: 8081,
+    strictPort: true,
+    open: true,
     headers: {
       'Content-Security-Policy': "script-src 'self' 'unsafe-eval' 'unsafe-inline';"
     }

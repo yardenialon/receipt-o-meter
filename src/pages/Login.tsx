@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -11,14 +10,26 @@ import { SocialProof } from '@/components/login/SocialProof';
 const Login = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
+  const isDevelopment = import.meta.env.DEV;
 
   useEffect(() => {
+    // In development mode, redirect immediately to home
+    if (isDevelopment) {
+      console.log('Development mode: Auto-redirecting from login to home');
+      navigate('/', { replace: true });
+      return;
+    }
+
+    // In production, redirect if user is authenticated
     if (user && !isLoading) {
       navigate('/', { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, navigate, isDevelopment]);
 
   useEffect(() => {
+    // Skip auth state change listener in development mode
+    if (isDevelopment) return;
+
     const handleAuthChange = (event: string) => {
       if (event === 'SIGNED_IN') {
         window.history.replaceState({}, document.title, '/login');
@@ -35,7 +46,12 @@ const Login = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, isDevelopment]);
+
+  // In development mode, just return null (will redirect via useEffect)
+  if (isDevelopment) {
+    return <div className="text-center p-8">מעביר לדף הבית...</div>;
+  }
 
   if (isLoading) {
     return (
