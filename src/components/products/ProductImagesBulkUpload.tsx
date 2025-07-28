@@ -75,7 +75,7 @@ export const ProductImagesBulkUpload = () => {
         <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
           <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <p className="text-sm text-gray-600 mb-4">
-            העלה קובץ CSV עם העמודות: מק"ט, שם מוצר, URL תמונה
+            העלה קובץ CSV עם העמודות: SKU, Product Name, Image URL
           </p>
           <input
             type="file"
@@ -97,9 +97,9 @@ export const ProductImagesBulkUpload = () => {
               <p className="font-medium mb-1">פורמט הקובץ הנדרש:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>קובץ CSV עם כותרות בשורה הראשונה</li>
-                <li>עמודה ראשונה: מק"ט המוצר</li>
-                <li>עמודה שנייה: שם המוצר</li>
-                <li>עמודה שלישית: URL של התמונה</li>
+                <li>עמודה ראשונה: SKU (מק"ט המוצר)</li>
+                <li>עמודה שנייה: Product Name (שם המוצר)</li>
+                <li>עמודה שלישית: Image URL (URL של התמונה)</li>
               </ul>
             </div>
           </div>
