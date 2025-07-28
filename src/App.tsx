@@ -13,16 +13,21 @@ import { ProductDetails } from './components/products/ProductDetails';
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
+  console.log('ProtectedRoute - isLoading:', isLoading, 'user:', user?.email);
+  
   if (isLoading) {
+    console.log('ProtectedRoute showing loading...');
     return <div className="flex items-center justify-center min-h-screen">
-      טוען...
+      <div className="animate-pulse">טוען...</div>
     </div>;
   }
   
   if (!user) {
+    console.log('ProtectedRoute redirecting to login...');
     return <Navigate to="/login" replace />;
   }
   
+  console.log('ProtectedRoute rendering children for user:', user.email);
   return <>{children}</>;
 };
 
