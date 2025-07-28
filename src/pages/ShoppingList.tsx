@@ -24,7 +24,7 @@ export default function ShoppingList() {
     <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32" dir="rtl">
       {/* Mobile header with centered button */}
       <div className="md:hidden px-4 pt-6 pb-8 text-center">
-        <h1 className="text-3xl font-bold mb-6">רשימות קניות</h1>
+        <h1 className="text-3xl font-bold mb-6 text-red-500">🔴 רשימות קניות - מובייל מעודכן</h1>
         <Button 
           onClick={() => createList.mutate()}
           className="w-full max-w-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg shadow-lg"
