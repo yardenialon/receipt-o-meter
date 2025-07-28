@@ -4,6 +4,7 @@ import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
 import { ProductsTable } from "@/components/products/ProductsTable";
 import { ProductsGrid } from "@/components/products/ProductsGrid";
+import { ProductImagesBulkUpload } from "@/components/products/ProductImagesBulkUpload";
 import { useProductsDisplay } from "@/hooks/useProductsDisplay";
 import { useProductsData } from "@/hooks/useProductsData";
 import { useShoppingListItems } from "@/hooks/useShoppingListItems";
@@ -72,6 +73,7 @@ export default function Products() {
     <div className="container py-8" dir="rtl">
       <ProductsHeader />
       <div className="space-y-8 mt-8">
+        <ProductImagesBulkUpload />
         <ProductsSearchBar 
           onSearch={handleSearch} 
           onViewChange={handleViewChange}
