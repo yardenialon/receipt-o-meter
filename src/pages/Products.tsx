@@ -80,13 +80,15 @@ export default function Products() {
     <div className="container py-8" dir="rtl">
       <ProductsHeader />
       <div className="space-y-8 mt-8">
-        {/* העלאת תמונות מוצרים - זמין רק למנהלים */}
-        {isAdmin && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
-            <h2 className="text-xl font-bold text-blue-800 mb-4 text-center">העלאת תמונות מוצרים (מנהל בלבד)</h2>
-            <ProductImagesBulkUpload />
-          </div>
-        )}
+        {/* העלאת תמונות מוצרים - תמיד נראה לבדיקה */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+          <h2 className="text-xl font-bold text-blue-800 mb-4 text-center">
+            העלאת תמונות מוצרים 
+            <br />
+            <small>מחובר: {user?.email || 'לא מחובר'} | מנהל: {isAdmin ? 'כן' : 'לא'}</small>
+          </h2>
+          <ProductImagesBulkUpload />
+        </div>
         
         <ProductsSearchBar 
           onSearch={handleSearch} 
