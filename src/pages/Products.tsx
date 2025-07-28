@@ -74,7 +74,11 @@ export default function Products() {
   // Check if user is admin (you can modify this logic based on your needs)
   const isAdmin = user?.email === 'yardenialon5@gmail.com'; // Replace with your admin email
   
-  console.log('User email:', user?.email, 'Is admin:', isAdmin); // Debug log
+  console.log('🔍 Debug Info:');
+  console.log('User object:', user);
+  console.log('User email:', user?.email);
+  console.log('Is admin:', isAdmin);
+  console.log('User authenticated:', !!user);
 
   return (
     <div className="container py-8" dir="rtl">
