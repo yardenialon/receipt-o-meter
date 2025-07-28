@@ -2,16 +2,21 @@
 export const securityHeaders = {
   'Content-Security-Policy': 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "script-src 'self' 'unsafe-inline'; " +
     "style-src 'self' 'unsafe-inline'; " +
     "img-src 'self' data: blob: https:; " +
     "font-src 'self' data:; " +
-    "connect-src 'self' https:; " +
-    "frame-ancestors 'none'",
+    "connect-src 'self' https://kthqkydgegsoheymesgc.supabase.co; " +
+    "frame-ancestors 'none'; " +
+    "base-uri 'self'; " +
+    "form-action 'self'; " +
+    "upgrade-insecure-requests",
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
+  'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
 } as const;
 
 export const corsHeaders = {
