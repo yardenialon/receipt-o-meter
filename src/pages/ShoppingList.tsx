@@ -47,9 +47,46 @@ export default function ShoppingList() {
         </Button>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        {/* Shopping lists column - takes full width on mobile, 1/3 on desktop */}
-        <div className="space-y-6 px-4 md:px-0 md:col-span-1 col-span-full">
+      {/* Mobile layout */}
+      <div className="md:hidden">
+        <div className="space-y-6 px-4">
+          {lists?.length === 0 ? (
+            <div className="bg-gray-50/50 rounded-lg p-8 text-center border border-dashed border-gray-200">
+              <p className="text-gray-500 mb-4">אין רשימות קניות</p>
+              <Button 
+                onClick={() => createList.mutate()}
+                variant="outline"
+                className="mx-auto"
+              >
+                <ListPlus className="h-4 w-4 ml-2" />
+                צור רשימה חדשה
+              </Button>
+            </div>
+          ) : (
+            <div>
+              {lists?.map((list, index) => (
+                <motion.div 
+                  key={list.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="mb-6"
+                >
+                  <ShoppingListContainer
+                    list={list}
+                    onDeleteList={(id) => deleteList.mutate(id)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop layout */}
+      <div className="hidden md:grid gap-8 md:grid-cols-3">
+        {/* Shopping lists column - takes 1/3 width */}
+        <div className="space-y-6 px-4 md:px-0">
           {lists?.length === 0 ? (
             <div className="bg-gray-50/50 rounded-lg p-8 text-center border border-dashed border-gray-200">
               <p className="text-gray-500 mb-4">אין רשימות קניות</p>
@@ -82,8 +119,8 @@ export default function ShoppingList() {
           )}
         </div>
 
-        {/* Price comparison column - hidden on mobile, takes 2/3 width on desktop */}
-        <div className="hidden md:block md:col-span-2 space-y-8 sticky top-8 px-4 md:px-0">
+        {/* Price comparison column - takes 2/3 width */}
+        <div className="col-span-2 space-y-8 sticky top-8 px-4 md:px-0">
           <ShoppingPriceComparison items={allItems} />
         </div>
       </div>
