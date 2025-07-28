@@ -73,7 +73,12 @@ export default function Products() {
     <div className="container py-8" dir="rtl">
       <ProductsHeader />
       <div className="space-y-8 mt-8">
-        <ProductImagesBulkUpload />
+        {/* העלאת תמונות מוצרים בכמויות גדולות */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+          <h2 className="text-xl font-bold text-blue-800 mb-4 text-center">העלאת תמונות מוצרים</h2>
+          <ProductImagesBulkUpload />
+        </div>
+        
         <ProductsSearchBar 
           onSearch={handleSearch} 
           onViewChange={handleViewChange}
