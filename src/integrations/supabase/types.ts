@@ -340,6 +340,7 @@ export type Database = {
           image_path: string
           is_primary: boolean | null
           product_code: string
+          product_name: string | null
           status: string | null
         }
         Insert: {
@@ -349,6 +350,7 @@ export type Database = {
           image_path: string
           is_primary?: boolean | null
           product_code: string
+          product_name?: string | null
           status?: string | null
         }
         Update: {
@@ -358,6 +360,7 @@ export type Database = {
           image_path?: string
           is_primary?: boolean | null
           product_code?: string
+          product_name?: string | null
           status?: string | null
         }
         Relationships: []

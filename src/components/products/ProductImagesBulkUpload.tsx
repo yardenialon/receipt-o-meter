@@ -98,13 +98,19 @@ export const ProductImagesBulkUpload = () => {
           <div className="flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-700">
-              <p className="font-medium mb-1">פורמט הקובץ הנדרש:</p>
-              <ul className="list-disc list-inside space-y-1">
+              <p className="font-medium mb-2">פורמט הקובץ הנדרש:</p>
+              <ul className="list-disc list-inside space-y-1 mb-3">
                 <li>קובץ CSV עם כותרות בשורה הראשונה</li>
-                <li>עמודה ראשונה: SKU (מק"ט המוצר)</li>
-                <li>עמודה שנייה: Product Name (שם המוצר)</li>
-                <li>עמודה שלישית: Image URL (URL של התמונה)</li>
+                <li>עמודה ראשונה: <strong>SKU</strong> (מק"ט המוצר)</li>
+                <li>עמודה שנייה: <strong>Product Name</strong> (שם המוצר)</li>
+                <li>עמודה שלישית: <strong>Image URL</strong> (URL של התמונה)</li>
               </ul>
+              <p className="text-xs text-blue-600 bg-blue-100 p-2 rounded">
+                <strong>דוגמה:</strong><br/>
+                SKU,Product Name,Image URL<br/>
+                12345,חלב תנובה 3%,https://example.com/image1.jpg<br/>
+                67890,לחם לבן,https://example.com/image2.png
+              </p>
             </div>
           </div>
         </div>
@@ -126,11 +132,13 @@ export const ProductImagesBulkUpload = () => {
           className="w-full"
         >
           {uploading ? 'מעבד...' : 'העלה תמונות'}
-          {/* Debug info */}
-          <span className="text-xs opacity-50 ml-2">
-            ({file ? 'קובץ נבחר' : 'אין קובץ'} | {uploading ? 'מעלה' : 'מוכן'})
-          </span>
         </Button>
+        
+        {file && !uploading && (
+          <div className="text-center text-sm text-green-600 bg-green-50 p-2 rounded">
+            ✅ קובץ נבחר: {file.name} | הכל מוכן להעלאה
+          </div>
+        )}
       </CardContent>
     </Card>
   );

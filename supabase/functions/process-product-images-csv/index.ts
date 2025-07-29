@@ -13,30 +13,50 @@ interface CSVRow {
 }
 
 function parseCSV(csvContent: string): CSVRow[] {
+  console.log('🔍 מתחיל לנתח CSV...');
   const lines = csvContent.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
+  console.log(`📊 נמצאו ${lines.length} שורות`);
+  
+  if (lines.length < 2) {
+    throw new Error('קובץ CSV חייב להכיל לפחות שורת כותרות ושורה אחת של נתונים');
+  }
+  
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  console.log('📋 כותרות:', headers);
   
   const rows: CSVRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
-    if (values.length >= 3) {
+    const line = lines[i].trim();
+    if (!line) continue; // דלג על שורות ריקות
+    
+    // התמודדות עם CSV עם גרשיים
+    const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+    console.log(`📝 שורה ${i}:`, values);
+    
+    if (values.length >= 3 && values[0] && values[1] && values[2]) {
       rows.push({
         productCode: values[0],
         productName: values[1],
         imageUrl: values[2]
       });
+    } else {
+      console.warn(`⚠️ שורה ${i} לא תקינה - חסרים נתונים:`, values);
     }
   }
   
+  console.log(`✅ נמצאו ${rows.length} מוצרים תקינים לעיבוד`);
   return rows;
 }
 
 async function downloadImage(url: string): Promise<Uint8Array> {
+  console.log(`🔽 מוריד תמונה: ${url}`);
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.statusText}`);
+    throw new Error(`Failed to download image from ${url}: ${response.status} ${response.statusText}`);
   }
-  return new Uint8Array(await response.arrayBuffer());
+  const arrayBuffer = await response.arrayBuffer();
+  console.log(`✅ הורדה הושלמה - גודל: ${arrayBuffer.byteLength} bytes`);
+  return new Uint8Array(arrayBuffer);
 }
 
 function getImageExtension(url: string, contentType?: string): string {
@@ -83,12 +103,19 @@ serve(async (req) => {
 
     for (const row of rows) {
       try {
-        console.log(`מעבד מוצר: ${row.productCode} - ${row.productName}`);
+        console.log(`🔄 מעבד מוצר ${progress.processed + 1}/${rows.length}: ${row.productCode} - ${row.productName}`);
+        
+        // בדיקת URL תקין
+        if (!row.imageUrl.startsWith('http')) {
+          throw new Error(`URL לא תקין: ${row.imageUrl}`);
+        }
         
         // Download image
         const imageData = await downloadImage(row.imageUrl);
         const extension = getImageExtension(row.imageUrl);
-        const fileName = `${row.productCode}.${extension}`;
+        const fileName = `${row.productCode}_${Date.now()}.${extension}`;
+        
+        console.log(`📤 מעלה לאחסון: ${fileName}`);
         
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -99,23 +126,27 @@ serve(async (req) => {
           });
 
         if (uploadError) {
-          console.error(`שגיאה בהעלאת תמונה עבור ${row.productCode}:`, uploadError);
+          console.error(`❌ שגיאה בהעלאת תמונה עבור ${row.productCode}:`, uploadError);
           progress.failed++;
         } else {
-          console.log(`הועלתה תמונה בהצלחה עבור ${row.productCode}: ${uploadData.path}`);
+          console.log(`✅ הועלתה תמונה בהצלחה עבור ${row.productCode}: ${uploadData.path}`);
           
           // Insert/update product image record
+          console.log(`💾 שומר במסד נתונים עבור ${row.productCode}`);
           const { error: dbError } = await supabase
             .from('product_images')
             .upsert({
               product_code: row.productCode,
               product_name: row.productName,
               image_path: uploadData.path,
-              is_primary: true
+              is_primary: true,
+              status: 'active'
+            }, {
+              onConflict: 'product_code'
             });
 
           if (dbError) {
-            console.error(`שגיאה בשמירת מידע במסד נתונים עבור ${row.productCode}:`, dbError);
+            console.error(`❌ שגיאה בשמירת מידע במסד נתונים עבור ${row.productCode}:`, dbError);
             
             // Clean up uploaded file if DB insert failed
             await supabase.storage
@@ -124,15 +155,21 @@ serve(async (req) => {
               
             progress.failed++;
           } else {
+            console.log(`✅ נשמר במסד נתונים בהצלחה עבור ${row.productCode}`);
             progress.succeeded++;
           }
         }
       } catch (error) {
-        console.error(`שגיאה בעיבוד מוצר ${row.productCode}:`, error);
+        console.error(`❌ שגיאה בעיבוד מוצר ${row.productCode}:`, error);
         progress.failed++;
       }
       
       progress.processed++;
+      
+      // עדכון ביניים כל 5 מוצרים
+      if (progress.processed % 5 === 0) {
+        console.log(`📊 התקדמות: ${progress.processed}/${rows.length} - הצליחו: ${progress.succeeded}, נכשלו: ${progress.failed}`);
+      }
     }
 
     console.log('סיום עיבוד:', progress);
