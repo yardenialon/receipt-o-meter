@@ -1,21 +1,29 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Package2, LogOut, ListCheck } from 'lucide-react';
+import { Home, Package2, LogOut, ListCheck, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export const MobileNav = () => {
+  const { isAdmin, role, isLoading } = useUserRole();
+  const location = useLocation();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  console.log('📱 MobileNav component state:', { isAdmin, role, isLoading });
+  
   const links = [
     { href: '/', label: 'ראשי', icon: Home },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימות', icon: ListCheck },
+    ...(isAdmin ? [{ href: '/admin', label: 'מנהל', icon: Settings }] : []),
   ];
-  const location = useLocation();
-  const { signOut } = useAuth();
-  const navigate = useNavigate();
+  
+  console.log('📱 Mobile navigation links:', links.map(l => l.label));
 
   const handleLogout = async () => {
     try {
