@@ -1,4 +1,6 @@
 
+console.log('🔥 APP.TSX FILE IS LOADING!');
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/AppSidebar';
