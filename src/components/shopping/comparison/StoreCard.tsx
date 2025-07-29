@@ -52,9 +52,6 @@ export const StoreCard = ({
   const availableItems = comparison.items.filter(item => item.isAvailable);
   const totalItems = comparison.items.length;
   
-  // Display store name, use chainName if available as it's more likely to match our logo database
-  const displayStoreName = chainName || comparison.storeName;
-  
   // חישוב מספר סניפים
   const branchCount = comparison.branches ? 
     Object.values(comparison.branches).reduce((sum, branches) => sum + branches.length, 0) : 0;
@@ -69,13 +66,13 @@ export const StoreCard = ({
         <div className="space-y-4">
           <div className="flex flex-col items-center gap-2 text-center">
             <StoreLogo 
-              storeName={displayStoreName} 
+              storeName={chainName || comparison.storeName} 
               logoUrl={logoUrl}
               className="h-8 w-auto mb-1" 
             />
             
             <div className="text-base font-medium text-gray-700">
-              {displayStoreName}
+              {chainName || comparison.storeName}
             </div>
             
             {branchName && (

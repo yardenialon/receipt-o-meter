@@ -9,10 +9,8 @@ import Login from './pages/Login';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
-import Receipts from './pages/Receipts';
 import { ProductDetails } from './components/products/ProductDetails';
 
-// Protected Route component to handle auth checks
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
@@ -70,12 +68,6 @@ function App() {
                     <ShoppingList />
                   </ProtectedRoute>
                 } />
-                <Route path="/receipts" element={
-                  <ProtectedRoute>
-                    <Receipts />
-                  </ProtectedRoute>
-                } />
-                {/* Add a catch-all route to redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

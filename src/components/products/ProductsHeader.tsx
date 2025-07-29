@@ -1,3 +1,4 @@
+
 import { ShoppingCart } from 'lucide-react';
 
 export const ProductsHeader = () => {
@@ -8,6 +9,10 @@ export const ProductsHeader = () => {
           <ShoppingCart className="h-6 w-6 text-primary" />
         </div>
         <h1 className="text-2xl font-bold">מוצרים</h1>
+      </div>
+      
+      <div className="flex items-center text-sm text-gray-500">
+        <span>מציג מוצרים מכל הרשתות</span>
       </div>
     </div>
   );

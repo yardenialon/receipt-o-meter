@@ -1,159 +1,143 @@
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Image as ImageIcon, Heart } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 
 interface ProductsGridProps {
   products: Array<{
     productCode: string;
-    products: any[];
+    products: Array<{
+      product_code: string;
+      product_name: string;
+      price: number;
+      manufacturer?: string;
+      store_chain?: string;
+    }>;
   }>;
+  onAddToList?: (product: any) => void;
 }
 
-export const ProductsGrid = ({ products }: ProductsGridProps) => {
-  const navigate = useNavigate();
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [productImages, setProductImages] = useState<Record<string, string | null>>({});
+export const ProductsGrid = ({ products, onAddToList }: ProductsGridProps) => {
+  const [productImages, setProductImages] = useState<Record<string, string>>({});
 
-  // Helper function to safely format date
-  const safeFormatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return 'לא ידוע';
-    
-    try {
-      const date = new Date(dateStr);
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return 'לא ידוע';
-      }
-      return format(date, 'dd/MM/yy', { locale: he });
-    } catch (error) {
-      console.error('Invalid date format:', dateStr, error);
-      return 'לא ידוע';
-    }
-  };
-
-  // Fetch product images on component mount
   useEffect(() => {
-    const fetchImages = async () => {
-      const imagePromises = products.map(async ({ productCode }) => {
-        try {
-          const { data, error } = await supabase
-            .from('product_images')
-            .select('image_path')
-            .eq('product_code', productCode)
-            .eq('is_primary', true)
-            .maybeSingle();
-
-          if (error) {
-            console.error('Error fetching product image:', error);
-            return [productCode, null];
-          }
-
-          if (!data) return [productCode, null];
-
-          const { data: urlData } = supabase.storage
-            .from('product_images')
-            .getPublicUrl(data.image_path);
-
-          return [productCode, urlData.publicUrl];
-        } catch (error) {
-          console.error('Error getting product image:', error);
-          return [productCode, null];
+    // Fetch images for all products
+    const fetchProductImages = async () => {
+      if (!products || products.length === 0) return;
+      
+      const productCodes = products.map(item => item.productCode);
+      
+      try {
+        const { data, error } = await supabase
+          .from('product_images')
+          .select('product_code, image_path')
+          .in('product_code', productCodes)
+          .eq('is_primary', true);
+        
+        if (error) {
+          console.error('Error fetching product images:', error);
+          return;
         }
-      });
-
-      const results = await Promise.all(imagePromises);
-      const imagesMap = results.reduce((acc, [code, url]) => {
-        acc[code as string] = url;
-        return acc;
-      }, {} as Record<string, string | null>);
-
-      setProductImages(imagesMap);
+        
+        // Create a map of product codes to image URLs
+        const imagesMap: Record<string, string> = {};
+        
+        for (const item of data || []) {
+          const imageUrl = supabase.storage
+            .from('product_images')
+            .getPublicUrl(item.image_path).data.publicUrl;
+          
+          imagesMap[item.product_code] = imageUrl;
+        }
+        
+        setProductImages(imagesMap);
+      } catch (error) {
+        console.error('Failed to fetch product images:', error);
+      }
     };
-
-    fetchImages();
+    
+    fetchProductImages();
   }, [products]);
 
-  const handleImageError = (productCode: string) => {
-    setImageErrors(prev => ({ ...prev, [productCode]: true }));
-  };
-
-  const handleCardClick = (productCode: string) => {
-    navigate(`/products/${productCode}`);
-  };
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">לא נמצאו מוצרים</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {products.map(({ productCode, products }) => {
-        const baseProduct = products[0];
-        const prices = products.map(p => p.price).filter(price => price > 0);
-        const lowestPrice = prices.length > 0 ? Math.min(...prices) : null;
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" dir="rtl">
+      {products.map((item) => {
+        const product = item.products[0]; // Use the first product for display
+        const imageUrl = productImages[item.productCode];
         
-        // Safely calculate latest update date
-        let latestUpdateString;
-        try {
-          const validDates = products
-            .map(p => new Date(p.price_update_date))
-            .filter(date => !isNaN(date.getTime()));
-            
-          const latestUpdate = validDates.length > 0 
-            ? new Date(Math.max(...validDates.map(d => d.getTime())))
-            : new Date();
-            
-          latestUpdateString = safeFormatDate(latestUpdate.toISOString());
-        } catch(e) {
-          console.error('Error calculating latest update date:', e);
-          latestUpdateString = 'לא ידוע';
-        }
-        
-        // Calculate number of stores with this product
-        const storeCount = new Set(products.map(p => p.store_chain)).size;
-
         return (
-          <Card 
-            key={productCode}
-            className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleCardClick(productCode)}
-          >
-            <div className="relative h-40 bg-gray-100">
-              {!imageErrors[productCode] ? (
-                <img
-                  src={productImages[productCode] || '/placeholder.svg'}
-                  alt={baseProduct.product_name}
-                  className="w-full h-full object-contain p-2"
-                  onError={() => handleImageError(productCode)}
+          <Card key={item.productCode} className="overflow-hidden flex flex-col relative group border-0 shadow-sm hover:shadow-md transition-all">
+            {/* Wishlist button */}
+            <button className="absolute top-2 right-2 p-1.5 bg-white rounded-full z-10 opacity-80 hover:opacity-100">
+              <Heart className="h-4 w-4 text-gray-400 hover:text-red-500 transition-colors" />
+            </button>
+            
+            <div className="aspect-square relative bg-gray-50 p-4">
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt={product.product_name}
+                  className="w-full h-full object-contain transition-transform group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
                 />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <p className="text-sm">אין תמונה</p>
+                <div className="flex items-center justify-center h-full">
+                  <ImageIcon className="h-12 w-12 text-gray-300" />
                 </div>
               )}
             </div>
-            <CardContent className="pt-4">
-              <p className="text-xs text-gray-500 mb-1">מק״ט: {productCode}</p>
-              <h3 className="font-medium text-sm line-clamp-2 h-10">{baseProduct.product_name}</h3>
-              {baseProduct.manufacturer && (
-                <p className="text-xs text-gray-500 mt-1">{baseProduct.manufacturer}</p>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between items-center pt-0">
-              <div>
-                {lowestPrice ? (
-                  <p className="font-bold text-red-600">₪{lowestPrice.toFixed(2)}</p>
-                ) : (
-                  <p className="text-gray-500 text-sm">מחיר לא זמין</p>
-                )}
-                <p className="text-xs text-gray-400">מתוך {storeCount} חנויות</p>
+            
+            <div className="p-4 flex-1 flex flex-col">
+              <div className="text-lg font-bold mb-1 text-primary-800">
+                ₪{product.price.toFixed(2)}
               </div>
-              <Badge variant="outline" className="text-xs">
-                {latestUpdateString}
-              </Badge>
-            </CardFooter>
+              
+              <h3 className="font-medium text-sm line-clamp-2 h-10 mb-2">{product.product_name}</h3>
+              
+              <div className="mt-auto text-xs text-gray-500">
+                {product.manufacturer && <p className="mb-1">{product.manufacturer}</p>}
+                
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-gray-400">קוד: {product.product_code}</p>
+                  
+                  {product.store_chain && (
+                    <span className="text-xs font-medium text-primary-600">
+                      {product.store_chain}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-gray-50 border-t">
+              <Button 
+                size="sm" 
+                className="w-full"
+                onClick={() => onAddToList && onAddToList({
+                  code: product.product_code,
+                  name: product.product_name,
+                  price: product.price
+                })}
+              >
+                <Plus className="h-4 w-4 ml-1" />
+                הוסף לסל
+              </Button>
+            </div>
           </Card>
         );
       })}

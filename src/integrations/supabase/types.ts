@@ -223,6 +223,45 @@ export type Database = {
           },
         ]
       }
+      price_updates: {
+        Row: {
+          chain_name: string
+          completed_at: string | null
+          error_log: Json | null
+          id: string
+          processed_products: number | null
+          processed_stores: number | null
+          started_at: string
+          status: string
+          total_products: number | null
+          total_stores: number | null
+        }
+        Insert: {
+          chain_name: string
+          completed_at?: string | null
+          error_log?: Json | null
+          id?: string
+          processed_products?: number | null
+          processed_stores?: number | null
+          started_at?: string
+          status?: string
+          total_products?: number | null
+          total_stores?: number | null
+        }
+        Update: {
+          chain_name?: string
+          completed_at?: string | null
+          error_log?: Json | null
+          id?: string
+          processed_products?: number | null
+          processed_stores?: number | null
+          started_at?: string
+          status?: string
+          total_products?: number | null
+          total_stores?: number | null
+        }
+        Relationships: []
+      }
       product_alternatives: {
         Row: {
           alternative_name: string

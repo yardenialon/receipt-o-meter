@@ -13,6 +13,11 @@ export function HeroSection() {
     navigate('/shopping-list');
   };
 
+  const handleSearch = (searchTerm: string) => {
+    console.log('Searching for:', searchTerm);
+    // Can implement actual search navigation if needed
+  };
+
   return (
     <div className="relative overflow-hidden bg-white py-16 sm:py-24">
       <div className="container mx-auto px-4">
@@ -28,6 +33,7 @@ export function HeroSection() {
           {/* חיפוש מרכזי */}
           <div className="w-full max-w-2xl mb-6 relative">
             <ProductsSearch 
+              onSearch={handleSearch}
               onProductSelect={(product) => {
                 console.log('Selected product:', product);
                 // ניתן להוסיף לוגיקה נוספת כאן

@@ -1,182 +1,114 @@
 
-import { useNavigate } from 'react-router-dom';
-import { ProductsHeader } from '@/components/products/ProductsHeader';
-import { ProductsTable } from '@/components/products/ProductsTable';
-import { ProductsGrid } from '@/components/products/ProductsGrid';
-import { ProductsSearchBar } from '@/components/products/ProductsSearchBar';
-import { Button } from '@/components/ui/button';
-import { 
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import { useProductsData } from '@/hooks/useProductsData';
-import { useProductsDisplay } from '@/hooks/useProductsDisplay';
+import { useState } from "react";
+import { ProductsHeader } from "@/components/products/ProductsHeader";
+import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
+import { ProductsTable } from "@/components/products/ProductsTable";
+import { ProductsGrid } from "@/components/products/ProductsGrid";
+import { useProductsDisplay } from "@/hooks/useProductsDisplay";
+import { useProductsData } from "@/hooks/useProductsData";
+import { useShoppingListItems } from "@/hooks/useShoppingListItems";
+import { toast } from "sonner";
+import { useShoppingLists } from "@/hooks/useShoppingLists";
+import { Button } from "@/components/ui/button";
+import { ArrowDown } from "lucide-react";
 
-const PRODUCTS_PER_PAGE = 50;
-
-const Products = () => {
-  const navigate = useNavigate();
+export default function Products() {
+  const [productsPerPage, setProductsPerPage] = useState(24);
   
   const { 
     currentPage, 
-    viewMode, 
-    searchTerm, 
-    expandedProducts,
-    handlePageChange,
-    handleSearch,
+    searchTerm,
+    viewMode,
+    expandedProducts, 
+    handlePageChange, 
+    handleSearch, 
     handleViewChange,
-    handleToggleExpand,
-    getPageNumbers
+    handleToggleExpand 
   } = useProductsDisplay();
   
-  const {
-    loading,
-    totalProducts,
+  const { 
     productsByCategory,
     flattenedProducts,
-    fetchProducts
+    loading,
+    totalProducts
   } = useProductsData({ 
     currentPage, 
-    searchTerm, 
-    productsPerPage: PRODUCTS_PER_PAGE 
+    searchTerm,
+    productsPerPage
   });
 
-  const handleRowClick = (productCode: string) => {
-    navigate(`/products/${productCode}`);
+  // Get shopping lists to add products to
+  const { lists } = useShoppingLists();
+  // Add product to shopping list functionality
+  const { addItem } = useShoppingListItems();
+
+  const handleAddToShoppingList = (product: any) => {
+    if (!lists || lists.length === 0) {
+      toast.error("אין רשימות קניות זמינות. אנא צור רשימה חדשה קודם.");
+      return;
+    }
+
+    // Use the first list by default
+    const listId = lists[0].id;
+    
+    addItem.mutate({
+      listId: listId,
+      name: product.name || product.product_name,
+      productCode: product.code || product.product_code
+    }, {
+      onSuccess: () => {
+        toast.success(`המוצר "${product.name || product.product_name}" נוסף לרשימת הקניות`);
+      }
+    });
   };
 
-  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+  const handleLoadMore = () => {
+    setProductsPerPage(prevValue => prevValue + 24);
+  };
+
+  const hasMoreProducts = flattenedProducts.length < totalProducts;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container py-8" dir="rtl">
       <ProductsHeader />
-      
-      <ProductsSearchBar 
-        onSearch={handleSearch}
-        onViewChange={handleViewChange}
-        currentView={viewMode}
-      />
-      
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-2">טוען מוצרים...</p>
-        </div>
-      ) : flattenedProducts.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">לא נמצאו מוצרים</p>
-          <Button 
-            className="mt-4"
-            onClick={() => {
-              handleSearch('');
-              fetchProducts();
-            }}
-          >
-            נסה שוב
-          </Button>
-        </div>
-      ) : (
-        <>
-          {viewMode === 'list' ? (
-            <ProductsTable 
-              productsByCategory={productsByCategory} 
-              expandedProducts={expandedProducts}
-              onToggleExpand={handleToggleExpand}
-              onRowClick={handleRowClick}
+      <div className="space-y-8 mt-8">
+        <ProductsSearchBar 
+          onSearch={handleSearch} 
+          onViewChange={handleViewChange}
+          currentView={viewMode}
+        />
+        
+        {viewMode === 'list' ? (
+          <ProductsTable 
+            productsByCategory={productsByCategory || {}}
+            expandedProducts={expandedProducts}
+            onToggleExpand={handleToggleExpand}
+            loading={loading}
+            onSelectProduct={handleAddToShoppingList}
+          />
+        ) : (
+          <div className="space-y-6">
+            <ProductsGrid 
+              products={flattenedProducts || []} 
+              onAddToList={handleAddToShoppingList}
             />
-          ) : (
-            <ProductsGrid products={flattenedProducts} />
-          )}
-          
-          {totalPages > 1 && (
-            <Pagination className="mt-6 flex justify-center">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage > 1) handlePageChange(currentPage - 1);
-                    }} 
-                    className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
-                  />
-                </PaginationItem>
-                
-                {currentPage > 3 && (
-                  <>
-                    <PaginationItem>
-                      <PaginationLink 
-                        href="#" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(1);
-                        }}
-                      >
-                        1
-                      </PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  </>
-                )}
-                
-                {getPageNumbers(totalPages).map(page => (
-                  <PaginationItem key={page}>
-                    <PaginationLink 
-                      href="#" 
-                      isActive={page === currentPage}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePageChange(page);
-                      }}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                
-                {currentPage < totalPages - 2 && (
-                  <>
-                    <PaginationItem>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink 
-                        href="#" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(totalPages);
-                        }}
-                      >
-                        {totalPages}
-                      </PaginationLink>
-                    </PaginationItem>
-                  </>
-                )}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                    }}
-                    className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </>
-      )}
+
+            {hasMoreProducts && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  onClick={handleLoadMore} 
+                  variant="outline" 
+                  className="gap-2"
+                  disabled={loading}
+                >
+                  {loading ? 'טוען...' : 'הצג עוד מוצרים'}
+                  {!loading && <ArrowDown className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
-
-export default Products;

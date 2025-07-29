@@ -11,7 +11,7 @@ export const useProductsDisplay = ({
   onSearchTermChange 
 }: UseProductsDisplayProps = {}) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid'); // Default to grid view
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedProducts, setExpandedProducts] = useState<Record<string, { expanded: boolean }>>({});
 
