@@ -37,7 +37,7 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
           store_id,
           manufacturer
         `)
-        .or(`product_name.ilike.%${debouncedSearch}%,product_code.ilike.%${debouncedSearch}%`)
+        .or(`product_name.ilike.%${debouncedSearch}%,product_code.eq.${debouncedSearch}`)
         .limit(50);
 
       if (error) {
