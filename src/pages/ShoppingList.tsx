@@ -21,12 +21,13 @@ export default function ShoppingList() {
   }
 
   return (
-    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32" dir="rtl">
-      <div className="flex items-center justify-between mb-8 px-4 md:px-0">
-        <h1 className="text-3xl font-bold">רשימות קניות</h1>
+    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32 pt-4" dir="rtl">
+      {/* Header with title and new list button */}
+      <div className="mb-6 px-4 md:px-0">
+        <h1 className="text-3xl font-bold mb-4">רשימות קניות</h1>
         <Button 
           onClick={() => createList.mutate()}
-          className="bg-primary-500 hover:bg-primary-600 shadow-sm"
+          className="w-full md:w-auto bg-primary-500 hover:bg-primary-600 shadow-sm"
         >
           <ListPlus className="h-5 w-5 ml-2" />
           רשימה חדשה
@@ -35,7 +36,7 @@ export default function ShoppingList() {
 
       <div className="grid gap-8 md:grid-cols-3">
         {/* Shopping lists column - takes 1/3 width */}
-        <div className="space-y-6 px-4 md:px-0">
+        <div className="space-y-6">
           {lists?.length === 0 ? (
             <div className="bg-gray-50/50 rounded-lg p-8 text-center border border-dashed border-gray-200">
               <p className="text-gray-500 mb-4">אין רשימות קניות</p>
@@ -69,7 +70,7 @@ export default function ShoppingList() {
         </div>
 
         {/* Price comparison column - takes 2/3 width */}
-        <div className="col-span-2 space-y-8 sticky top-8 px-4 md:px-0">
+        <div className="col-span-2 space-y-8 sticky top-8">
           <ShoppingPriceComparison items={allItems} />
         </div>
       </div>
