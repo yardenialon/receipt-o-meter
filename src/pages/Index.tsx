@@ -9,8 +9,8 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       {/* בדיקת שינוי - הקוד נטען בהצלחה! */}
-      <div className="bg-red-600 text-white text-center py-8 font-bold text-2xl animate-pulse">
-        🚨 בדיקה: הקוד עובד! זמן: {new Date().toLocaleTimeString()} 🚨
+      <div className="bg-blue-600 text-white text-center py-8 font-bold text-2xl">
+        🔧 הוספתי עמוד קבלות לתפריט - זמן: {new Date().toLocaleTimeString()} 🔧
       </div>
       {/* Hero Section */}
       <HeroSection />
