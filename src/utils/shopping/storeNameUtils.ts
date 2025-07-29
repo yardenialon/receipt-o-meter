@@ -1,43 +1,86 @@
 
-import { Product } from '@/types/shopping';
-
 // פונקציה לנרמול שם רשת
 export const normalizeChainName = (storeName: string): string => {
   if (!storeName) return '';
   
   const normalizedName = storeName.toLowerCase().trim();
   
-  const yochananofVariations = [
-    'yochananof', 'יוחננוף', 'יוחנונוף', 'יוחננוב',
-    'יוחננוף טוב טעם', 'יוחננוף טוב טעם בעמ', 'טוב טעם יוחננוף',
-    'טוב טעם', 'tov taam', 'tovtaam', 'טוב טעם בעמ', 'טוב טעם רשת'
-  ];
-
-  const ramiLevyVariations = [
-    'רמי לוי', 'rami levy', 'רמי לוי שיווק השקמה',
-    'שיווק השקמה', 'רמי לוי שיווק השיקמה', 'רמי לוי סניף'
-  ];
-
-  const shufersalVariations = [
-    'שופרסל', 'shufersal', 'שופרסל אונליין',
-    'שופרסל דיל', 'שופרסל שלי', 'שופרסל אקספרס'
-  ];
-  
-  const yeinotBitanVariations = [
-    'יינות ביתן', 'yeinot bitan', 'ינות ביתן', 'יינות',
-    'ינות', 'bitan', 'ביתן', 'יינות-ביתן', 'יינות_ביתן',
-    'megamart', 'מגה מרט', 'מגהמרט'
-  ];
-
-  if (yochananofVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  // Map specific variations to their canonical store names
+  if (normalizedName.includes('יוחננוף') || normalizedName.includes('טוב טעם יוחננוף') || 
+      normalizedName.includes('יוחננוב') || normalizedName.includes('יוחנונוף')) {
     return 'יוחננוף';
-  } else if (ramiLevyVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('רמי לוי') || normalizedName.includes('שיווק השקמה')) {
     return 'רמי לוי';
-  } else if (shufersalVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('שופרסל') || normalizedName.includes('shufersal')) {
     return 'שופרסל';
-  } else if (yeinotBitanVariations.some(variant => normalizedName.includes(variant.toLowerCase()))) {
+  }
+  
+  if (normalizedName.includes('טיב טעם') && !normalizedName.includes('יוחננוף')) {
+    return 'טיב טעם';
+  }
+  
+  if (normalizedName.includes('חצי חינם')) {
+    return 'חצי חינם';
+  }
+  
+  if (normalizedName.includes('משנת יוסף')) {
+    return 'משנת יוסף';
+  }
+  
+  if (normalizedName.includes('יינות ביתן')) {
     return 'יינות ביתן';
   }
+  
+  if (normalizedName.includes('קרפור') || normalizedName.includes('קארפור') || 
+      normalizedName.includes('carrefour') || normalizedName.includes('כרפור')) {
+    return 'קרפור';
+  }
+  
+  if (normalizedName.includes('ויקטורי')) {
+    return 'ויקטורי';
+  }
+  
+  if (normalizedName.includes('אושר עד')) {
+    return 'אושר עד';
+  }
+  
+  if (normalizedName.includes('מחסני השוק')) {
+    return 'מחסני השוק';
+  }
+  
+  if (normalizedName.includes('סופר פארם') || normalizedName.includes('super pharm') || 
+      normalizedName.includes('super-pharm') || normalizedName.includes('סופרפארם')) {
+    return 'סופר פארם';
+  }
+  
+  if (normalizedName.includes('קינג סטור') || normalizedName.includes('king store')) {
+    return 'קינג סטור';
+  }
+  
+  if (normalizedName.includes('זול ובגדול')) {
+    return 'זול ובגדול';
+  }
+  
+  if (normalizedName.includes('נתיב החסד')) {
+    return 'נתיב החסד';
+  }
+  
+  if (normalizedName.includes('פרש מרקט') || normalizedName.includes('fresh market')) {
+    return 'פרש מרקט';
+  }
+  
+  if (normalizedName.includes('קשת טעמים')) {
+    return 'קשת טעמים';
+  }
+  
+  if (normalizedName.includes('סופר יהודה')) {
+    return 'סופר יהודה';
+  }
 
+  // Return original if no mapping found
   return storeName;
 };

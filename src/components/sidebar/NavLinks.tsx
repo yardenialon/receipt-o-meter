@@ -1,11 +1,10 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Package2, LogOut, ListCheck, Settings } from 'lucide-react';
+import { Home, BarChart2, Package2, LogOut, ListCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -51,10 +50,7 @@ export const NavLink = ({ href, label, icon: Icon }: NavLinkProps) => {
 
 export const NavLinks = () => {
   const { signOut } = useAuth();
-  const { isAdmin, role, isLoading } = useUserRole();
   const navigate = useNavigate();
-  
-  console.log('🔗 NavLinks component state:', { isAdmin, role, isLoading });
 
   const handleLogout = async () => {
     try {
@@ -68,12 +64,10 @@ export const NavLinks = () => {
 
   const links = [
     { href: '/', label: 'ראשי', icon: Home },
+    { href: '/analytics', label: 'ניתוח', icon: BarChart2 },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },
-    ...(isAdmin ? [{ href: '/admin', label: 'דשבורד מנהל', icon: Settings }] : []),
   ];
-  
-  console.log('📋 Navigation links:', links.map(l => l.label));
 
   return (
     <div className="space-y-1">

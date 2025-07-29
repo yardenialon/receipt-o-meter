@@ -1,53 +1,28 @@
 
-console.log('🔥 APP.TSX FILE IS LOADING!');
-
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserRole } from '@/hooks/useUserRole';
 import Index from './pages/Index';
 import Login from './pages/Login';
+import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
-import { AdminDashboard } from './pages/AdminDashboard';
 import { ProductDetails } from './components/products/ProductDetails';
 
+// Protected Route component to handle auth checks
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse">טוען...</div>
+      טוען...
     </div>;
   }
   
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  const { isAdmin, isLoading: roleLoading, role } = useUserRole();
-  
-  console.log('🔐 AdminRoute check:', { user: !!user, isLoading, roleLoading, isAdmin, role });
-  
-  if (isLoading || roleLoading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse">טוען...</div>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -55,8 +30,8 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { user } = useAuth();
-  
-  console.log('🎯 App component - user exists:', !!user);
+
+  console.log("Current authenticated user:", user);
 
   return (
     <Router>
@@ -74,6 +49,11 @@ function App() {
                     <Index />
                   </ProtectedRoute>
                 } />
+                <Route path="/analytics" element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } />
                 <Route path="/products" element={
                   <ProtectedRoute>
                     <Products />
@@ -89,11 +69,7 @@ function App() {
                     <ShoppingList />
                   </ProtectedRoute>
                 } />
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } />
+                {/* Add a catch-all route to redirect to home */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

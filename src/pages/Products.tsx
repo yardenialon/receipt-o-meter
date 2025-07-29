@@ -1,138 +1,182 @@
 
-import { useState } from "react";
-import { ProductsHeader } from "@/components/products/ProductsHeader";
-import { ProductsSearchBar } from "@/components/products/ProductsSearchBar";
-import { ProductsTable } from "@/components/products/ProductsTable";
-import { ProductsGrid } from "@/components/products/ProductsGrid";
-import { ProductImagesBulkUpload } from "@/components/products/ProductImagesBulkUpload";
-import { useProductsDisplay } from "@/hooks/useProductsDisplay";
-import { useProductsData } from "@/hooks/useProductsData";
-import { useShoppingListItems } from "@/hooks/useShoppingListItems";
-import { useAuth } from "@/hooks/use-auth";
-import { toast } from "sonner";
-import { useShoppingLists } from "@/hooks/useShoppingLists";
-import { Button } from "@/components/ui/button";
-import { ArrowDown } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { ProductsHeader } from '@/components/products/ProductsHeader';
+import { ProductsTable } from '@/components/products/ProductsTable';
+import { ProductsGrid } from '@/components/products/ProductsGrid';
+import { ProductsSearchBar } from '@/components/products/ProductsSearchBar';
+import { Button } from '@/components/ui/button';
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useProductsData } from '@/hooks/useProductsData';
+import { useProductsDisplay } from '@/hooks/useProductsDisplay';
 
-export default function Products() {
-  const { user } = useAuth();
-  const [productsPerPage, setProductsPerPage] = useState(24);
+const PRODUCTS_PER_PAGE = 50;
+
+const Products = () => {
+  const navigate = useNavigate();
   
   const { 
     currentPage, 
-    searchTerm,
-    viewMode,
-    expandedProducts, 
-    handlePageChange, 
-    handleSearch, 
+    viewMode, 
+    searchTerm, 
+    expandedProducts,
+    handlePageChange,
+    handleSearch,
     handleViewChange,
-    handleToggleExpand 
+    handleToggleExpand,
+    getPageNumbers
   } = useProductsDisplay();
   
-  const { 
+  const {
+    loading,
+    totalProducts,
     productsByCategory,
     flattenedProducts,
-    loading,
-    totalProducts
+    fetchProducts
   } = useProductsData({ 
     currentPage, 
-    searchTerm,
-    productsPerPage
+    searchTerm, 
+    productsPerPage: PRODUCTS_PER_PAGE 
   });
 
-  // Get shopping lists to add products to
-  const { lists } = useShoppingLists();
-  // Add product to shopping list functionality
-  const { addItem } = useShoppingListItems();
-
-  const handleAddToShoppingList = (product: any) => {
-    if (!lists || lists.length === 0) {
-      toast.error("אין רשימות קניות זמינות. אנא צור רשימה חדשה קודם.");
-      return;
-    }
-
-    // Use the first list by default
-    const listId = lists[0].id;
-    
-    addItem.mutate({
-      listId: listId,
-      name: product.name || product.product_name,
-      productCode: product.code || product.product_code
-    }, {
-      onSuccess: () => {
-        toast.success(`המוצר "${product.name || product.product_name}" נוסף לרשימת הקניות`);
-      }
-    });
+  const handleRowClick = (productCode: string) => {
+    navigate(`/products/${productCode}`);
   };
 
-  const handleLoadMore = () => {
-    setProductsPerPage(prevValue => prevValue + 24);
-  };
-
-  const hasMoreProducts = flattenedProducts.length < totalProducts;
-  
-  // Check if user is admin (you can modify this logic based on your needs)
-  const isAdmin = user?.email === 'yardenialon5@gmail.com'; // Replace with your admin email
-  
-  console.log('🔍 Debug Info:');
-  console.log('User object:', user);
-  console.log('User email:', user?.email);
-  console.log('Is admin:', isAdmin);
-  console.log('User authenticated:', !!user);
+  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
 
   return (
-    <div className="container py-8" dir="rtl">
+    <div className="p-6 space-y-6">
       <ProductsHeader />
-      <div className="space-y-8 mt-8">
-        {/* העלאת תמונות מוצרים - מופיע תמיד */}
-        <div className="bg-red-100 border-2 border-red-500 p-6 rounded-lg">
-          <h2 className="text-xl font-bold text-red-800 mb-4 text-center">
-            🔧 בדיקה: העלאת תמונות מוצרים
-          </h2>
-          <div className="text-center mb-4">
-            <p>מחובר: {user?.email || 'לא מחובר'}</p>
-            <p>מנהל: {isAdmin ? 'כן ✅' : 'לא ❌'}</p>
-          </div>
-          <ProductImagesBulkUpload />
+      
+      <ProductsSearchBar 
+        onSearch={handleSearch}
+        onViewChange={handleViewChange}
+        currentView={viewMode}
+      />
+      
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+          <p className="mt-2">טוען מוצרים...</p>
         </div>
-        
-        <ProductsSearchBar 
-          onSearch={handleSearch} 
-          onViewChange={handleViewChange}
-          currentView={viewMode}
-        />
-        
-        {viewMode === 'list' ? (
-          <ProductsTable 
-            productsByCategory={productsByCategory || {}}
-            expandedProducts={expandedProducts}
-            onToggleExpand={handleToggleExpand}
-            loading={loading}
-            onSelectProduct={handleAddToShoppingList}
-          />
-        ) : (
-          <div className="space-y-6">
-            <ProductsGrid 
-              products={flattenedProducts || []} 
-              onAddToList={handleAddToShoppingList}
+      ) : flattenedProducts.length === 0 ? (
+        <div className="text-center py-10">
+          <p className="text-gray-500">לא נמצאו מוצרים</p>
+          <Button 
+            className="mt-4"
+            onClick={() => {
+              handleSearch('');
+              fetchProducts();
+            }}
+          >
+            נסה שוב
+          </Button>
+        </div>
+      ) : (
+        <>
+          {viewMode === 'list' ? (
+            <ProductsTable 
+              productsByCategory={productsByCategory} 
+              expandedProducts={expandedProducts}
+              onToggleExpand={handleToggleExpand}
+              onRowClick={handleRowClick}
             />
-
-            {hasMoreProducts && (
-              <div className="flex justify-center mt-6">
-                <Button 
-                  onClick={handleLoadMore} 
-                  variant="outline" 
-                  className="gap-2"
-                  disabled={loading}
-                >
-                  {loading ? 'טוען...' : 'הצג עוד מוצרים'}
-                  {!loading && <ArrowDown className="h-4 w-4" />}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          ) : (
+            <ProductsGrid products={flattenedProducts} />
+          )}
+          
+          {totalPages > 1 && (
+            <Pagination className="mt-6 flex justify-center">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) handlePageChange(currentPage - 1);
+                    }} 
+                    className={currentPage === 1 ? "opacity-50 pointer-events-none" : ""}
+                  />
+                </PaginationItem>
+                
+                {currentPage > 3 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationLink 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(1);
+                        }}
+                      >
+                        1
+                      </PaginationLink>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  </>
+                )}
+                
+                {getPageNumbers(totalPages).map(page => (
+                  <PaginationItem key={page}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={page === currentPage}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                {currentPage < totalPages - 2 && (
+                  <>
+                    <PaginationItem>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationLink 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(totalPages);
+                        }}
+                      >
+                        {totalPages}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </>
+                )}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                    }}
+                    className={currentPage === totalPages ? "opacity-50 pointer-events-none" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
+      )}
     </div>
   );
 };
+
+export default Products;

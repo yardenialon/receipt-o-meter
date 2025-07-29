@@ -6,19 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useQuery } from '@tanstack/react-query';
 
-interface ProductsSearchProps {
-  onSearch: (searchTerm: string) => void;
+interface ProductSearchProps {
   onProductSelect?: (product: { name: string; product_code?: string | null }) => void;
-  placeholder?: string;
-  className?: string;
 }
 
-export const ProductsSearch = ({ 
-  onSearch, 
-  onProductSelect,
-  placeholder = "חפש מוצר...",
-  className = ""
-}: ProductsSearchProps) => {
+export const ProductsSearch = ({ onProductSelect }: ProductSearchProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
@@ -67,10 +59,10 @@ export const ProductsSearch = ({
     <div className="relative">
       <Input
         type="search"
-        placeholder={placeholder}
+        placeholder="חפש מוצר..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className={className}
+        className="w-full"
         dir="rtl"
       />
       <SearchResults

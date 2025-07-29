@@ -9,13 +9,12 @@ export const AuthSection = () => {
 
   return (
     <motion.div 
-      className="w-full max-w-md mx-auto mb-4 md:mb-6"
+      className="w-full max-w-md mx-auto px-2 md:px-0 mb-4 md:mb-6"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.3 }}
+      transition={{ delay: 0.6 }}
     >
-      <div className="relative bg-white/70 backdrop-blur-xl rounded-2xl p-2 md:p-6 shadow-2xl border border-white/20">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-400/5 via-blue-400/5 to-indigo-400/5 rounded-2xl" />
+      <div className="bg-white/70 backdrop-blur-xl rounded-2xl p-2 md:p-6 shadow-2xl border border-white/20">
         <Auth
           supabaseClient={supabase}
           appearance={{

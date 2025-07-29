@@ -12,12 +12,30 @@ const Login = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuth();
 
-  // Simple redirect when user is authenticated
   useEffect(() => {
     if (user && !isLoading) {
       navigate('/', { replace: true });
     }
   }, [user, isLoading, navigate]);
+
+  useEffect(() => {
+    const handleAuthChange = (event: string) => {
+      if (event === 'SIGNED_IN') {
+        window.history.replaceState({}, document.title, '/login');
+        toast.success('התחברת בהצלחה!');
+        navigate('/', { replace: true });
+      }
+      if (event === 'SIGNED_OUT') {
+        toast.info('התנתקת בהצלחה');
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   if (isLoading) {
     return (

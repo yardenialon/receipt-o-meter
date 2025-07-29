@@ -3,25 +3,27 @@ import { StoreLogo } from '@/components/shopping/comparison/StoreLogo';
 import { StoreChain } from './utils/storeChainUtils';
 
 interface LogoItemProps {
-  store: StoreChain & { key: string };
+  store: StoreChain;
   visibleLogos: number;
 }
 
 export function LogoItem({ store, visibleLogos }: LogoItemProps) {
+  // Make sure to see what's being rendered
+  console.log('Rendering LogoItem:', { store });
+  
   return (
     <div 
-      className="flex-shrink-0 flex flex-col items-center justify-center"
+      className="flex-shrink-0 flex flex-col items-center justify-center px-2"
       style={{ width: `${100 / visibleLogos}%` }}
     >
-      <div className="h-16 w-full flex items-center justify-center group cursor-pointer">
-        <div className="bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center transition-all group-hover:scale-105 hover:shadow-md">
-          <StoreLogo 
-            storeName={store.name} 
-            className="h-10 max-w-full object-contain" 
-          />
-        </div>
+      <div className="h-16 w-16 mx-auto bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center overflow-hidden">
+        <StoreLogo 
+          storeName={store.name} 
+          className="h-12 w-12 object-contain"
+          logoUrl={store.logo_url} 
+        />
       </div>
-      <span className="mt-1 text-xs md:text-sm text-center text-gray-700 truncate max-w-[90%]">
+      <span className="mt-2 text-sm text-center text-gray-700 truncate w-full">
         {store.name}
       </span>
     </div>

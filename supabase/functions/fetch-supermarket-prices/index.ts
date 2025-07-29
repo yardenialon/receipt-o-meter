@@ -27,7 +27,6 @@ serve(async (req) => {
       .insert({
         status: 'processing',
         started_at: new Date().toISOString(),
-        chain_name: 'various',
       })
       .select()
       .single()
