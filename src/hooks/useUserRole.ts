@@ -7,6 +7,8 @@ export function useUserRole() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
+  console.log('🚀 useUserRole hook is RUNNING - user:', user?.email);
+
   useEffect(() => {
     const fetchUserRole = async () => {
       console.log('🔍 Fetching user role for user:', user?.id);

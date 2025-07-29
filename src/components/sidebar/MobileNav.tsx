@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export const MobileNav = () => {
+  console.log('🚀 MobileNav component is RENDERING');
   const { isAdmin, role, isLoading } = useUserRole();
   const location = useLocation();
   const { signOut } = useAuth();
