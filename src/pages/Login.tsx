@@ -15,28 +15,9 @@ const Login = () => {
   // Simple redirect when user is authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      console.log('User authenticated, redirecting to home');
       navigate('/', { replace: true });
     }
   }, [user, isLoading, navigate]);
-
-  // Simplified auth change handler
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      if (event === 'SIGNED_IN' && session?.user) {
-        toast.success('התחברת בהצלחה!');
-        navigate('/', { replace: true });
-      }
-      if (event === 'SIGNED_OUT') {
-        toast.info('התנתקת בהצלחה');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
 
   if (isLoading) {
     return (
