@@ -22,7 +22,7 @@ export function HeroSection() {
     <div className="relative overflow-hidden bg-white py-16 sm:py-24">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center justify-center text-center">
-          <SavvyLogo size={120} className="mb-6" />
+          <SavvyLogo size={240} className="mb-6" />
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl mb-6">
             <span className="block text-primary-600">זהו את המחירים המשתלמים</span>
           </h1>
