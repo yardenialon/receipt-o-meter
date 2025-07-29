@@ -5,6 +5,7 @@ import { Home, Package2, LogOut, ListCheck, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -50,6 +51,7 @@ export const NavLink = ({ href, label, icon: Icon }: NavLinkProps) => {
 
 export const NavLinks = () => {
   const { signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -66,7 +68,7 @@ export const NavLinks = () => {
     { href: '/', label: 'ראשי', icon: Home },
     { href: '/products', label: 'מוצרים', icon: Package2 },
     { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },
-    { href: '/admin', label: 'דשבורד מנהל', icon: Settings },
+    ...(isAdmin ? [{ href: '/admin', label: 'דשבורד מנהל', icon: Settings }] : []),
   ];
 
   return (

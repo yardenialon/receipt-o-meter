@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
+import { useUserRole } from '@/hooks/useUserRole';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Products from './pages/Products';
@@ -22,6 +23,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
+  
+  if (isLoading || roleLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-pulse">טוען...</div>
+    </div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -62,9 +84,9 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                  <ProtectedRoute>
+                  <AdminRoute>
                     <AdminDashboard />
-                  </ProtectedRoute>
+                  </AdminRoute>
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
