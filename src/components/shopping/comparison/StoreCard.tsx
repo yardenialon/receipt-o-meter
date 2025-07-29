@@ -105,11 +105,6 @@ export const StoreCard = ({
             </div>
 
             <div className="flex flex-wrap justify-center gap-2">
-              {comparison.storeId && (
-                <Badge variant="outline" className="text-sm">
-                  סניף {comparison.storeId}
-                </Badge>
-              )}
               {isCheapest && isComplete && (
                 <Badge variant="outline" className="text-green-800 border-green-200 bg-green-50">
                   המחיר הזול ביותר
