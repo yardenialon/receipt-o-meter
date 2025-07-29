@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
+import Receipts from './pages/Receipts';
 import { ProductDetails } from './components/products/ProductDetails';
 
 // Protected Route component to handle auth checks
@@ -67,6 +68,11 @@ function App() {
                 <Route path="/shopping-list" element={
                   <ProtectedRoute>
                     <ShoppingList />
+                  </ProtectedRoute>
+                } />
+                <Route path="/receipts" element={
+                  <ProtectedRoute>
+                    <Receipts />
                   </ProtectedRoute>
                 } />
                 {/* Add a catch-all route to redirect to home */}
