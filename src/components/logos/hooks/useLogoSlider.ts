@@ -13,8 +13,12 @@ export function useLogoSlider() {
   const { data: storeChains, isLoading } = useQuery({
     queryKey: ['store-chains'],
     queryFn: fetchStoreChains,
-    initialData: fallbackStoreChains
+    initialData: fallbackStoreChains,
+    staleTime: 5 * 60 * 1000, // 5 דקות
+    gcTime: 10 * 60 * 1000 // 10 דקות
   });
+
+  console.log('Store chains data:', storeChains);
 
   // יצירת מערך כפול לאפקט אינסופי
   const duplicatedItems = useMemo(() => {
@@ -112,11 +116,14 @@ export function useLogoSlider() {
 
   // החזרת הפריטים לתצוגה
   const displayItems = useMemo(() => {
-    if (!storeChains || storeChains.length === 0) return [];
+    // אם אין נתונים בכלל, נשתמש בנתונים הסטטיים
+    const currentStoreChains = storeChains && storeChains.length > 0 ? storeChains : fallbackStoreChains;
+    
+    if (!currentStoreChains || currentStoreChains.length === 0) return [];
     
     // אם יש לנו פחות פריטים מהמספר הנראה, נחזיר את כל הפריטים
-    if (storeChains.length <= visibleLogos) {
-      return storeChains.map((store, i) => ({
+    if (currentStoreChains.length <= visibleLogos) {
+      return currentStoreChains.map((store, i) => ({
         ...store,
         key: `visible-${store.id}-${i}`
       }));
