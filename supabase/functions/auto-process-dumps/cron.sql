@@ -12,7 +12,10 @@ select
     select
       net.http_post(
         url:='https://kthqkydgegsoheymesgc.supabase.co/functions/v1/auto-process-dumps',
-        headers:='{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0aHFreWRnZWdzb2hleW1lc2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5Nzg2ODgsImV4cCI6MjA1MDU1NDY4OH0.Yek0syRgz4mgPmXc7wy-nml-ci1WFWCniwlZhc83Z6s"}'::jsonb
+        headers:=jsonb_build_object(
+          'Content-Type', 'application/json', 
+          'Authorization', 'Bearer ' || current_setting('app.settings.anon_key', true)
+        )
       ) as request_id;
     $$
   );
@@ -26,7 +29,10 @@ select
     select
       net.http_post(
         url:='https://kthqkydgegsoheymesgc.supabase.co/functions/v1/fetch-yeinot-bitan-prices',
-        headers:='{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0aHFreWRnZWdzb2hleW1lc2djIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5Nzg2ODgsImV4cCI6MjA1MDU1NDY4OH0.Yek0syRgz4mgPmXc7wy-nml-ci1WFWCniwlZhc83Z6s"}'::jsonb
+        headers:=jsonb_build_object(
+          'Content-Type', 'application/json', 
+          'Authorization', 'Bearer ' || current_setting('app.settings.anon_key', true)
+        )
       ) as request_id;
     $$
   );

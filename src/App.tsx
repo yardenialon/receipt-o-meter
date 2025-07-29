@@ -6,7 +6,6 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import Index from './pages/Index';
 import Login from './pages/Login';
-import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
 import { ProductDetails } from './components/products/ProductDetails';
@@ -46,11 +45,6 @@ function App() {
                 <Route path="/" element={
                   <ProtectedRoute>
                     <Index />
-                  </ProtectedRoute>
-                } />
-                <Route path="/analytics" element={
-                  <ProtectedRoute>
-                    <Analytics />
                   </ProtectedRoute>
                 } />
                 <Route path="/products" element={

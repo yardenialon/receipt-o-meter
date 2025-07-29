@@ -24,8 +24,6 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
     queryFn: async () => {
       if (!debouncedSearch || debouncedSearch.length < 2) return [];
 
-      console.log('חיפוש במק"ט ושם מוצר:', debouncedSearch);
-
       const { data, error } = await supabase
         .from('store_products')
         .select(`
@@ -37,16 +35,13 @@ export const ProductsSearchBar = ({ onSearch, onViewChange, currentView }: Produ
           store_id,
           manufacturer
         `)
-        .or(`product_name.ilike.%${debouncedSearch}%,product_code.eq.${debouncedSearch}`)
+        .ilike('product_name', `%${debouncedSearch}%`)
         .limit(50);
 
       if (error) {
         console.error('Error searching products:', error);
         throw error;
       }
-
-      console.log('תוצאות חיפוש:', data?.length || 0, 'מוצרים');
-      console.log('דוגמא לתוצאות:', data?.slice(0, 3));
 
       return data || [];
     },

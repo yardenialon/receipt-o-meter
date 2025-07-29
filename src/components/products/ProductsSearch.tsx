@@ -38,7 +38,7 @@ export const ProductsSearch = ({
           store_id,
           manufacturer
         `)
-        .or(`product_name.ilike.%${debouncedSearch}%,product_code.ilike.%${debouncedSearch}%`)
+        .ilike('product_name', `%${debouncedSearch}%`)
         .limit(50);
 
       if (error) {

@@ -340,7 +340,6 @@ export type Database = {
           image_path: string
           is_primary: boolean | null
           product_code: string
-          product_name: string | null
           status: string | null
         }
         Insert: {
@@ -350,7 +349,6 @@ export type Database = {
           image_path: string
           is_primary?: boolean | null
           product_code: string
-          product_name?: string | null
           status?: string | null
         }
         Update: {
@@ -360,7 +358,6 @@ export type Database = {
           image_path?: string
           is_primary?: boolean | null
           product_code?: string
-          product_name?: string | null
           status?: string | null
         }
         Relationships: []
@@ -696,27 +693,6 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -730,13 +706,6 @@ export type Database = {
           count: number
         }[]
       }
-      has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-        }
-        Returns: boolean
-      }
       process_imported_products: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -747,7 +716,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -874,8 +843,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-    },
+    Enums: {},
   },
 } as const
