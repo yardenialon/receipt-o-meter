@@ -36,7 +36,7 @@ export default function ShoppingList() {
 
       <div className="grid gap-8 md:grid-cols-3">
         {/* Shopping lists column - takes 1/3 width */}
-        <div className="space-y-6">
+        <div className="space-y-6 px-4 md:px-0">
           {lists?.length === 0 ? (
             <div className="bg-gray-50/50 rounded-lg p-8 text-center border border-dashed border-gray-200">
               <p className="text-gray-500 mb-4">אין רשימות קניות</p>
