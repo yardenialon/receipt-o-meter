@@ -60,8 +60,9 @@ serve(async (req) => {
         }
 
         // Validate URL
+        let imageUrl: URL;
         try {
-          new URL(record['Image URL']);
+          imageUrl = new URL(record['Image URL']);
         } catch {
           errors.push(`URL לא תקין: ${record['Image URL']}`);
           errorCount++;
@@ -81,25 +82,87 @@ serve(async (req) => {
           continue;
         }
 
-        // Insert or update product image
+        console.log(`Processing image for product: ${record.SKU}`);
+
+        // Download image from URL
+        let imageResponse: Response;
+        try {
+          imageResponse = await fetch(record['Image URL']);
+          if (!imageResponse.ok) {
+            errors.push(`לא ניתן להוריד תמונה עבור ${record.SKU}: ${imageResponse.status}`);
+            errorCount++;
+            continue;
+          }
+        } catch (fetchError) {
+          errors.push(`שגיאה בהורדת תמונה עבור ${record.SKU}: ${fetchError}`);
+          errorCount++;
+          continue;
+        }
+
+        // Get image data
+        const imageBlob = await imageResponse.blob();
+        
+        // Get file extension from URL or content type
+        let fileExtension = 'jpg';
+        const urlPath = imageUrl.pathname;
+        const urlExtension = urlPath.split('.').pop()?.toLowerCase();
+        if (urlExtension && ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(urlExtension)) {
+          fileExtension = urlExtension;
+        } else {
+          const contentType = imageResponse.headers.get('content-type');
+          if (contentType) {
+            if (contentType.includes('png')) fileExtension = 'png';
+            else if (contentType.includes('gif')) fileExtension = 'gif';
+            else if (contentType.includes('webp')) fileExtension = 'webp';
+          }
+        }
+
+        // Generate file path for storage
+        const fileName = `${record.SKU}_${Date.now()}.${fileExtension}`;
+        const storagePath = `product_images/${fileName}`;
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product_images')
+          .upload(storagePath, imageBlob, {
+            contentType: imageResponse.headers.get('content-type') || `image/${fileExtension}`,
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          errors.push(`שגיאה בהעלאת תמונה עבור ${record.SKU}: ${uploadError.message}`);
+          errorCount++;
+          continue;
+        }
+
+        console.log(`Successfully uploaded image for ${record.SKU} to ${storagePath}`);
+
+        // Insert or update product image record in database
         const { error: insertError } = await supabase
           .from('product_images')
           .upsert({
             product_code: record.SKU,
             product_name: record['Product Name'],
-            image_path: record['Image URL'],
-            is_primary: false, // Set all as non-primary by default
+            image_path: storagePath, // Store the storage path, not the original URL
+            is_primary: false,
             status: 'active'
           }, {
             onConflict: 'product_code,image_path'
           });
 
         if (insertError) {
-          console.error('Error inserting image:', insertError);
-          errors.push(`שגיאה בהכנסת תמונה עבור ${record.SKU}: ${insertError.message}`);
+          console.error('Error inserting image record:', insertError);
+          errors.push(`שגיאה בשמירת רשומת תמונה עבור ${record.SKU}: ${insertError.message}`);
           errorCount++;
+          
+          // Clean up uploaded file if database insert failed
+          await supabase.storage
+            .from('product_images')
+            .remove([storagePath]);
         } else {
           processedCount++;
+          console.log(`Successfully processed image for ${record.SKU}`);
         }
 
       } catch (error) {
