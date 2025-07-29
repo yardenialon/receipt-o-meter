@@ -20,9 +20,13 @@ export const ProductImagesBulkUpload = () => {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
+    console.log('🔍 File selected:', selectedFile?.name, selectedFile?.type);
+    
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
+      console.log('✅ CSV file set successfully');
     } else {
+      console.log('❌ Invalid file type:', selectedFile?.type);
       toast.error('אנא בחר קובץ CSV תקין');
     }
   };
@@ -122,6 +126,10 @@ export const ProductImagesBulkUpload = () => {
           className="w-full"
         >
           {uploading ? 'מעבד...' : 'העלה תמונות'}
+          {/* Debug info */}
+          <span className="text-xs opacity-50 ml-2">
+            ({file ? 'קובץ נבחר' : 'אין קובץ'} | {uploading ? 'מעלה' : 'מוכן'})
+          </span>
         </Button>
       </CardContent>
     </Card>
