@@ -9,9 +9,9 @@ const corsHeaders = {
 };
 
 interface CsvRow {
-  product_code: string;
-  image_url: string;
-  is_primary?: string;
+  SKU: string;
+  'Product Name': string;
+  'Image URL': string;
 }
 
 serve(async (req) => {
@@ -41,7 +41,7 @@ serve(async (req) => {
     const csvText = await file.text();
     const records = parse(csvText, {
       skipFirstRow: true,
-      columns: ['product_code', 'image_url', 'is_primary']
+      columns: ['SKU', 'Product Name', 'Image URL']
     }) as CsvRow[];
 
     console.log(`Found ${records.length} records in CSV`);
@@ -53,7 +53,7 @@ serve(async (req) => {
     // Process each record
     for (const record of records) {
       try {
-        if (!record.product_code || !record.image_url) {
+        if (!record.SKU || !record['Image URL']) {
           errors.push(`שורה חסרה נתונים: ${JSON.stringify(record)}`);
           errorCount++;
           continue;
@@ -61,44 +61,34 @@ serve(async (req) => {
 
         // Validate URL
         try {
-          new URL(record.image_url);
+          new URL(record['Image URL']);
         } catch {
-          errors.push(`URL לא תקין: ${record.image_url}`);
+          errors.push(`URL לא תקין: ${record['Image URL']}`);
           errorCount++;
           continue;
         }
-
-        // Parse is_primary
-        const isPrimary = record.is_primary?.toLowerCase() === 'true';
 
         // Check if product exists in store_products
         const { data: productExists } = await supabase
           .from('store_products')
           .select('product_code')
-          .eq('product_code', record.product_code)
+          .eq('product_code', record.SKU)
           .limit(1);
 
         if (!productExists || productExists.length === 0) {
-          errors.push(`מוצר לא נמצא: ${record.product_code}`);
+          errors.push(`מוצר לא נמצא: ${record.SKU}`);
           errorCount++;
           continue;
-        }
-
-        // If this is set as primary, update other images for this product to not be primary
-        if (isPrimary) {
-          await supabase
-            .from('product_images')
-            .update({ is_primary: false })
-            .eq('product_code', record.product_code);
         }
 
         // Insert or update product image
         const { error: insertError } = await supabase
           .from('product_images')
           .upsert({
-            product_code: record.product_code,
-            image_path: record.image_url,
-            is_primary: isPrimary,
+            product_code: record.SKU,
+            product_name: record['Product Name'],
+            image_path: record['Image URL'],
+            is_primary: false, // Set all as non-primary by default
             status: 'active'
           }, {
             onConflict: 'product_code,image_path'
@@ -106,7 +96,7 @@ serve(async (req) => {
 
         if (insertError) {
           console.error('Error inserting image:', insertError);
-          errors.push(`שגיאה בהכנסת תמונה עבור ${record.product_code}: ${insertError.message}`);
+          errors.push(`שגיאה בהכנסת תמונה עבור ${record.SKU}: ${insertError.message}`);
           errorCount++;
         } else {
           processedCount++;

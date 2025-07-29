@@ -68,9 +68,9 @@ export const ProductImagesCsvUpload = ({ onSuccess }: ProductImagesCsvUploadProp
   });
 
   const downloadTemplate = () => {
-    const csvContent = `product_code,image_url,is_primary
-7290000123456,https://example.com/image1.jpg,true
-7290000654321,https://example.com/image2.jpg,false`;
+    const csvContent = `SKU,Product Name,Image URL
+7290000123456,שמפו ראש וכתפיים,https://example.com/image1.jpg
+7290000654321,משחת שיניים קולגייט,https://example.com/image2.jpg`;
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -144,9 +144,9 @@ export const ProductImagesCsvUpload = ({ onSuccess }: ProductImagesCsvUploadProp
           
           <div className="mt-6 text-xs text-muted-foreground space-y-2">
             <p><strong>פורמט הקובץ:</strong></p>
-            <p>• product_code - קוד המוצר (חובה)</p>
-            <p>• image_url - קישור לתמונה (חובה)</p>
-            <p>• is_primary - האם תמונה ראשית (true/false)</p>
+            <p>• SKU - קוד המוצר (חובה)</p>
+            <p>• Product Name - שם המוצר</p>
+            <p>• Image URL - קישור לתמונה (חובה)</p>
             <p className="text-amber-600 mt-2">
               <strong>שים לב:</strong> התמונות צריכות להיות זמינות באינטרנט
             </p>
