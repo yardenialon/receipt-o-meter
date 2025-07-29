@@ -1,13 +1,11 @@
 
-import { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLogoSlider } from './hooks/useLogoSlider';
 import { LogoItem } from './LogoItem';
 
 export function LogoSlider() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const { 
     currentIndex, 
     visibleLogos, 
@@ -17,14 +15,6 @@ export function LogoSlider() {
     showControls,
     isAnimating
   } = useLogoSlider();
-  
-  // נוודא שהסליידר ממוקם נכון כשמשתנה האינדקס
-  useEffect(() => {
-    // עדכון מיקום כשמשתנה האינדקס
-    if (containerRef.current) {
-      containerRef.current.style.transform = `translateX(0)`;
-    }
-  }, [currentIndex]);
 
   return (
     <div className="relative py-6">
@@ -41,31 +31,25 @@ export function LogoSlider() {
           </Button>
         )}
 
-        <div 
-          ref={containerRef}
-          className="overflow-hidden mx-10 w-full"
-        >
-          <AnimatePresence initial={false}>
-            <motion.div 
-              className="flex items-center"
-              initial={false}
-              animate={{ 
-                x: `calc(-${currentIndex * (100 / visibleLogos)}%)`,
-              }}
-              transition={{ 
-                ease: "easeInOut", 
-                duration: 0.5
-              }}
-            >
-              {displayItems.map((store) => (
-                <LogoItem 
-                  key={store.key} 
-                  store={store} 
-                  visibleLogos={visibleLogos} 
-                />
-              ))}
-            </motion.div>
-          </AnimatePresence>
+        <div className="overflow-hidden mx-10 w-full">
+          <motion.div 
+            className="flex items-center"
+            animate={{ 
+              x: `calc(-${currentIndex * (100 / visibleLogos)}%)`,
+            }}
+            transition={{ 
+              ease: "easeInOut", 
+              duration: isAnimating ? 0.3 : 0,
+            }}
+          >
+            {displayItems.map((store) => (
+              <LogoItem 
+                key={store.key} 
+                store={store} 
+                visibleLogos={visibleLogos} 
+              />
+            ))}
+          </motion.div>
         </div>
 
         {showControls && (
