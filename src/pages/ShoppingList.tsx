@@ -21,7 +21,7 @@ export default function ShoppingList() {
   }
 
   return (
-    <div className="mx-auto md:container px-0 md:px-8 md:pb-8 pb-32 pt-4" dir="rtl">
+    <div className="w-full h-full md:container md:mx-auto md:px-8 md:pb-8 pb-32 pt-4" dir="rtl">
       {/* Header with title and new list button */}
       <div className="mb-6 px-4 md:px-0">
         <h1 className="text-3xl font-bold mb-4">רשימות קניות</h1>
