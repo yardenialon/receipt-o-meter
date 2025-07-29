@@ -87,16 +87,7 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         .select(`
           source_branch_id,
           source_branch_name,
-          source_chain,
-          branch_id,
-          store_branches!inner (
-            name,
-            address,
-            store_chains (
-              name,
-              logo_url
-            )
-          )
+          source_chain
         `)
         .in('source_branch_id', storeIds);
       
@@ -111,10 +102,10 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
         console.log('Branch mappings found:', branches);
         branches.forEach((mapping: any) => {
           branchData[mapping.source_branch_id] = {
-            name: mapping.source_branch_name || mapping.store_branches?.name,
-            address: mapping.store_branches?.address,
-            chainName: mapping.store_branches?.store_chains?.name || mapping.source_chain,
-            logoUrl: mapping.store_branches?.store_chains?.logo_url
+            name: mapping.source_branch_name,
+            address: null, // נוסיף מאוחר יותר אם נצטרך
+            chainName: mapping.source_chain,
+            logoUrl: null // נוסיף מאוחר יותר אם נצטרך
           };
         });
       }
