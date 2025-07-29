@@ -8,6 +8,8 @@ import { MobileNav } from './sidebar/MobileNav';
 export function AppSidebar() {
   const isMobile = useIsMobile();
   const { openMobile, setOpenMobile } = useSidebar();
+  
+  console.log('🎭 AppSidebar component - isMobile:', isMobile);
 
   const sidebarContent = (
     <div className="flex flex-col gap-4 py-4">

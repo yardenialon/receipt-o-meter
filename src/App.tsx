@@ -53,6 +53,8 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { user } = useAuth();
+  
+  console.log('🎯 App component - user exists:', !!user);
 
   return (
     <Router>
