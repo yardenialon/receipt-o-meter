@@ -83,23 +83,22 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       }
 
       const { data: branches, error } = await supabase
-        .from('store_branches')
+        .from('branch_mappings')
         .select(`
+          source_branch_id,
+          source_branch_name,
+          source_chain,
           branch_id,
-          name,
-          address,
-          chain_id,
-          store_chains (
+          store_branches!inner (
             name,
-            logo_url
-          ),
-          branch_mappings (
-            source_chain,
-            source_branch_id,
-            source_branch_name
+            address,
+            store_chains (
+              name,
+              logo_url
+            )
           )
         `)
-        .in('branch_id', storeIds);
+        .in('source_branch_id', storeIds);
       
       if (error) {
         console.error('Error fetching branch info:', error);
@@ -109,19 +108,18 @@ export const ShoppingListPriceComparison = ({ comparisons, isLoading }: PriceCom
       const branchData: Record<string, any> = {};
       
       if (branches) {
-        branches.forEach((branch: any) => {
-          if (branch.branch_mappings && branch.branch_mappings.length > 0) {
-            const mapping = branch.branch_mappings[0];
-            branchData[mapping.source_branch_id] = {
-              name: mapping.source_branch_name || branch.name,
-              address: branch.address,
-              chainName: branch.store_chains?.name || mapping.source_chain,
-              logoUrl: branch.store_chains?.logo_url
-            };
-          }
+        console.log('Branch mappings found:', branches);
+        branches.forEach((mapping: any) => {
+          branchData[mapping.source_branch_id] = {
+            name: mapping.source_branch_name || mapping.store_branches?.name,
+            address: mapping.store_branches?.address,
+            chainName: mapping.store_branches?.store_chains?.name || mapping.source_chain,
+            logoUrl: mapping.store_branches?.store_chains?.logo_url
+          };
         });
       }
       
+      console.log('Final branch data:', branchData);
       return branchData;
     },
     enabled: normalizedComparisons.length > 0
