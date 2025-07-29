@@ -114,15 +114,9 @@ export function useLogoSlider() {
   const displayItems = useMemo(() => {
     if (!duplicatedItems.length) return [];
     
-    // הצגת פריטים מההמערך הכפול
-    const itemsToShow = [];
-    for (let i = 0; i < visibleLogos; i++) {
-      const itemIndex = (currentIndex + i) % duplicatedItems.length;
-      itemsToShow.push(duplicatedItems[itemIndex]);
-    }
-    
-    return itemsToShow;
-  }, [duplicatedItems, currentIndex, visibleLogos]);
+    // הצגת כל הפריטים הכפולים לגלילה רציפה
+    return duplicatedItems;
+  }, [duplicatedItems]);
 
   return {
     currentIndex,
