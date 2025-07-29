@@ -30,7 +30,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
-  const { isAdmin, isLoading: roleLoading } = useUserRole();
+  const { isAdmin, isLoading: roleLoading, role } = useUserRole();
+  
+  console.log('🔐 AdminRoute check:', { user: !!user, isLoading, roleLoading, isAdmin, role });
   
   if (isLoading || roleLoading) {
     return <div className="flex items-center justify-center min-h-screen">

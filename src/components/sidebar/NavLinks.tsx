@@ -51,8 +51,10 @@ export const NavLink = ({ href, label, icon: Icon }: NavLinkProps) => {
 
 export const NavLinks = () => {
   const { signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, role, isLoading } = useUserRole();
   const navigate = useNavigate();
+  
+  console.log('🔗 NavLinks component state:', { isAdmin, role, isLoading });
 
   const handleLogout = async () => {
     try {
@@ -70,6 +72,8 @@ export const NavLinks = () => {
     { href: '/shopping-list', label: 'רשימת קניות', icon: ListCheck },
     ...(isAdmin ? [{ href: '/admin', label: 'דשבורד מנהל', icon: Settings }] : []),
   ];
+  
+  console.log('📋 Navigation links:', links.map(l => l.label));
 
   return (
     <div className="space-y-1">
