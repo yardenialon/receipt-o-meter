@@ -112,11 +112,27 @@ export function useLogoSlider() {
 
   // החזרת הפריטים לתצוגה
   const displayItems = useMemo(() => {
+    if (!storeChains || storeChains.length === 0) return [];
+    
+    // אם יש לנו פחות פריטים מהמספר הנראה, נחזיר את כל הפריטים
+    if (storeChains.length <= visibleLogos) {
+      return storeChains.map((store, i) => ({
+        ...store,
+        key: `visible-${store.id}-${i}`
+      }));
+    }
+    
+    // אחרת, נשתמש בלוגיקת הגלילה האינסופית
     if (!duplicatedItems.length) return [];
     
-    // הצגת כל הפריטים הכפולים לגלילה רציפה
-    return duplicatedItems;
-  }, [duplicatedItems]);
+    const itemsToShow = [];
+    for (let i = 0; i < visibleLogos; i++) {
+      const itemIndex = (currentIndex + i) % duplicatedItems.length;
+      itemsToShow.push(duplicatedItems[itemIndex]);
+    }
+    
+    return itemsToShow;
+  }, [storeChains, duplicatedItems, currentIndex, visibleLogos]);
 
   return {
     currentIndex,
