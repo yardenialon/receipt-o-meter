@@ -55,7 +55,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
 
     if (normalizedName.includes('פוליצר') || normalizedName.includes('politzer')) {
-      return '/lovable-uploads/politzer-logo.png';
+      return '/lovable-uploads/469ec827-3362-432b-8f2c-9e48418e4c70.png';
     }
 
     if (normalizedName.includes('זול בשפע') || normalizedName.includes('zol beshefa')) {
