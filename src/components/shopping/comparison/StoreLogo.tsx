@@ -119,7 +119,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
 
     if (normalizedName.includes('סטופ מרקט') || normalizedName.includes('stop market')) {
-      return '/lovable-uploads/stop-market-logo.png';
+      return '/lovable-uploads/0f24053f-bbf1-465c-82cb-6da8e2213297.png';
     }
     
     return logoUrl || null;
