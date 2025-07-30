@@ -39,6 +39,11 @@ export interface StoreChain {
 
 // שליפת כל רשתות המזון מהדאטהבייס
 export async function fetchStoreChains() {
+  // כרגע נשתמש ברשימה הסטטית בלבד עד שתהיה לנו טבלת store_products
+  return fallbackStoreChains;
+  
+  /*
+  TODO: לפתח כשתהיה טבלת store_products
   const { data, error } = await supabase
     .from('store_products')
     .select('store_chain')
@@ -72,4 +77,5 @@ export async function fetchStoreChains() {
   
   // מיון לפי שם
   return combinedStores.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  */
 }
