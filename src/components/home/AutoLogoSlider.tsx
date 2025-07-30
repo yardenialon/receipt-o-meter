@@ -1,14 +1,9 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchStoreChains, fallbackStoreChains } from '@/components/logos/utils/storeChainUtils';
 import { StoreLogo } from '@/components/shopping/comparison/StoreLogo';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AutoLogoSlider() {
-  const [translateX, setTranslateX] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const isMobile = useIsMobile();
-  
   const { data: storeChains = fallbackStoreChains } = useQuery({
     queryKey: ['store-chains-logos'],
     queryFn: fetchStoreChains,
@@ -48,34 +43,6 @@ export function AutoLogoSlider() {
     });
   }, [storeChains]);
 
-  // Duplicate the stores array to create seamless loop
-  const duplicatedStores = useMemo(() => {
-    return [...filteredStores, ...filteredStores, ...filteredStores];
-  }, [filteredStores]);
-
-  const visibleLogos = isMobile ? 3 : 7;
-  const logoWidth = 100 / visibleLogos; // Width percentage per logo
-
-  useEffect(() => {
-    if (isPaused || filteredStores.length === 0) return;
-
-    const intervalId = setInterval(() => {
-      setTranslateX(prev => {
-        const increment = 0.05; // Slower movement
-        const maxTranslate = -(filteredStores.length * logoWidth);
-        const newTranslate = prev - increment;
-        
-        // Reset to start when we've moved one full set
-        if (newTranslate <= maxTranslate) {
-          return 0;
-        }
-        return newTranslate;
-      });
-    }, 50); // Slower interval (20fps instead of 60fps)
-
-    return () => clearInterval(intervalId);
-  }, [isPaused, filteredStores.length, logoWidth]);
-
   if (filteredStores.length === 0) {
     return (
       <div className="py-6">
@@ -87,22 +54,19 @@ export function AutoLogoSlider() {
   }
 
   return (
-    <div className="py-6 overflow-hidden">
+    <div className="py-6">
       <div 
-        className="flex transition-none"
+        className="flex gap-6 overflow-x-auto pb-2 scrollbar-hide"
         style={{
-          transform: `translateX(${translateX}%)`,
-          width: `${duplicatedStores.length * logoWidth}%`,
-          willChange: 'transform'
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
         }}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
       >
-        {duplicatedStores.map((store, index) => (
+        
+        {filteredStores.map((store) => (
           <div 
-            key={`${store.id}-${index}`}
+            key={store.id}
             className="flex-shrink-0 flex flex-col items-center justify-center group cursor-pointer"
-            style={{ width: `${logoWidth}%` }}
           >
             <div className="h-16 w-16 flex items-center justify-center">
               <div className="bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center transition-all group-hover:scale-105 hover:shadow-md h-full w-full">
@@ -112,7 +76,7 @@ export function AutoLogoSlider() {
                 />
               </div>
             </div>
-            <span className="mt-1 text-xs text-center text-gray-700 truncate max-w-[90%]">
+            <span className="mt-1 text-xs text-center text-gray-700 truncate max-w-[90%] w-16">
               {store.name}
             </span>
           </div>
