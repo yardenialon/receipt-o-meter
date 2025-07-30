@@ -35,7 +35,38 @@ export function StoreLogosSection() {
         <p className="text-center text-gray-500 text-sm mb-4">מידע מעודכן מכל רשתות המזון במקום אחד</p>
         
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4 justify-items-center">
-          {storeChains.map((store) => (
+          {storeChains
+            .filter(store => {
+              // רק רשתות שיש להן לוגו
+              const normalizedName = store.name.toLowerCase().trim();
+              return (
+                normalizedName.includes('רמי לוי') || 
+                normalizedName.includes('carrefour') || normalizedName.includes('קרפור') ||
+                normalizedName.includes('shufersal') || normalizedName.includes('שופרסל') ||
+                normalizedName.includes('machsanei') || normalizedName.includes('מחסני השוק') ||
+                normalizedName.includes('victory') || normalizedName.includes('ויקטורי') ||
+                normalizedName.includes('yochananof') || normalizedName.includes('יוחננוף') ||
+                normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן') ||
+                normalizedName.includes('אושר עד') || normalizedName.includes('osher ad') ||
+                normalizedName.includes('חצי חינם') || normalizedName.includes('hatzi hinam') ||
+                normalizedName.includes('קשת טעמים') || normalizedName.includes('keshet teamim') ||
+                normalizedName.includes('סופר יהודה') || normalizedName.includes('super yehuda') ||
+                normalizedName.includes('פרש מרקט') || normalizedName.includes('fresh market') ||
+                normalizedName.includes('פוליצר') || normalizedName.includes('politzer') ||
+                normalizedName.includes('ברקת') || normalizedName.includes('bareket') || normalizedName.includes('barkat') ||
+                normalizedName.includes('שוק העיר') || normalizedName.includes('shuk hair') || normalizedName.includes('city market') ||
+                normalizedName.includes('סופר ספיר') || normalizedName.includes('super sapir') ||
+                normalizedName.includes('סיטי מרקט') || normalizedName.includes('city market 24/7') ||
+                normalizedName.includes('היפר כהן') || normalizedName.includes('hyper cohen') ||
+                normalizedName.includes('טיב טעם') || normalizedName.includes('tiv taam') ||
+                normalizedName.includes('זול ובגדול') || normalizedName.includes('zol vegadol') ||
+                normalizedName.includes('משנת יוסף') || normalizedName.includes('mishnat yosef') ||
+                normalizedName.includes('קינג סטור') || normalizedName.includes('king store') ||
+                normalizedName.includes('נתיב החסד') || normalizedName.includes('netiv hachesed') ||
+                normalizedName.includes('סטופ מרקט') || normalizedName.includes('stop market')
+              );
+            })
+            .map((store) => (
             <div 
               key={store.id}
               className="flex flex-col items-center justify-center group cursor-pointer"
