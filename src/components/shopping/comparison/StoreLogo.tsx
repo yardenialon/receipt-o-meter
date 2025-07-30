@@ -39,8 +39,35 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
     
     if (normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן')) {
-      // This is the correct URL for Yeinot Bitan logo - verified it exists
       return '/lovable-uploads/f86638e1-48b0-4005-9df5-fbebc92daa6b.png';
+    }
+
+    if (normalizedName.includes('אושר עד') || normalizedName.includes('osher ad')) {
+      return '/lovable-uploads/osher-ad-logo.png';
+    }
+
+    if (normalizedName.includes('סופר פארם') || normalizedName.includes('super pharm') || normalizedName.includes('super-pharm')) {
+      return '/lovable-uploads/super-pharm-logo.png';
+    }
+
+    if (normalizedName.includes('חצי חינם') || normalizedName.includes('hatzi hinam')) {
+      return '/lovable-uploads/hatzi-hinam-logo.png';
+    }
+
+    if (normalizedName.includes('פוליצר') || normalizedName.includes('politzer')) {
+      return '/lovable-uploads/politzer-logo.png';
+    }
+
+    if (normalizedName.includes('זול בשפע') || normalizedName.includes('zol beshefa')) {
+      return '/lovable-uploads/zol-beshefa-logo.png';
+    }
+
+    if (normalizedName.includes('משולם') || normalizedName.includes('meshulam')) {
+      return '/lovable-uploads/meshulam-logo.png';
+    }
+
+    if (normalizedName.includes('סטופ מרקט') || normalizedName.includes('stop market')) {
+      return '/lovable-uploads/stop-market-logo.png';
     }
     
     return logoUrl || null;
