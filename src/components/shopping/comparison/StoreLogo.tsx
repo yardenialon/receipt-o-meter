@@ -43,7 +43,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
 
     if (normalizedName.includes('אושר עד') || normalizedName.includes('osher ad')) {
-      return '/lovable-uploads/osher-ad-logo.png';
+      return '/lovable-uploads/54e06c3b-7d13-4823-a702-1046b8339dcc.png';
     }
 
     if (normalizedName.includes('סופר פארם') || normalizedName.includes('super pharm') || normalizedName.includes('super-pharm')) {
