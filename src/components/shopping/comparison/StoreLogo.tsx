@@ -66,6 +66,10 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
       return '/lovable-uploads/meshulam-logo.png';
     }
 
+    if (normalizedName.includes('משנת יוסף') || normalizedName.includes('mishnat yosef')) {
+      return '/lovable-uploads/7fab5270-86ce-4833-a600-de896912c2c9.png';
+    }
+
     if (normalizedName.includes('זול ובגדול') || normalizedName.includes('zol vegadol')) {
       return '/lovable-uploads/ba3176e3-1b3b-4ebe-b0bd-a933bbfe3a91.png';
     }
