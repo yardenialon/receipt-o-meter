@@ -51,7 +51,7 @@ export const StoreLogo = ({ storeName, className, logoUrl }: StoreLogoProps) => 
     }
 
     if (normalizedName.includes('חצי חינם') || normalizedName.includes('hatzi hinam')) {
-      return '/lovable-uploads/hatzi-hinam-logo.png';
+      return '/lovable-uploads/e83879f3-3038-4340-a0c5-1f943395991c.png';
     }
 
     if (normalizedName.includes('פוליצר') || normalizedName.includes('politzer')) {
