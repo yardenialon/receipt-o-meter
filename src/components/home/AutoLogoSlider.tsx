@@ -21,7 +21,6 @@ export function AutoLogoSlider() {
         normalizedName.includes('machsanei') || normalizedName.includes('מחסני השוק') ||
         normalizedName.includes('victory') || normalizedName.includes('ויקטורי') ||
         normalizedName.includes('yochananof') || normalizedName.includes('יוחננוף') ||
-        normalizedName.includes('yeinot bitan') || normalizedName.includes('יינות ביתן') ||
         normalizedName.includes('אושר עד') || normalizedName.includes('osher ad') ||
         normalizedName.includes('חצי חינם') || normalizedName.includes('hatzi hinam') ||
         normalizedName.includes('קשת טעמים') || normalizedName.includes('keshet teamim') ||
