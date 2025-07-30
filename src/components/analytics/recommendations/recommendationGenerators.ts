@@ -4,35 +4,32 @@ import { PurchasePattern, Recommendation } from './types';
 export async function generateHealthyAlternatives(patterns: { [key: string]: PurchasePattern }): Promise<Recommendation[]> {
   const recommendations: Recommendation[] = [];
   
-  // Get healthy alternatives from the database
-  const { data: alternatives } = await supabase
-    .from('product_alternatives')
-    .select('*')
-    .eq('alternative_type', 'healthy');
-
-  if (alternatives) {
-    for (const pattern of Object.values(patterns)) {
-      const matchingAlternatives = alternatives.filter(alt => 
-        pattern.items.some(item => 
-          alt.product_name.toLowerCase().includes(item.toLowerCase()) ||
-          alt.category === pattern.category
-        )
-      );
-
-      recommendations.push(...matchingAlternatives.map(alt => ({
-        name: alt.alternative_name,
-        reason: alt.benefits
-      })));
+  // כרגע נשתמש ברשימה סטטית עד שתהיה לנו טבלת product_alternatives
+  const staticHealthyAlternatives = [
+    {
+      product_name: 'דגנים',
+      alternative_name: 'קינואה אורגנית',
+      benefits: 'עשירה בחלבון ומינרלים',
+      category: 'דגנים ותחליפים'
+    },
+    {
+      product_name: 'מוצרי חלב',
+      alternative_name: 'יוגורט יווני',
+      benefits: 'פרוביוטיקה טבעית וחלבון גבוה',
+      category: 'מוצרי חלב'
     }
-  }
+  ];
 
-  // Add general healthy recommendations if we don't have enough data
-  if (recommendations.length < 2) {
-    recommendations.push({
-      name: 'ירקות עונתיים',
-      reason: 'להגדלת צריכת ויטמינים ומינרלים טבעיים'
-    });
-  }
+  // Add general healthy recommendations
+  recommendations.push({
+    name: 'ירקות עונתיים',
+    reason: 'להגדלת צריכת ויטמינים ומינרלים טבעיים'
+  });
+
+  recommendations.push({
+    name: 'דגים פעמיים בשבוע',
+    reason: 'למען צריכת אומגה 3 בריאה'
+  });
 
   return recommendations;
 }
@@ -40,37 +37,16 @@ export async function generateHealthyAlternatives(patterns: { [key: string]: Pur
 export async function generateSavingOpportunities(patterns: { [key: string]: PurchasePattern }): Promise<Recommendation[]> {
   const recommendations: Recommendation[] = [];
 
-  // Get budget alternatives from the database
-  const { data: alternatives } = await supabase
-    .from('product_alternatives')
-    .select('*')
-    .eq('alternative_type', 'budget');
+  // כרגע נשתמש ברשימה סטטית עד שתהיה לנו טבלת product_alternatives
+  recommendations.push({
+    name: 'מעקב אחר מבצעים',
+    reason: 'שימוש באפליקציות השוואת מחירים לחיסכון משמעותי'
+  });
 
-  if (alternatives) {
-    // Find categories with high average prices
-    const expensiveCategories = Object.values(patterns)
-      .filter(p => p.avgPrice > 50)
-      .sort((a, b) => b.avgPrice - a.avgPrice);
-
-    for (const category of expensiveCategories) {
-      const matchingAlternatives = alternatives.filter(alt => 
-        alt.category === category.category
-      );
-
-      recommendations.push(...matchingAlternatives.map(alt => ({
-        name: alt.alternative_name,
-        reason: `חיסכון של ${Math.round((category.avgPrice - (alt.price_range_max || 0)) / category.avgPrice * 100)}% - ${alt.benefits}`
-      })));
-    }
-  }
-
-  // Add general saving recommendations
-  if (recommendations.length < 2) {
-    recommendations.push({
-      name: 'מעקב אחר מבצעים',
-      reason: 'שימוש באפליקציות השוואת מחירים לחיסכון משמעותי'
-    });
-  }
+  recommendations.push({
+    name: 'קניות במלאי',
+    reason: 'רכישת מוצרי יסוד במלאי כשיש מבצעים משתלמים'
+  });
 
   return recommendations;
 }
@@ -78,34 +54,15 @@ export async function generateSavingOpportunities(patterns: { [key: string]: Pur
 export async function generatePersonalizedRecommendations(patterns: { [key: string]: PurchasePattern }): Promise<Recommendation[]> {
   const recommendations: Recommendation[] = [];
 
-  // Get seasonal alternatives from the database
-  const { data: alternatives } = await supabase
-    .from('product_alternatives')
-    .select('*')
-    .eq('alternative_type', 'seasonal');
+  // כרגע נשתמש ברשימה סטטית עד שתהיה לנו טבלת product_alternatives  
+  const currentMonth = new Date().getMonth();
+  recommendations.push(getSeasonalRecommendation(currentMonth));
 
-  if (alternatives) {
-    // Find most frequent categories
-    const frequentCategories = Object.values(patterns)
-      .sort((a, b) => b.frequency - a.frequency);
-
-    for (const category of frequentCategories.slice(0, 2)) {
-      const matchingAlternatives = alternatives.filter(alt => 
-        alt.category === category.category
-      );
-
-      recommendations.push(...matchingAlternatives.map(alt => ({
-        name: alt.alternative_name,
-        reason: alt.benefits
-      })));
-    }
-  }
-
-  // Add seasonal recommendation if we don't have enough
-  if (recommendations.length < 2) {
-    const currentMonth = new Date().getMonth();
-    recommendations.push(getSeasonalRecommendation(currentMonth));
-  }
+  // Add a general personalized recommendation
+  recommendations.push({
+    name: 'תכנון קניות שבועי',
+    reason: 'הכנת רשימת קניות מראש חוסכת זמן וכסף'
+  });
 
   return recommendations;
 }

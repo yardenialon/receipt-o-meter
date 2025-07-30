@@ -61,8 +61,9 @@ export function AutoLogoSlider() {
 
     const intervalId = setInterval(() => {
       setTranslateX(prev => {
+        const increment = 0.05; // Slower movement
         const maxTranslate = -(filteredStores.length * logoWidth);
-        const newTranslate = prev - 0.1; // Slow continuous movement
+        const newTranslate = prev - increment;
         
         // Reset to start when we've moved one full set
         if (newTranslate <= maxTranslate) {
@@ -70,7 +71,7 @@ export function AutoLogoSlider() {
         }
         return newTranslate;
       });
-    }, 16); // ~60fps
+    }, 50); // Slower interval (20fps instead of 60fps)
 
     return () => clearInterval(intervalId);
   }, [isPaused, filteredStores.length, logoWidth]);

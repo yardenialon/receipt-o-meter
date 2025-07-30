@@ -9,29 +9,30 @@ export function WeeklyDealsCard() {
   const { data: weeklyDeals, isLoading: isLoadingDeals } = useQuery({
     queryKey: ['weekly-deals'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('store_products')
-          .select(`
-            product_code,
-            product_name,
-            price,
-            store_chain,
-            price_update_date
-          `)
-          .order('price', { ascending: true })
-          .limit(5);
-
-        if (error) {
-          console.error('Error fetching weekly deals:', error);
-          throw error;
+      // כרגע נשתמש בדאטה סטטית עד שתהיה לנו טבלת store_products
+      return [
+        {
+          product_code: 'D001',
+          product_name: 'תפוחים אדומים 1 ק"ג',
+          price: 8.90,
+          store_chain: 'רמי לוי',
+          price_update_date: new Date().toISOString()
+        },
+        {
+          product_code: 'D002',
+          product_name: 'בננות 1 ק"ג',
+          price: 6.50,
+          store_chain: 'שופרסל',
+          price_update_date: new Date().toISOString()
+        },
+        {
+          product_code: 'D003',
+          product_name: 'יוגורט דנונה',
+          price: 4.20,
+          store_chain: 'יינות ביתן',
+          price_update_date: new Date().toISOString()
         }
-
-        return data || [];
-      } catch (error) {
-        console.error('Failed to fetch weekly deals:', error);
-        return [];
-      }
+      ];
     },
   });
 

@@ -9,31 +9,30 @@ export function PricingTrendsCard() {
   const { data: pricingTrends, isLoading: isLoadingPricing } = useQuery({
     queryKey: ['pricing-trends'],
     queryFn: async () => {
-      try {
-        // במציאות, נרצה לבדוק מוצרים שעלו במחיר לאחרונה
-        // כרגע נציג פשוט מוצרים יקרים להדגמה
-        const { data, error } = await supabase
-          .from('store_products')
-          .select(`
-            product_code,
-            product_name,
-            price,
-            store_chain,
-            price_update_date
-          `)
-          .order('price', { ascending: false })
-          .limit(5);
-
-        if (error) {
-          console.error('Error fetching pricing trends:', error);
-          throw error;
+      // כרגע נשתמש בדאטה סטטית עד שתהיה לנו טבלת store_products
+      return [
+        {
+          product_code: 'P001',
+          product_name: 'חלב תנובה 3% 1 ליטר',
+          price: 6.90,
+          store_chain: 'שופרסל',
+          price_update_date: new Date().toISOString()
+        },
+        {
+          product_code: 'P002',
+          product_name: 'לחם אחיד פרוס',
+          price: 5.50,
+          store_chain: 'רמי לוי',
+          price_update_date: new Date().toISOString()
+        },
+        {
+          product_code: 'P003',
+          product_name: 'גבינה צהובה 200 גרם',
+          price: 15.90,
+          store_chain: 'יינות ביתן',
+          price_update_date: new Date().toISOString()
         }
-
-        return data || [];
-      } catch (error) {
-        console.error('Failed to fetch pricing trends:', error);
-        return [];
-      }
+      ];
     },
   });
 
