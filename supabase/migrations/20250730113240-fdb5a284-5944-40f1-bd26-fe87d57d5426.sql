@@ -1,0 +1,1 @@
+UPDATE public.product_images SET is_primary = true;

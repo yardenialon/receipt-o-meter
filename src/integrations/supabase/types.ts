@@ -338,7 +338,7 @@ export type Database = {
           created_at: string
           id: string
           image_path: string
-          is_primary: boolean | null
+          is_primary: boolean
           product_code: string
           product_name: string | null
           status: string | null
@@ -348,7 +348,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_path: string
-          is_primary?: boolean | null
+          is_primary?: boolean
           product_code: string
           product_name?: string | null
           status?: string | null
@@ -358,7 +358,7 @@ export type Database = {
           created_at?: string
           id?: string
           image_path?: string
-          is_primary?: boolean | null
+          is_primary?: boolean
           product_code?: string
           product_name?: string | null
           status?: string | null
