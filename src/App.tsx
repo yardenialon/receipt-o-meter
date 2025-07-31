@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Products from './pages/Products';
 import ShoppingList from './pages/ShoppingList';
 import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 import { ProductDetails } from './components/products/ProductDetails';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -66,6 +67,11 @@ function App() {
                 <Route path="/blog" element={
                   <ProtectedRoute>
                     <Blog />
+                  </ProtectedRoute>
+                } />
+                <Route path="/blog/:slug" element={
+                  <ProtectedRoute>
+                    <BlogPost />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />
