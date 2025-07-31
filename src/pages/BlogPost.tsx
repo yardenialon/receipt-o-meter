@@ -5,6 +5,91 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const blogPosts = {
+  'smart-shopping-list': {
+    title: 'הרשימה שהופכת כל קנייה לחכמה יותר – וחוסכת לכם מאות שקלים בחודש',
+    date: 'יולי 2025',
+    badge: 'חדש',
+    content: (
+      <>
+        <section>
+          <p className="leading-relaxed text-foreground mb-4">
+            רובנו רגילים לכתוב את רשימת הקניות על פתק, או בקבוצת וואטסאפ משפחתית. אבל ב-2025 – יש דרך הרבה יותר חכמה לעשות את זה.
+          </p>
+          <p className="leading-relaxed text-foreground">
+            עם רשימת הקניות החכמה של SAVY אתם לא רק זוכרים מה לקנות – אתם גם יודעים איפה הכי משתלם לקנות כל פריט. 
+            משתמשים דיווחו שבזכות המערכת הם הוזילו את סל הקניות שלהם בין 15%-25% שזה אלפי שקלים בשנה!
+          </p>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🛍️ למה זה חשוב?</h3>
+          <p className="mb-3 text-foreground">כי אין רשת אחת שהכי זולה בהכול.</p>
+          <p className="mb-3 text-foreground">חלק מהמוצרים זולים יותר ברשת אחת – ואחרים דווקא ברשת אחרת.</p>
+          <p className="mb-3 text-foreground">למשל:</p>
+          <ul className="space-y-2 mb-4">
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>בשר וגבינות משתלם לקנות ברשת X</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>פירות וירקות – ברשת Y</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>מוצרי טואלטיקה וניקיון – ברשת Z</span>
+            </li>
+          </ul>
+          <p className="text-foreground">
+            ככה מי שקונה חכם, קונה חכם באמת – ומחלק את הקנייה בצורה שממקסמת את החיסכון.
+          </p>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🎯 מה SAVY נותנת לכם?</h3>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>חיפוש חכם של כל מוצר לפי מחירים עדכניים באזורך</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>אפשרות לבנות כמה רשימות לפי קטגוריות, חנויות או ימי השבוע</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>המלצות אוטומטיות לחנות הכי משתלמת לכל רשימה</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>מעקב אחרי מבצעים משתלמים ושינויים במחירים</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>שיתוף נוח עם בני משפחה או שותפים</span>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <p className="leading-relaxed text-foreground mb-4">
+            לא עוד רשימת קניות שעובדת רק בשביל הסדר – עכשיו היא גם עובדת בשביל הכסף שלכם.
+          </p>
+          
+          <div className="bg-muted p-4 rounded-lg">
+            <div className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-primary" />
+              <span className="font-semibold">התחילו עכשיו:</span>
+              <a href="https://receipt-o-meter.lovable.app/shopping-list" target="_blank" rel="noopener noreferrer" 
+                 className="text-primary hover:underline">
+                רשימת קניות חכמה
+              </a>
+            </div>
+          </div>
+        </section>
+      </>
+    )
+  },
   'mishnat-yosef': {
     title: 'הכירו את "משנת יוסף" – המיזם החברתי שמוריד את יוקר המחיה',
     date: 'יולי 2025',

@@ -3,8 +3,17 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import mishnatYosefImage from '@/assets/mishnat-yosef-blog.jpg';
+import smartShoppingListImage from '@/assets/smart-shopping-list-blog.jpg';
 
 const blogPosts = [
+  {
+    id: 'smart-shopping-list',
+    title: 'הרשימה שהופכת כל קנייה לחכמה יותר – וחוסכת לכם מאות שקלים בחודש',
+    excerpt: 'עם רשימת הקניות החכמה של SAVY אתם לא רק זוכרים מה לקנות – אתם גם יודעים איפה הכי משתלם לקנות כל פריט',
+    image: smartShoppingListImage,
+    date: 'יולי 2025',
+    badge: 'חדש'
+  },
   {
     id: 'mishnat-yosef',
     title: 'הכירו את "משנת יוסף" – המיזם החברתי שמוריד את יוקר המחיה',
