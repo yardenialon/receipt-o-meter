@@ -3,7 +3,7 @@ import { HeroSection } from '@/components/home/HeroSection';
 import { StoreLogosSection } from '@/components/home/StoreLogosSection';
 import { CategorySection } from '@/components/home/CategorySection';
 import { SmartInfoSection } from '@/components/home/SmartInfoSection';
-import { AnalyticsSection } from '@/components/home/AnalyticsSection';
+import { BlogPostsSection } from '@/components/home/BlogPostsSection';
 
 export default function Index() {
   return (
@@ -20,8 +20,8 @@ export default function Index() {
       {/* בלוקים חכמים */}
       <SmartInfoSection />
 
-      {/* חלק מעודכן מהעיצוב הקודם - המלצות והשוואות */}
-      <AnalyticsSection />
+      {/* פוסטים מהבלוג */}
+      <BlogPostsSection />
     </div>
   );
 }
