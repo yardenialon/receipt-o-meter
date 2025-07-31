@@ -5,6 +5,121 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const blogPosts = {
+  'ha-chishuk': {
+    title: 'הכירו את מיזם "החישוק" – המהפכה החברתית נגד יוקר המחיה',
+    date: 'יולי 2025',
+    badge: 'חדש',
+    content: (
+      <>
+        <section>
+          <p className="leading-relaxed text-foreground mb-4">
+            "החישוק" הוא מיזם חברתי־כלכלי (חל"צ), שמטרתו לשבור את מנגנון המחיר של שוק המזון בישראל – בעזרת גישה פשוטה, שקופה ומשתפת פעולה: הם קונים בזול (לעיתים ישירות מסיטונאים או יצרנים) ומוכרים ללא רווח, כמעט כמו מחיר־עלות.
+          </p>
+          <p className="leading-relaxed text-foreground">
+            מייסד המיזם, קסם לי, החל את הפעילות מתוך מהפכה נגד יוקר המחיה, לאחר שגילה פערים גדולים במחירי מוצרי יסוד בין שכונות סמוכות.
+          </p>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🛒 איך זה עובד ואיפה חוסכים?</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">1. ביצוע קניה במקביל לסופר – בלי פערים</h4>
+              <p className="text-foreground">באתר מוצגים מחירים של עשרות עד כמעט 50% פחות מרשתות מסחר רגילות, בעיקר עבור מוצרי מזווה יבשים כמו קמח, תבלינים ופסטה.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">2. צמצום עלויות תיווך ותפעול</h4>
+              <p className="text-foreground">החברה פועלת ממחסן קטן בחולון, משתדלת לשמור על מבנה תפעולי מינימליסטי (שכירות, כח אדם), וכך מורידה את עלויות העיבוד והתפעול עד למינימום.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">3. איסוף שכונתי ושיתוף בקהילה</h4>
+              <p className="text-foreground">במקום משלוחים יקרים עד הבית, מוצעות נקודות איסוף שכונתיות – במחיר של כ־5 ש"ח למשלוח עד 4 ק"ג, מה שמוזיל משמעותית את עלות הלוגיסטיקה. כיום פועלות כ־200 נקודות כאלה בארץ.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">4. מכירה של מוצרים עם תוקף קצר במחירי מציאה</h4>
+              <p className="text-foreground">בקטגוריית "מציאון החישוק" נמכרים מוצרים שהם בעלי תוקף קצר (3–5 חודשים) במחיר מוזל במיוחד, ללא פיגור מלאי.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">📊 למה זה יכול לחסוך לכם כסף?</h3>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>הוזלה של עשרות אחוזים בהשוואה לסופר רגיל, גם עבור מותגים אלטרנטיביים ואיכותיים</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>מודל שקוף: פירוט ברור של הוצאות והכנסות באתר, כולל המחסור לרווח</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>גישה קהילתית: ככל שהביקוש עולה – הם רוכשים עוד, וכך מורידים מחירים באופן דינמי</span>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🧩 איך אתם יכולים להרוויח מזה?</h3>
+          <ul className="space-y-3">
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>לפני כל קנייה בסופר: בדקו באיזה מוצרים אפשר להוזיל דרך החישוק (מלח, קמח, תבלינים, חטיפים ועוד)</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>בחרו נקודת איסוף שכונתית הנמצאת בקרבתכם – כך תחסכו במשלוח (5 ₪ בלבד עד 4 ק"ג)</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>עקבו אחרי מציאוני תוקף קצר – יש שם חיסכון משמעותי באיכות גבוהה</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></div>
+              <span>בתמיכה מועילה: תוכלו לתרום באופן סמלי (לחיצת "חמצן לחישוק") או להפיץ את הרעיון ברשתות</span>
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-4 text-primary">✅ תזכורת קצרה:</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-border rounded-lg">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border border-border p-3 text-right font-semibold">מרכיב</th>
+                  <th className="border border-border p-3 text-right font-semibold">מה היתרון</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { component: 'רכישה במחיר סיטונאי (ללא רווח)', advantage: 'עד 50% פחות מהסופר' },
+                  { component: 'משלוחים שיתופיים / נקודות איסוף', advantage: 'עלות משלוח מינימלית, יעילות לוגיסטית' },
+                  { component: 'שקיפות מלאה', advantage: 'אפשר לראות כל חודש עדכונים על הוצאות והכנסות' },
+                  { component: 'מציאון תוקף קצר', advantage: 'מוצרים איכותיים במחיר גרוטאות' },
+                ].map((item, index) => (
+                  <tr key={index} className="hover:bg-muted/50">
+                    <td className="border border-border p-3 font-semibold">{item.component}</td>
+                    <td className="border border-border p-3">{item.advantage}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <p className="leading-relaxed text-foreground mt-4">
+            לסיכום: "החישוק" משמש כאלטרנטיבה בעלת עוצמה לכל מי שרוצה להוריד מהחשבונית בסוף החודש. בזכות שילוב של רכישה חכמה, מודל חברתי וקהילה תומכת – אתם מקבלים איכות במחיר אנושי.
+          </p>
+        </section>
+      </>
+    )
+  },
   'smart-shopping-list': {
     title: 'הרשימה שהופכת כל קנייה לחכמה יותר – וחוסכת לכם מאות שקלים בחודש',
     date: 'יולי 2025',

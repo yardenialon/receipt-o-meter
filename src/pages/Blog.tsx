@@ -4,15 +4,24 @@ import { Calendar, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import mishnatYosefImage from '@/assets/mishnat-yosef-blog.jpg';
 import smartShoppingListImage from '@/assets/smart-shopping-list-blog.jpg';
+import haChishukImage from '@/assets/ha-chishuk-blog.jpg';
 
 const blogPosts = [
+  {
+    id: 'ha-chishuk',
+    title: 'הכירו את מיזם "החישוק" – המהפכה החברתית נגד יוקר המחיה',
+    excerpt: 'מיזם חברתי שקונה בזול ומוכר ללא רווח, כמעט כמו מחיר עלות – עד 50% פחות מהסופר',
+    image: haChishukImage,
+    date: 'יולי 2025',
+    badge: 'חדש'
+  },
   {
     id: 'smart-shopping-list',
     title: 'הרשימה שהופכת כל קנייה לחכמה יותר – וחוסכת לכם מאות שקלים בחודש',
     excerpt: 'עם רשימת הקניות החכמה של SAVY אתם לא רק זוכרים מה לקנות – אתם גם יודעים איפה הכי משתלם לקנות כל פריט',
     image: smartShoppingListImage,
     date: 'יולי 2025',
-    badge: 'חדש'
+    badge: 'עדכון'
   },
   {
     id: 'mishnat-yosef',
