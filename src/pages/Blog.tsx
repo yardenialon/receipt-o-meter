@@ -8,12 +8,20 @@ import haChishukImage from '@/assets/ha-chishuk-blog.jpg';
 
 const blogPosts = [
   {
+    id: 'super-chevrati',
+    title: 'הכירו את "הסופר החברתי" – המהפכה החברתית נגד יוקר המחיה',
+    excerpt: 'מיזם ממשי של ההסתדרות הכללית החדשה שמאפשר רכישה של מוצרי מזון, פארם וניקיון במחירים מסובסדים',
+    image: '/lovable-uploads/9b89ade0-0000-48ab-9c9d-98ad3041adfb.png',
+    date: 'יולי 2025',
+    badge: 'חדש'
+  },
+  {
     id: 'ha-chishuk',
     title: 'הכירו את מיזם "החישוק" – המהפכה החברתית נגד יוקר המחיה',
     excerpt: 'מיזם חברתי שקונה בזול ומוכר ללא רווח, כמעט כמו מחיר עלות – עד 50% פחות מהסופר',
     image: haChishukImage,
     date: 'יולי 2025',
-    badge: 'חדש'
+    badge: 'עדכון'
   },
   {
     id: 'smart-shopping-list',
@@ -21,7 +29,7 @@ const blogPosts = [
     excerpt: 'עם רשימת הקניות החכמה של SAVY אתם לא רק זוכרים מה לקנות – אתם גם יודעים איפה הכי משתלם לקנות כל פריט',
     image: smartShoppingListImage,
     date: 'יולי 2025',
-    badge: 'עדכון'
+    badge: 'פופולרי'
   },
   {
     id: 'mishnat-yosef',

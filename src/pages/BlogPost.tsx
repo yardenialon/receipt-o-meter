@@ -5,6 +5,137 @@ import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const blogPosts = {
+  'super-chevrati': {
+    title: 'הכירו את "הסופר החברתי" – המהפכה החברתית נגד יוקר המחיה',
+    date: 'יולי 2025',
+    badge: 'חדש',
+    content: (
+      <>
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🏛️ מהו "הסופר החברתי" ולמי הוא מיועד?</h3>
+          <p className="leading-relaxed text-foreground mb-4">
+            הסופר החברתי הוא מיזם ממשי של ההסתדרות הכללית החדשה, שמטרתו לתת פתרון ישיר לעלות יוקר המחיה בישראל. 
+            מיועד ל־חברות וחברי ההסתדרות, כולל עובדי הוראה, שירותים עירוניים, עצמאים וחברים פורום העצמאים מבית ההסתדרות.
+          </p>
+          <p className="leading-relaxed text-foreground">
+            זוהי פלטפורמה מקוונת שמאפשרת רכישה של מוצרי מזון, פארם וניקיון, במחירים מסובסדים – לעיתים בעשרות אחוזים פחות מהמחיר הממוצע בשוק.
+          </p>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">💰 למה זה משתלם?</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">מחירים נמוכים משמעותית:</h4>
+              <p className="text-foreground">לדוגמה, משחת שיניים Colgate ב־4.9 ₪ במקום 11.9 ₪; טונה (4 יח') ב־12.9 ₪ במקום 21.9 ₪; פסטה ברילה ב־2.9 ₪ במקום 7.9 ₪; שמן זית ב־29 ₪ במקום 32–33 ₪.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">מוצרים מסובסדים</h4>
+              <p className="text-foreground">בעזרת הנחות עומק מהספקים ויבוא מקביל המנוהל על ידי הסופר החברתי.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">חדשנות בשקיפות החשבונאית</h4>
+              <p className="text-foreground">הפרויקט מתוחזק על ידי חברת הסופר החברתי בע"מ, בבעלות מלאה של ההסתדרות, עם מדיניות מחיר המשקפת מחירי שוק ממוצעים.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">כשרות ברורה</h4>
+              <p className="text-foreground">האתר מכיל סימוני כשרות מדויקים, כולל מוצרים עם ייחוס לכשרות מהדרין, במיוחד למגזר הדתי־חרדי.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🚀 איך מצטרפים ומזמינים?</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">חברות בהתאמה</h4>
+              <p className="text-foreground">קודם כל, נדרש להיות חברת או חבר בהסתדרות. אפשר גם להצטרף דרך האתר אם עדיין לא משויכים.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">הרשמה או התחברות באתר</h4>
+              <p className="text-foreground">הזדהות עם תעודת זהות ונייד, ובחירת סיסמה או קוד חד‑פעמי כניסה.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">בחירת מוצרים</h4>
+              <p className="text-foreground">תפריט קניות מקיף בקבוצות כמו יבשים ואפייה, ניקיון ופארם, כלי בית, מוצרים לחיות מחמד ועוד.</p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-2">משלוח ארצי נוח</h4>
+              <p className="text-foreground">זמני אספקה של 5–7 ימי עסקים לכל הארץ, כאשר לעיתים יש גם מבצעים על משלוח, כולל אפשרות למשלוח חינם לתקופות מסוימות.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-4 text-primary">📊 יתרונות עיקריים בקצרה:</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-border rounded-lg">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border border-border p-3 text-right font-semibold">יתרון</th>
+                  <th className="border border-border p-3 text-right font-semibold">מה זה אומר בפועל</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { advantage: 'חסכון כספי אמיתי', meaning: 'מחירים נמוכים בעשרות אחוזים ממחיר שוק' },
+                  { advantage: 'גישה נוחה אונליין', meaning: 'ללא צורך להתנייד, הזמנה מהבית' },
+                  { advantage: 'תשלום מאובטח', meaning: 'מגוון כרטיסי אשראי מקובלים' },
+                  { advantage: 'כשרות מותאמת', meaning: 'סימוני כשרות מופיעים לכל מוצר' },
+                  { advantage: 'שירות ותמיכה', meaning: 'מוקד תמיכה דרך האתר של ההסתדרות' },
+                ].map((item, index) => (
+                  <tr key={index} className="hover:bg-muted/50">
+                    <td className="border border-border p-3 font-semibold">{item.advantage}</td>
+                    <td className="border border-border p-3">{item.meaning}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">🎯 למה כדאי להצטרף עכשיו?</h3>
+          <p className="leading-relaxed text-foreground mb-4">
+            המיזם הושק ביוני‑יולי 2024 כצעד חברתי משמעותי למאבק ביוקר המחיה, ובמשך השנה בוצעו השקעות לצורך הרחבת ההיצע והשרות עד ל־2025.
+          </p>
+          <p className="leading-relaxed text-foreground mb-4">
+            מבצעי השבוע העדכניים מציגים מחירים השווים קופונים – כמו חבילות מבצע לספגטוני, למשחת כביסה ועוד, עם מגבלות כמו שתי יחידות לכל מוצר.
+          </p>
+          <p className="leading-relaxed text-foreground">
+            מדובר בתשתית מתמשכת שמחוברת ישירות להסתדרות – לכן ככל שהשימוש גדל, כך יש סיכוי שיתווספו חסכונות, מבצעים ואפשרויות נוספים לאורך זמן.
+          </p>
+        </section>
+
+        <section>
+          <h3 className="text-xl font-semibold mb-3 text-primary">✅ לסיכום</h3>
+          <p className="leading-relaxed text-foreground mb-4">
+            הסופר החברתי מבית ההסתדרות הוא חלופה אמיתית לצרכנות יומיומית בתקציב מוגבל. 
+            אם אתם חברי הסתדרות, זהו כלי עוצמתי לחשבונית זולה יותר – עם נוחות דיגיטלית, כשרות ברורה, שירות ותמיכה ועדכוני מבצעים שוטפים.
+          </p>
+          
+          <div className="bg-muted p-4 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <ExternalLink className="h-4 w-4 text-primary" />
+              <span className="font-semibold">רוצים להתחיל ולהתחבר כבר עכשיו?</span>
+            </div>
+            <p className="text-sm">מצטרפים באתר הרשמי לבני ההסתדרות:</p>
+            <a href="https://super-hist.co.il/login/" target="_blank" rel="noopener noreferrer" 
+               className="text-primary hover:underline font-medium">
+              https://super-hist.co.il/login/
+            </a>
+          </div>
+        </section>
+      </>
+    )
+  },
   'ha-chishuk': {
     title: 'הכירו את מיזם "החישוק" – המהפכה החברתית נגד יוקר המחיה',
     date: 'יולי 2025',
