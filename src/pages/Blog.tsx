@@ -19,7 +19,7 @@ const blogPosts = [
     id: 'ha-chishuk',
     title: 'הכירו את מיזם "החישוק" – המהפכה החברתית נגד יוקר המחיה',
     excerpt: 'מיזם חברתי שקונה בזול ומוכר ללא רווח, כמעט כמו מחיר עלות – עד 50% פחות מהסופר',
-    image: haChishukImage,
+    image: '/lovable-uploads/c1fdc5f7-dbe7-43c3-9d71-09b92ea5085e.png',
     date: 'יולי 2025',
     badge: 'עדכון'
   },
