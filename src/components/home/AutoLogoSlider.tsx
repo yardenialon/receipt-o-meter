@@ -67,15 +67,15 @@ export function AutoLogoSlider() {
             key={store.id}
             className="flex-shrink-0 flex flex-col items-center justify-center group cursor-pointer"
           >
-            <div className="h-16 w-16 flex items-center justify-center">
+            <div className="h-32 w-32 flex items-center justify-center">
               <div className="bg-white rounded-lg shadow-sm border p-2 flex items-center justify-center transition-all group-hover:scale-105 hover:shadow-md h-full w-full">
                 <StoreLogo 
                   storeName={store.name} 
-                  className="h-10 max-w-full object-contain" 
+                  className="h-20 max-w-full object-contain" 
                 />
               </div>
             </div>
-            <span className="mt-1 text-xs text-center text-gray-700 truncate max-w-[90%] w-16">
+            <span className="mt-1 text-xs text-center text-gray-700 truncate max-w-[90%] w-32">
               {store.name}
             </span>
           </div>
